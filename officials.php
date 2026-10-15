@@ -54,7 +54,7 @@ $groups = [];
 foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 ?>
 <!DOCTYPE html>
-<html lang="en"<?= is_public() ? ' class="is-public"' : '' ?>>
+<html lang="en"<?= is_limited_viewer() ? ' class="is-public"' : '' ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -92,7 +92,8 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=2"></script>
+<script>window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;</script>
+<script src="sidebar.js?v=3"></script>
 
 <main class="main page-content">
 

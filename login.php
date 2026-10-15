@@ -273,7 +273,7 @@
                     <i class="bi bi-globe2 me-2"></i>View as Public
                 </a>
                 <div class="text-center text-secondary small mt-2">
-                    No password needed. View only, and you can still send a KK registration or sign up for events.
+                    No password needed. Public view is limited to SK Officials and Announcements.
                 </div>
 
             </div>

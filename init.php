@@ -1,10 +1,10 @@
 <?php
 
-$__official = current_user() !== null;
-$__public = is_public();
+$__user = current_user();
+$__official = $__user !== null && ($__user['role'] ?? '') !== 'KK Member';
+$__public = is_limited_viewer();
 
-$__publicKeys = ['skAnnouncements', 'kkMembers', 'skRoles', 'skMeetings', 'skAttendance',
-                 'skTransparencyBudget', 'skTransparencyExpenses'];
+$__publicKeys = ['skAnnouncements'];
 
 if (USE_MEMBERS_TABLE) require_once __DIR__ . '/members_table.php';
 

@@ -142,16 +142,34 @@ function can_view_background_history() {
 /* a visitor who clicked "Continue as Public Viewer" (view only) */
 function is_public() { return !current_user() && !empty($_SESSION['public']); }
 
-/* pages everyone may open: officers + public viewers.
-   (?view=public in a link also starts a public view, so shared links keep working) */
+/* KK accounts without an active SK position have the same limited page access as public viewers. */
+function is_limited_member() {
+    $user = current_user();
+    return $user && ($user['role'] ?? '') === 'KK Member';
+}
+
+function is_limited_viewer() {
+    return is_public() || is_limited_member();
+}
+
+function limited_viewer_can_open_page($page) {
+    return in_array(basename((string)$page), ['announcements.php', 'officials.php'], true);
+}
+
+/* Public viewers can open only announcements and officials; other viewer pages require an officer. */
 function require_viewer() {
     $user = current_user();
     if ($user && !empty($user['must_change_password'])) {
         header('Location: change-password.php');
         exit;
     }
-    if ($user || is_public()) return;
-    if (($_GET['view'] ?? '') === 'public') { $_SESSION['public'] = true; return; }
+    if (($_GET['view'] ?? '') === 'public') $_SESSION['public'] = true;
+    if ($user && !is_limited_member()) return;
+    if (is_limited_viewer()) {
+        if (limited_viewer_can_open_page($_SERVER['SCRIPT_NAME'] ?? '')) return;
+        header('Location: announcements.php');
+        exit;
+    }
     header('Location: login.php'); exit;
 }
 
@@ -167,7 +185,11 @@ function require_official() {
         header('Location: change-password.php');
         exit;
     }
-    if ($user) return;
+    if ($user && !is_limited_member()) return;
+    if (is_limited_viewer()) {
+        header('Location: announcements.php');
+        exit;
+    }
     header('Location: ' . (is_public() ? 'dashboard.php' : 'login.php')); exit;
 }
 

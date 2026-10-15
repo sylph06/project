@@ -470,7 +470,7 @@ html{
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=2"></script>
+<script src="sidebar.js?v=3"></script>
 
 
 <div class="page-content">

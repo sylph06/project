@@ -35,6 +35,16 @@
         ]}
     ];
 
+    var publicMode = document.documentElement.classList.contains('is-public') || !!window.SK_PUBLIC;
+    if (publicMode) {
+        MENU = [
+            { title: null, items: [
+                ['officials.php',     'bi-person-badge', 'SK Officials'],
+                ['announcements.php', 'bi-megaphone',    'Announcements']
+            ]}
+        ];
+    }
+
     var current = (location.pathname.split('/').pop() || 'dashboard.php').toLowerCase();
 
     // Pages that belong to a menu item but have a different file name.
