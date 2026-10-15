@@ -1,0 +1,251 @@
+/* =========================================================
+   SHARED SIDEBAR + THEME  (loaded by every page)
+   Uses ONLY Bootstrap's own colours (primary + its tints and the
+   neutral greys). Change Bootstrap's --bs-primary once and every
+   page follows.
+   ========================================================= */
+
+/* slightly larger text for page content (rem-based sizes grow with this) */
+html{
+    font-size:17.5px;
+}
+
+body{
+    background:var(--bs-tertiary-bg)!important;
+    color:var(--bs-body-color);
+    line-height:1.55;
+}
+
+.top-strip{
+    background:var(--bs-primary)!important;
+}
+
+/* ---------- sidebar: white, turns primary on hover / active ---------- */
+.sidebar{
+    --bs-offcanvas-width:260px;
+    background:var(--bs-white);
+    border-right:1px solid var(--bs-border-color);
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    line-height:1.5;
+}
+
+.sidebar a{
+    text-decoration:none;
+}
+
+@media(min-width:992px){
+    .sidebar{
+        position:fixed;
+        top:0;
+        bottom:0;
+        left:0;
+        width:260px!important;
+        z-index:1000;
+        background:var(--bs-white)!important;
+    }
+
+    .sidebar .offcanvas-body{
+        overflow-y:auto;
+    }
+
+    .page-content{
+        margin-left:260px;
+    }
+}
+
+@media(max-width:991px){
+    .sidebar .offcanvas-body{
+        padding:18px!important;
+    }
+}
+
+.sidebar .nav-link{
+    color:var(--bs-body-color);
+    font-size:15px;
+    padding:11.5px 13.5px;
+    border-radius:13px;
+    transition:.2s ease;
+}
+
+.sidebar .nav-link:hover{
+    color:var(--bs-white);
+    background:var(--bs-primary);
+    transform:translateX(3px);
+}
+
+.sidebar .nav-link.active{
+    color:var(--bs-white);
+    background:var(--bs-primary);
+    font-weight:800;
+}
+
+.brand-badge{
+    width:50px;
+    height:50px;
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    border-radius:14px;
+    overflow:hidden;
+    background:var(--bs-primary);
+    color:var(--bs-white);
+}
+
+.brand-badge img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+
+.sidebar-section-title{
+    color:var(--bs-secondary-color);
+    font-size:12px;
+    font-weight:800;
+    text-transform:uppercase;
+    margin:12px 4px 5px;
+}
+
+/* hamburger button shown in the page header on mobile */
+.sidebar-toggle{
+    color:var(--bs-primary);
+    border:1px solid var(--bs-primary);
+    background:transparent;
+    font-weight:700;
+}
+
+.sidebar-toggle:hover,
+.sidebar-toggle:focus{
+    color:var(--bs-white);
+    background:var(--bs-primary);
+    border-color:var(--bs-primary);
+}
+
+.page-content{
+    min-height:100vh;
+}
+
+/* sidebar keeps its original (smaller) text size - only page content is enlarged */
+.sidebar{ font-size:16px; }
+.sidebar .offcanvas-title{ font-size:20px; }
+.sidebar .small{ font-size:14px; }
+
+/* ---------- white text on primary-coloured elements ---------- */
+.hero, .hero h1, .hero h2, .hero p, .hero small,
+.dashboard-hero, .dashboard-hero h1, .dashboard-hero h2, .dashboard-hero p,
+.hero-copy h2, .hero-copy p,
+.member-hero, .member-hero h1, .member-hero h2, .member-hero p,
+.avatar, .member-avatar, .stat-icon, .stat i, .report-icon,
+.fun-card .fun-icon, .date-box, .date-box *, .image-panel-icon,
+.ann-date-chip, .ann-meta-icon, .ann-banner-empty, .up-thumb,
+.modal-header, .modal-header .modal-title, .modal-header h5, .modal-header h4,
+.status-active, .edit-btn, .btn-primary,
+.section-label, .badge.text-bg-success{
+    color:var(--bs-white)!important;
+}
+
+.modal-header .btn-close{
+    filter:invert(1) grayscale(100%) brightness(200%);
+}
+
+/* ---------- Bootstrap "warning" is shown as Bootstrap's grey (secondary) ---------- */
+:root,
+[data-bs-theme="light"]{
+    --bs-warning:var(--bs-secondary);
+    --bs-warning-rgb:var(--bs-secondary-rgb);
+    --bs-warning-text-emphasis:var(--bs-secondary-text-emphasis);
+    --bs-warning-bg-subtle:var(--bs-secondary-bg-subtle);
+    --bs-warning-border-subtle:var(--bs-secondary-border-subtle);
+}
+
+.bg-warning,
+.text-bg-warning,
+.badge.bg-warning,
+.badge.text-bg-warning,
+.bg-warning.text-dark{
+    background-color:var(--bs-secondary)!important;
+    color:var(--bs-white)!important;
+}
+
+.text-warning{
+    color:var(--bs-secondary)!important;
+}
+
+.alert-warning{
+    --bs-alert-bg:var(--bs-secondary-bg-subtle);
+    --bs-alert-border-color:var(--bs-secondary-border-subtle);
+    --bs-alert-color:var(--bs-secondary-text-emphasis);
+    --bs-alert-link-color:var(--bs-secondary-text-emphasis);
+}
+
+.btn-warning{
+    --bs-btn-color:var(--bs-white);
+    --bs-btn-bg:var(--bs-primary);
+    --bs-btn-border-color:var(--bs-primary);
+    --bs-btn-hover-color:var(--bs-white);
+    --bs-btn-hover-bg:var(--bs-primary-text-emphasis);
+    --bs-btn-hover-border-color:var(--bs-primary-text-emphasis);
+    --bs-btn-active-color:var(--bs-white);
+    --bs-btn-active-bg:var(--bs-primary-text-emphasis);
+    --bs-btn-active-border-color:var(--bs-primary-text-emphasis);
+}
+
+.btn-outline-warning{
+    --bs-btn-color:var(--bs-secondary);
+    --bs-btn-border-color:var(--bs-secondary);
+    --bs-btn-hover-color:var(--bs-white);
+    --bs-btn-hover-bg:var(--bs-secondary);
+    --bs-btn-hover-border-color:var(--bs-secondary);
+    --bs-btn-active-color:var(--bs-white);
+    --bs-btn-active-bg:var(--bs-secondary-text-emphasis);
+    --bs-btn-active-border-color:var(--bs-secondary-text-emphasis);
+}
+
+.table-warning{
+    --bs-table-color:var(--bs-body-color);
+    --bs-table-bg:var(--bs-secondary-bg-subtle);
+    --bs-table-border-color:var(--bs-secondary-border-subtle);
+}
+
+.progress-bar.bg-warning{
+    background-color:var(--bs-secondary)!important;
+}
+
+/* =========================================================
+   PUBLIC VIEWER  (view only)
+   <html class="is-public"> is set by PHP for visitors who chose
+   "Continue as Public Viewer". Every add / edit / delete / save /
+   manage control is hidden. (api.php also refuses their saves.)
+   ========================================================= */
+html.is-public .admin-only,
+/* printing is for SK officials only */
+html.is-public [data-act="print"],
+html.is-public [data-print],
+html.is-public #printListBtn,
+html.is-public .print-btn,
+/* members */
+html.is-public [data-act="role"],
+html.is-public [data-act="kkedit"],
+html.is-public [data-act="remove"],
+html.is-public #dismissUnlinked,
+/* SK meetings */
+html.is-public [onclick="openMeetingForm()"],
+html.is-public [data-att],
+html.is-public [data-edit],
+html.is-public [data-del],
+html.is-public #saveAttendanceBtn,
+html.is-public #meetingSubmitBtn,
+/* reports: budget + expenses forms and row actions */
+html.is-public .fund-box,
+html.is-public .entry-card,
+html.is-public .table-action,
+html.is-public .expense-table th:last-child,
+html.is-public .expense-table td:last-child:not(.empty-row){
+    display:none!important;
+}
+
+html.is-public .entry-grid{
+    grid-template-columns:1fr;
+}

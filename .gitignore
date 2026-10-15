@@ -1,0 +1,21 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Local database snapshots
+/local.session.sql
+*.sql.gz
+
+# Runtime and temporary files
+*.log
+error_log
+*.tmp
+*.bak
+*.orig
+*.swp
+
+# Local editor and operating-system files
+/.vscode/
+.DS_Store
+Thumbs.db
