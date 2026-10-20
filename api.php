@@ -3,7 +3,9 @@
    api.php  - the only place the pages talk to the database
      ?action=login    check username + password, start the session
                       (5 wrong tries from one device = locked for 20 seconds)
-     ?action=event_register  anyone (no account) signs up for an event / announcement
+     ?action=event_register  an authenticated user signs up for an event / announcement
+     ?action=event_attendance officials mark a sign-up as attended or not attended
+     ?action=meeting_minutes_*  save, approve, or reopen private SK meeting minutes
      ?action=set      save one data list        (officers only)
      ?action=remove   delete one data list      (officers only)
      ?action=password change your own password   (officers only)
@@ -13,6 +15,7 @@
 require_once __DIR__ . '/config.php';
 if (USE_MEMBERS_TABLE) require_once __DIR__ . '/members_table.php';
 require_once __DIR__ . '/role_store.php';
+require_once __DIR__ . '/meeting_minutes.php';
 header('Content-Type: application/json; charset=utf-8');
 
 function out($arr, $code = 200) {
@@ -177,8 +180,12 @@ if ($action === 'register') {
     out(['ok' => true, 'refNo' => $rec['refNo']]);
 }
 
-/* ---------- public event sign-up: NO account and NO "public viewer" click needed ---------- */
+/* ---------- event sign-up: requires an authenticated account ---------- */
 if ($action === 'event_register') {
+    $eventUser = current_user();
+    if (!$eventUser) out(['ok' => false, 'error' => 'Please log in before signing up for an event.'], 401);
+    if (!empty($eventUser['must_change_password'])) out(['ok' => false, 'error' => 'Change your temporary password before signing up.'], 403);
+
     $eventId = (string)($in['eventId'] ?? '');
     $d = $in['data'] ?? null;
     if (!preg_match('/^[A-Za-z0-9_\-]{1,60}$/', $eventId) || !is_array($d)) out(['ok' => false, 'error' => 'Bad form data.'], 400);
@@ -216,24 +223,29 @@ if ($action === 'event_register') {
     if ($evDate === '' || date('Y-m-d H:i:s') > $evEnd) { $pdo->rollBack(); out(['ok' => false, 'error' => 'This event has already ended.'], 400); }
 
     $regs = $get('skEventRegistrations');
+    $memberId = $eventUser['legacy_id'] !== null ? (string)$eventUser['legacy_id'] : '';
     foreach ($regs as $r) {
-        if (($r['eventId'] ?? '') === $eventId && strtolower($r['name'] ?? '') === strtolower($name) && ($r['mobile'] ?? '') === $mobile) {
+        if (($r['eventId'] ?? '') === $eventId
+            && (($memberId !== '' && (string)($r['memberId'] ?? '') === $memberId)
+                || (strtolower($r['name'] ?? '') === strtolower($name) && ($r['mobile'] ?? '') === $mobile))) {
             $pdo->rollBack(); out(['ok' => false, 'error' => 'You are already signed up for this event.'], 409);
         }
     }
     $rec = [
         'id' => 'e' . round(microtime(true) * 1000) . substr(bin2hex(random_bytes(2)), 0, 3),
         'eventId' => $eventId, 'eventTitle' => mb_substr((string)($ev['title'] ?? ''), 0, 150),
+        'memberId' => $memberId !== '' ? $memberId : null,
         'name' => $name, 'age' => $age, 'purok' => $purok, 'mobile' => $mobile, 'email' => $email, 'notes' => $notes,
+        'attendanceStatus' => 'Not recorded',
         'submittedAt' => gmdate('c'),
     ];
     $regs[] = $rec;
     $pdo->prepare('INSERT INTO app_data (data_key, data_value, updated_by) VALUES (?, ?, ?)
                    ON DUPLICATE KEY UPDATE data_value = VALUES(data_value), updated_by = VALUES(updated_by)')
-        ->execute(['skEventRegistrations', json_encode($regs, JSON_UNESCAPED_UNICODE), current_user() ? current_user()['username'] : 'public']);
+        ->execute(['skEventRegistrations', json_encode($regs, JSON_UNESCAPED_UNICODE), $eventUser['username']]);
     $pdo->commit();
     $_SESSION['ev_log'][] = time();
-    out(['ok' => true, 'ref' => strtoupper(substr($rec['id'], -6)), 'record' => current_user() ? $rec : null]);
+    out(['ok' => true, 'ref' => strtoupper(substr($rec['id'], -6)), 'record' => $rec]);
 }
 
 /* ---------- everything below needs a logged-in officer ---------- */
@@ -244,6 +256,252 @@ if (!$user) {
 }
 if (!empty($user['must_change_password']) && $action !== 'password') {
     out(['ok' => false, 'error' => 'Change your temporary password before continuing.'], 403);
+}
+
+if (in_array($action, ['meeting_minutes_save', 'meeting_minutes_approve', 'meeting_minutes_reopen'], true)) {
+    $operation = substr($action, strlen('meeting_minutes_'));
+    $meetingId = (string)($in['meetingId'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9_-]{1,80}$/', $meetingId)) {
+        out(['ok' => false, 'error' => 'Choose a valid meeting.'], 400);
+    }
+    if (!meeting_minutes_role_can_manage($user['role'] ?? '')) {
+        out(['ok' => false, 'error' => 'Only the SK Secretary or SK Chairman can manage meeting minutes.'], 403);
+    }
+
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $select = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skMeetings' FOR UPDATE");
+        $select->execute();
+        $raw = $select->fetchColumn();
+        $meetings = $raw === false ? [] : json_decode((string)$raw, true);
+        if (!is_array($meetings)) throw new RuntimeException('Meeting data is invalid.');
+
+        $updatedIndex = null;
+        foreach ($meetings as $index => $meeting) {
+            if (is_array($meeting) && (string)($meeting['id'] ?? '') === $meetingId) {
+                $updatedIndex = $index;
+                break;
+            }
+        }
+        if ($updatedIndex === null) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'The meeting was not found.'], 404);
+        }
+
+        $meeting = $meetings[$updatedIndex];
+        $status = ($meeting['minutesStatus'] ?? '') === 'Approved' ? 'Approved' : 'Draft';
+        if (!meeting_minutes_action_allowed($user['role'], $operation, $status)) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'You cannot perform this action on the current minutes.'], 403);
+        }
+
+        $auditAction = '';
+        if ($operation === 'save') {
+            $html = $in['minutes'] ?? null;
+            if (!is_string($html) || strlen($html) > 1000000) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'The minutes submission is too large.'], 400);
+            }
+            $meeting['minutes'] = meeting_minutes_sanitize_html($html);
+            if (!meeting_minutes_within_limit($meeting['minutes'])) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'Minutes cannot exceed 20,000 characters.'], 400);
+            }
+            $auditAction = 'meeting_minutes_saved';
+        } elseif ($operation === 'approve') {
+            if (meeting_minutes_text_length((string)($meeting['minutes'] ?? '')) === 0) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'Add minutes before approving them.'], 400);
+            }
+            $meeting['minutesStatus'] = 'Approved';
+            $auditAction = 'meeting_minutes_approved';
+        } else {
+            $meeting['minutesStatus'] = 'Draft';
+            $auditAction = 'meeting_minutes_reopened';
+        }
+
+        if ($operation === 'save') $meeting['minutesStatus'] = 'Draft';
+        $meeting['minutesUpdatedBy'] = (string)$user['username'];
+        $meeting['minutesUpdatedAt'] = gmdate('c');
+        $meetings[$updatedIndex] = $meeting;
+        $encoded = json_encode($meetings, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        $save = $pdo->prepare('INSERT INTO app_data (data_key, data_value, updated_by) VALUES (?, ?, ?)
+                               ON DUPLICATE KEY UPDATE data_value = VALUES(data_value), updated_by = VALUES(updated_by)');
+        $save->execute(['skMeetings', $encoded, $user['username']]);
+        $pdo->prepare('INSERT INTO audit_log (actor_user_id, actor, target_legacy_id, action, old_value, new_value)
+                       VALUES (?, ?, ?, ?, NULL, NULL)')
+            ->execute([$user['id'], $user['username'], 'meeting:' . $meetingId, $auditAction]);
+        $pdo->commit();
+        out(['ok' => true, 'meeting' => $meeting]);
+    } catch (Throwable $ex) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log('Meeting minutes update failed: ' . $ex->getMessage());
+        out(['ok' => false, 'error' => 'Could not save the meeting minutes.'], 500);
+    }
+}
+
+if ($action === 'event_attendance') {
+    if (!can_write_app_data()) out(['ok' => false, 'error' => 'Your account role cannot record event attendance.'], 403);
+    $eventId = (string)($in['eventId'] ?? '');
+    $registrationId = (string)($in['registrationId'] ?? '');
+    $status = (string)($in['status'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $eventId)
+        || !preg_match('/^[A-Za-z0-9_-]{1,80}$/', $registrationId)
+        || !in_array($status, ['Attended', 'Did not attend', 'Not recorded'], true)) {
+        out(['ok' => false, 'error' => 'Bad attendance data.'], 400);
+    }
+
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $select = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skEventRegistrations' FOR UPDATE");
+        $select->execute();
+        $raw = $select->fetchColumn();
+        if ($raw === false) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'The event registration was not found.'], 404);
+        }
+        $registrations = json_decode((string)$raw, true);
+        if (!is_array($registrations)) throw new RuntimeException('Event registration data is invalid.');
+        $updated = null;
+        foreach ($registrations as &$registration) {
+            if (!is_array($registration)
+                || (string)($registration['id'] ?? '') !== $registrationId
+                || (string)($registration['eventId'] ?? '') !== $eventId) continue;
+            $registration['attendanceStatus'] = $status;
+            if ($status === 'Not recorded') {
+                unset($registration['attendanceMarkedAt'], $registration['attendanceMarkedBy']);
+            } else {
+                $registration['attendanceMarkedAt'] = gmdate('c');
+                $registration['attendanceMarkedBy'] = $user['username'];
+            }
+            $updated = $registration;
+            break;
+        }
+        unset($registration);
+        if ($updated === null) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'The event registration was not found.'], 404);
+        }
+        $save = $pdo->prepare('UPDATE app_data SET data_value = ?, updated_by = ? WHERE data_key = ?');
+        $save->execute([
+            json_encode($registrations, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
+            $user['username'],
+            'skEventRegistrations',
+        ]);
+        $pdo->commit();
+        out(['ok' => true, 'registration' => $updated]);
+    } catch (Throwable $ex) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log('Event attendance update failed: ' . $ex->getMessage());
+        out(['ok' => false, 'error' => 'Could not save event attendance.'], 500);
+    }
+}
+
+if ($action === 'event_walkin') {
+    if (!can_write_app_data()) out(['ok' => false, 'error' => 'Your account role cannot record event attendance.'], 403);
+    $eventId = (string)($in['eventId'] ?? '');
+    $memberId = (string)($in['memberId'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $eventId)
+        || !preg_match('/^[A-Za-z0-9_-]{1,100}$/', $memberId)) {
+        out(['ok' => false, 'error' => 'Choose a valid event and KK member.'], 400);
+    }
+
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $lockAnnouncements = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skAnnouncements' FOR UPDATE");
+        $lockAnnouncements->execute();
+        $announcements = json_decode((string)$lockAnnouncements->fetchColumn(), true);
+        if (!is_array($announcements)) throw new RuntimeException('Announcement data is invalid.');
+        $event = null;
+        foreach ($announcements as $announcement) {
+            if (is_array($announcement) && (string)($announcement['id'] ?? '') === $eventId) {
+                $event = $announcement;
+                break;
+            }
+        }
+        if (!$event || !empty($event['cancelled'])) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'The selected event was not found or was cancelled.'], 404);
+        }
+
+        if (USE_MEMBERS_TABLE) {
+            $memberQuery = $pdo->prepare('SELECT status FROM members WHERE legacy_id = ? FOR UPDATE');
+            $memberQuery->execute([$memberId]);
+            $memberStatus = $memberQuery->fetchColumn();
+        } else {
+            $lockMembers = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'kkMembers' FOR UPDATE");
+            $lockMembers->execute();
+            $members = json_decode((string)$lockMembers->fetchColumn(), true);
+            if (!is_array($members)) throw new RuntimeException('KK member data is invalid.');
+            $memberStatus = false;
+            foreach ($members as $member) {
+                if (is_array($member) && (string)($member['id'] ?? '') === $memberId) {
+                    $memberStatus = $member['status'] ?? 'Active';
+                    break;
+                }
+            }
+        }
+        if ($memberStatus !== 'Active') {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'Only active KK members can be added as walk-in attendees.'], 400);
+        }
+
+        $lockRegistrations = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skEventRegistrations' FOR UPDATE");
+        $lockRegistrations->execute();
+        $registrationsRaw = $lockRegistrations->fetchColumn();
+        $registrations = $registrationsRaw === false ? [] : json_decode((string)$registrationsRaw, true);
+        if (!is_array($registrations)) throw new RuntimeException('Event registration data is invalid.');
+        foreach ($registrations as $registration) {
+            if (is_array($registration)
+                && (string)($registration['eventId'] ?? '') === $eventId
+                && (string)($registration['memberId'] ?? '') === $memberId) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'This member already has a sign-up for the event. Record attendance on that sign-up instead.'], 409);
+            }
+        }
+
+        $pdo->prepare("INSERT INTO app_data (data_key, data_value, updated_by)
+                       VALUES ('skEventAttendance', '[]', ?)
+                       ON DUPLICATE KEY UPDATE data_key = VALUES(data_key)")
+            ->execute([$user['username']]);
+        $lockAttendance = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skEventAttendance' FOR UPDATE");
+        $lockAttendance->execute();
+        $attendance = json_decode((string)$lockAttendance->fetchColumn(), true);
+        if (!is_array($attendance)) throw new RuntimeException('Event walk-in attendance data is invalid.');
+        foreach ($attendance as $record) {
+            if (is_array($record)
+                && (string)($record['eventId'] ?? '') === $eventId
+                && (string)($record['memberId'] ?? '') === $memberId) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'This member is already recorded as a walk-in attendee.'], 409);
+            }
+        }
+        $record = [
+            'id' => 'w' . round(microtime(true) * 1000) . substr(bin2hex(random_bytes(3)), 0, 5),
+            'eventId' => $eventId,
+            'eventTitle' => mb_substr((string)($event['title'] ?? 'Untitled event'), 0, 150),
+            'memberId' => $memberId,
+            'attendanceStatus' => 'Attended',
+            'attendanceMarkedAt' => gmdate('c'),
+            'attendanceMarkedBy' => $user['username'],
+        ];
+        $attendance[] = $record;
+        $pdo->prepare('UPDATE app_data SET data_value = ?, updated_by = ? WHERE data_key = ?')
+            ->execute([
+                json_encode($attendance, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
+                $user['username'],
+                'skEventAttendance',
+            ]);
+        $pdo->commit();
+        out(['ok' => true, 'record' => $record]);
+    } catch (Throwable $ex) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log('Walk-in event attendance update failed: ' . $ex->getMessage());
+        out(['ok' => false, 'error' => 'Could not save walk-in attendance.'], 500);
+    }
 }
 
 if (in_array($action, ['role_assign', 'role_update', 'role_end', 'role_archive', 'role_archive_expired'], true)) {
@@ -573,6 +831,7 @@ if (USE_MEMBERS_TABLE && in_array($action, ['member_add', 'member_update', 'memb
 if ($action === 'set') {
     check_key($key);
     if ($key === 'skRoles') out(['ok' => false, 'error' => 'Use the dedicated SK role actions.'], 403);
+    if ($key === 'skEventAttendance') out(['ok' => false, 'error' => 'Use the dedicated event attendance actions.'], 403);
     if (!can_write_app_data()) out(['ok' => false, 'error' => 'Your account role cannot make this change.'], 403);
     if (USE_MEMBERS_TABLE) {
         $allowedKeys = [
@@ -586,8 +845,72 @@ if ($action === 'set') {
     }
     $value = $in['value'] ?? null;
     if (!is_string($value)) out(['ok' => false, 'error' => 'Bad value.'], 400);
-    json_decode($value);
+    $decoded = json_decode($value, true);
     if (json_last_error() !== JSON_ERROR_NONE) out(['ok' => false, 'error' => 'Data is not valid JSON.'], 400);
+    if ($key === 'skMeetings') {
+        if (!is_array($decoded) || !is_array(json_decode($value))) {
+            out(['ok' => false, 'error' => 'Meeting data must be a list.'], 400);
+        }
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            $select = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skMeetings' FOR UPDATE");
+            $select->execute();
+            $raw = $select->fetchColumn();
+            $existing = $raw === false ? [] : json_decode((string)$raw, true);
+            if (!is_array($existing)) throw new RuntimeException('Saved meeting data is invalid.');
+            $existingById = [];
+            foreach ($existing as $oldMeeting) {
+                if (is_array($oldMeeting) && isset($oldMeeting['id'])) {
+                    $existingById[(string)$oldMeeting['id']] = $oldMeeting;
+                }
+            }
+            $seen = [];
+            foreach ($decoded as $index => $meeting) {
+                if (!is_array($meeting) || !isset($meeting['id'])
+                    || !preg_match('/^[A-Za-z0-9_-]{1,80}$/', (string)$meeting['id'])) {
+                    $pdo->rollBack();
+                    out(['ok' => false, 'error' => 'Each meeting must have a valid id.'], 400);
+                }
+                $id = (string)$meeting['id'];
+                if (isset($seen[$id])) {
+                    $pdo->rollBack();
+                    out(['ok' => false, 'error' => 'Meeting ids must be unique.'], 400);
+                }
+                $seen[$id] = true;
+                $old = $existingById[$id] ?? null;
+                if (!meeting_minutes_generic_fields_match(is_array($old) ? $old : [], $meeting)) {
+                    $pdo->rollBack();
+                    out(['ok' => false, 'error' => 'Use the dedicated minutes actions to change meeting minutes.'], 403);
+                }
+                $oldMinutes = is_array($old) && is_string($old['minutes'] ?? null) ? $old['minutes'] : '';
+                $decoded[$index]['minutes'] = meeting_minutes_sanitize_html($oldMinutes);
+                $decoded[$index]['minutesStatus'] = is_array($old) && ($old['minutesStatus'] ?? '') === 'Approved' ? 'Approved' : 'Draft';
+                $decoded[$index]['minutesUpdatedBy'] = is_array($old) && is_string($old['minutesUpdatedBy'] ?? null) ? $old['minutesUpdatedBy'] : '';
+                $decoded[$index]['minutesUpdatedAt'] = is_array($old) && is_string($old['minutesUpdatedAt'] ?? null) ? $old['minutesUpdatedAt'] : '';
+            }
+            if (!meeting_minutes_role_can_manage($user['role'] ?? '')) {
+                foreach ($existingById as $oldId => $oldMeeting) {
+                    if (!isset($seen[$oldId]) && meeting_minutes_text_length(
+                        meeting_minutes_sanitize_html((string)($oldMeeting['minutes'] ?? ''))
+                    ) > 0) {
+                        $pdo->rollBack();
+                        out(['ok' => false, 'error' => 'Only the SK Secretary or SK Chairman can remove a meeting with minutes.'], 403);
+                    }
+                }
+            }
+            $canonical = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            $save = $pdo->prepare('INSERT INTO app_data (data_key, data_value, updated_by) VALUES (?, ?, ?)
+                                   ON DUPLICATE KEY UPDATE data_value = VALUES(data_value), updated_by = VALUES(updated_by)');
+            $save->execute([$key, $canonical, $user['username']]);
+            $pdo->commit();
+            out(['ok' => true, 'value' => $canonical]);
+        } catch (Throwable $ex) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log('Meeting data write failed: ' . $ex->getMessage());
+            out(['ok' => false, 'error' => 'Could not save meeting data.'], 500);
+        }
+    }
     db()->prepare('INSERT INTO app_data (data_key, data_value, updated_by) VALUES (?, ?, ?)
                    ON DUPLICATE KEY UPDATE data_value = VALUES(data_value), updated_by = VALUES(updated_by)')
         ->execute([$key, $value, $user['username']]);
@@ -624,6 +947,8 @@ if ($action === 'password') {                         // an officer changes thei
 if ($action === 'remove') {
     check_key($key);
     if ($key === 'skRoles') out(['ok' => false, 'error' => 'Use the dedicated SK role actions.'], 403);
+    if ($key === 'skEventAttendance') out(['ok' => false, 'error' => 'Use the dedicated event attendance actions.'], 403);
+    if ($key === 'skMeetings') out(['ok' => false, 'error' => 'Meeting records cannot be removed through the generic storage endpoint.'], 403);
     if (!can_write_app_data()) out(['ok' => false, 'error' => 'Your account role cannot make this change.'], 403);
     if (USE_MEMBERS_TABLE) {
         $allowedKeys = [

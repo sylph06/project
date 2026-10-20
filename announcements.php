@@ -9,7 +9,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="sidebar.css" rel="stylesheet">
-    <script>window.ANN_MODE = "<?= is_limited_viewer() ? 'public' : 'official' ?>";</script>
+    <script>
+        window.ANN_MODE = "<?= is_limited_viewer() ? 'public' : 'official' ?>";
+        window.ANN_AUTHENTICATED = <?= current_user() ? 'true' : 'false' ?>;
+    </script>
     <style>
 /* =========================================================
    ANNOUNCEMENTS PAGE STYLES (announcements.php = official view + public view in ONE file)
@@ -900,7 +903,7 @@ html.is-public .hero-copy p{
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=3"></script>
+<script src="sidebar.js?v=4"></script>
 
 <div class="page-content">
 
@@ -1241,6 +1244,8 @@ html.is-public .hero-copy p{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="app-alerts.js"></script>
 <script>
 /* =========================================================
    ANNOUNCEMENTS CORE  (used by both the official view and the public view)
@@ -1773,6 +1778,8 @@ html.is-public .hero-copy p{
         }, 1000);
 
         render();
+        var requestedEventId = new URLSearchParams(window.location.search).get("eventId");
+        if (requestedEventId && find(requestedEventId)) openDetails(requestedEventId);
     }
 
     window.AnnCore = {
@@ -2145,8 +2152,8 @@ html.is-public .hero-copy p{
 })();
 </script>
 
-<!-- event sign-up (open to everyone, no account needed) -->
-<script src="event-register.js"></script>
+<!-- Event sign-up; bump the query when this script changes to avoid stale browser copies. -->
+<script src="event-register.js?v=7"></script>
 
 </body>
 </html>

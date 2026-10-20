@@ -329,7 +329,7 @@ textarea.form-control{ min-height:0; }
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=3"></script>
+<script src="sidebar.js?v=4"></script>
 
 <div class="page-content">
 

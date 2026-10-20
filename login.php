@@ -1,4 +1,15 @@
-<?php require_once __DIR__ . '/config.php'; if (current_user()) { header('Location: dashboard.php'); exit; } ?>
+<?php
+require_once __DIR__ . '/config.php';
+$nextPage = 'dashboard.php';
+if (($_GET['next'] ?? '') === 'announcements.php') {
+    $nextPage = 'announcements.php?view=public';
+    $eventId = (string)($_GET['eventId'] ?? '');
+    if (preg_match('/^[A-Za-z0-9_-]{1,60}$/', $eventId)) {
+        $nextPage .= '&eventId=' . rawurlencode($eventId);
+    }
+}
+if (current_user()) { header('Location: ' . $nextPage); exit; }
+?>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -313,7 +324,7 @@
 (function () {
     "use strict";
 
-    var NEXT_PAGE = "dashboard.php";
+    var NEXT_PAGE = <?= json_encode($nextPage, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     var MAX_TRIES = 5;          // wrong tries before a short lock (the SERVER enforces this: api.php)
     var LOCK_SECONDS = 20;
 

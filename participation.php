@@ -176,13 +176,120 @@
         }
     </style>
 <?php include __DIR__ . '/init.php'; ?>
+<?php
+$participationMembers = json_decode($__data['kkMembers'] ?? '[]', true);
+$participationMembers = is_array($participationMembers) ? $participationMembers : [];
+$participationRegistrations = json_decode($__data['skEventRegistrations'] ?? '[]', true);
+$participationRegistrations = is_array($participationRegistrations) ? $participationRegistrations : [];
+$participationAnnouncements = json_decode($__data['skAnnouncements'] ?? '[]', true);
+$participationAnnouncements = is_array($participationAnnouncements) ? $participationAnnouncements : [];
+$participationWalkins = json_decode($__data['skEventAttendance'] ?? '[]', true);
+$participationWalkins = is_array($participationWalkins) ? $participationWalkins : [];
+$participationMembersById = [];
+foreach ($participationMembers as $member) {
+    if (is_array($member) && isset($member['id'])) {
+        $participationMembersById[(string)$member['id']] = $member;
+    }
+}
+$participationEventsById = [];
+foreach ($participationAnnouncements as $event) {
+    if (is_array($event) && isset($event['id'])) {
+        $participationEventsById[(string)$event['id']] = $event;
+    }
+}
+$participationRows = [];
+$participationEventOptions = [];
+$participationLinkedMembers = [];
+$participationSignupMemberEvents = [];
+$participationWalkinMemberEvents = [];
+$participationAttendedCount = 0;
+$participationActiveMembers = 0;
+foreach ($participationMembers as $member) {
+    if (is_array($member) && ($member['status'] ?? '') === 'Active') $participationActiveMembers++;
+}
+foreach ($participationRegistrations as $signup) {
+    if (!is_array($signup)) continue;
+    $eventId = (string)($signup['eventId'] ?? '');
+    $event = $participationEventsById[$eventId] ?? [];
+    $eventTitle = trim((string)($signup['eventTitle'] ?? $event['title'] ?? 'Unknown event'));
+    if ($eventTitle === '') $eventTitle = 'Unknown event';
+    $eventDate = (string)($event['date'] ?? '');
+    $memberId = isset($signup['memberId']) ? (string)$signup['memberId'] : '';
+    if ($memberId !== '') $participationSignupMemberEvents[$eventId . ':' . $memberId] = true;
+    $member = $memberId !== '' ? ($participationMembersById[$memberId] ?? null) : null;
+    $name = $member
+        ? trim(implode(' ', array_filter([
+            $member['firstName'] ?? '', $member['middleName'] ?? '',
+            $member['lastName'] ?? '', $member['suffix'] ?? '',
+        ], function ($part) { return trim((string)$part) !== ''; })))
+        : trim((string)($signup['name'] ?? ''));
+    if ($name === '') $name = 'Unnamed participant';
+    $status = in_array($signup['attendanceStatus'] ?? '', ['Attended', 'Did not attend'], true)
+        ? $signup['attendanceStatus']
+        : 'Not recorded';
+    if ($member) {
+        $participationLinkedMembers[$memberId] = true;
+        if ($status === 'Attended') $participationAttendedCount++;
+    } elseif ($status === 'Attended') {
+        $participationAttendedCount++;
+    }
+    $participationRows[] = [
+        'memberId' => $member ? (string)($member['memberNo'] ?? $memberId) : 'Not linked',
+        'memberName' => $name,
+        'memberStatus' => $member['status'] ?? 'Unlinked signup',
+        'eventId' => $eventId,
+        'eventTitle' => $eventTitle,
+        'eventDate' => $eventDate,
+        'submittedAt' => substr((string)($signup['submittedAt'] ?? ''), 0, 10),
+        'attendanceStatus' => $status,
+    ];
+    if ($eventId !== '') $participationEventOptions[$eventId] = $eventTitle;
+}
+foreach ($participationWalkins as $walkin) {
+    if (!is_array($walkin)) continue;
+    $eventId = (string)($walkin['eventId'] ?? '');
+    $memberId = (string)($walkin['memberId'] ?? '');
+    if ($memberId !== '' && isset($participationSignupMemberEvents[$eventId . ':' . $memberId])) continue;
+    if ($memberId !== '' && isset($participationWalkinMemberEvents[$eventId . ':' . $memberId])) continue;
+    if ($memberId !== '') $participationWalkinMemberEvents[$eventId . ':' . $memberId] = true;
+    $member = $memberId !== '' ? ($participationMembersById[$memberId] ?? null) : null;
+    $event = $participationEventsById[$eventId] ?? [];
+    $eventTitle = trim((string)($walkin['eventTitle'] ?? $event['title'] ?? 'Unknown event'));
+    if ($eventTitle === '') $eventTitle = 'Unknown event';
+    $name = $member
+        ? trim(implode(' ', array_filter([
+            $member['firstName'] ?? '', $member['middleName'] ?? '',
+            $member['lastName'] ?? '', $member['suffix'] ?? '',
+        ], function ($part) { return trim((string)$part) !== ''; })))
+        : 'KK member';
+    if ($member) $participationLinkedMembers[$memberId] = true;
+    $participationAttendedCount++;
+    $participationRows[] = [
+        'memberId' => $member ? (string)($member['memberNo'] ?? $memberId) : 'Unknown member',
+        'memberName' => $name !== '' ? $name : 'Unnamed member',
+        'memberStatus' => $member['status'] ?? 'Member record unavailable',
+        'eventId' => $eventId,
+        'eventTitle' => $eventTitle,
+        'eventDate' => (string)($event['date'] ?? ''),
+        'submittedAt' => 'Walk-in',
+        'attendanceStatus' => 'Attended',
+    ];
+    if ($eventId !== '') $participationEventOptions[$eventId] = $eventTitle;
+}
+usort($participationRows, function ($a, $b) {
+    return strcmp($b['eventDate'], $a['eventDate'])
+        ?: strcmp($a['eventTitle'], $b['eventTitle'])
+        ?: strcmp($a['memberName'], $b['memberName']);
+});
+asort($participationEventOptions, SORT_NATURAL | SORT_FLAG_CASE);
+?>
 </head>
 
 <body>
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=3"></script>
+<script src="sidebar.js?v=4"></script>
 
 <main class="main page-content">
 
@@ -227,7 +334,7 @@
         <div class="col-md-3">
             <div class="stat">
                 <i class="bi bi-people"></i>
-                <div class="number">124</div>
+                <div class="number"><?= $participationActiveMembers ?></div>
                 <div class="label">Active Youth</div>
             </div>
         </div>
@@ -235,24 +342,24 @@
         <div class="col-md-3">
             <div class="stat">
                 <i class="bi bi-person-check"></i>
-                <div class="number">86</div>
-                <div class="label">Participating Youth</div>
+                <div class="number"><?= count($participationLinkedMembers) ?></div>
+                <div class="label">KK members tracked</div>
             </div>
         </div>
 
         <div class="col-md-3">
             <div class="stat">
                 <i class="bi bi-trophy"></i>
-                <div class="number">8</div>
-                <div class="label">Highly Active</div>
+                <div class="number"><?= $participationAttendedCount ?></div>
+                <div class="label">Confirmed attendances</div>
             </div>
         </div>
 
         <div class="col-md-3">
             <div class="stat">
                 <i class="bi bi-calendar-event"></i>
-                <div class="number">12</div>
-                <div class="label">Programs Joined</div>
+                <div class="number"><?= count($participationEventOptions) ?></div>
+                <div class="label">Programs tracked</div>
             </div>
         </div>
 
@@ -273,19 +380,16 @@
                     <input type="text"
                            id="search"
                            class="form-control"
-                           placeholder="Search youth member...">
+                           placeholder="Search member or event...">
                 </div>
 
                 <div class="col-md-4">
 
-                    <select class="form-select">
-
-                        <option>All Activities</option>
-                        <option>Barangay Basketball League</option>
-                        <option>Youth Study Assistance</option>
-                        <option>Youth Health Awareness</option>
-                        <option>Youth Clean-Up Drive</option>
-
+                    <select class="form-select" id="activityFilter">
+                        <option value="">All Activities</option>
+                        <?php foreach ($participationEventOptions as $eventId => $eventTitle): ?>
+                            <option value="<?= e($eventId) ?>"><?= e($eventTitle) ?></option>
+                        <?php endforeach; ?>
                     </select>
 
                 </div>
@@ -301,63 +405,42 @@
                         <tr>
                             <th>Member ID</th>
                             <th>Full Name</th>
-                            <th>Programs Joined</th>
-                            <th>Participation</th>
-                            <th>Last Activity</th>
-                            <th>Status</th>
+                            <th>Program / Event</th>
+                            <th>Registration / record</th>
+                            <th>Attendance</th>
+                            <th>Member Status</th>
                         </tr>
 
                     </thead>
 
                     <tbody id="participationTable">
-
-                        <tr>
-                            <td>KK-2026-014</td>
-                            <td><strong>Maria Clara Santos</strong></td>
-                            <td>8</td>
-                            <td style="min-width:180px;">
-                                <div class="progress">
-                                    <div class="progress-bar" style="width:90%;"></div>
-                                </div>
-                                <small>90%</small>
-                            </td>
-                            <td>Sep 18, 2026</td>
-                            <td><span class="badge bg-dark">Active</span></td>
-                        </tr>
-
-                        <tr>
-                            <td>KK-2026-013</td>
-                            <td><strong>Juan Miguel Dela Cruz</strong></td>
-                            <td>6</td>
-                            <td>
-                                <div class="progress">
-                                    <div class="progress-bar" style="width:75%;"></div>
-                                </div>
-                                <small>75%</small>
-                            </td>
-                            <td>Sep 15, 2026</td>
-                            <td><span class="badge bg-dark">Active</span></td>
-                        </tr>
-
-                        <tr>
-                            <td>KK-2026-012</td>
-                            <td><strong>Angelica Reyes</strong></td>
-                            <td>3</td>
-                            <td>
-                                <div class="progress">
-                                    <div class="progress-bar" style="width:40%;"></div>
-                                </div>
-                                <small>40%</small>
-                            </td>
-                            <td>Sep 10, 2026</td>
-                            <td><span class="badge bg-secondary">Low</span></td>
-                        </tr>
-
+                        <?php if (!$participationRows): ?>
+                            <tr><td colspan="6" class="text-center text-muted py-4">No event sign-ups or walk-in attendances have been recorded yet.</td></tr>
+                        <?php else: foreach ($participationRows as $row): ?>
+                            <tr data-event-id="<?= e($row['eventId']) ?>">
+                                <td><?= e($row['memberId']) ?></td>
+                                <td><strong><?= e($row['memberName']) ?></strong></td>
+                                <td><?= e($row['eventTitle']) ?><?php if ($row['eventDate'] !== ''): ?><div class="small text-muted"><?= e($row['eventDate']) ?></div><?php endif; ?></td>
+                                <td><?= e($row['submittedAt'] ?: '—') ?></td>
+                                <td>
+                                    <?php
+                                    $attendanceBadge = $row['attendanceStatus'] === 'Attended'
+                                        ? 'text-bg-success'
+                                        : ($row['attendanceStatus'] === 'Did not attend' ? 'text-bg-secondary' : 'text-bg-warning');
+                                    ?>
+                                    <span class="badge <?= $attendanceBadge ?>"><?= e($row['attendanceStatus']) ?></span>
+                                </td>
+                                <td><?= e($row['memberStatus']) ?></td>
+                            </tr>
+                        <?php endforeach; endif; ?>
                     </tbody>
 
                 </table>
 
             </div>
+            <p class="small text-muted px-3 pb-3 mb-0">
+                Event sign-ups and confirmed attendance are shown separately. Walk-in attendance is included; older sign-ups and accounts not linked to a KK member remain marked as unlinked.
+            </p>
 
         </div>
 
@@ -374,19 +457,21 @@
 <script>
 
 document.getElementById("search").addEventListener("input", function() {
-
     const value = this.value.toLowerCase();
-
-    document.querySelectorAll("#participationTable tr").forEach(row => {
-
-        row.style.display =
-            row.innerText.toLowerCase().includes(value)
-            ? ""
-            : "none";
-
-    });
-
+    filterRows(value, document.getElementById("activityFilter").value);
 });
+
+document.getElementById("activityFilter").addEventListener("change", function() {
+    filterRows(document.getElementById("search").value.toLowerCase(), this.value);
+});
+
+function filterRows(search, eventId) {
+    document.querySelectorAll("#participationTable tr[data-event-id]").forEach(function(row) {
+        const matchesSearch = row.innerText.toLowerCase().includes(search);
+        const matchesEvent = !eventId || row.dataset.eventId === eventId;
+        row.style.display = matchesSearch && matchesEvent ? "" : "none";
+    });
+}
 
 </script>
 

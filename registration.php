@@ -328,6 +328,29 @@
             height: 36px;
             font-size: 14px;
         }
+
+        /* ---- 10 Centers of Participation: grid layout ---- */
+        #centerPrograms {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 10px;
+            align-items: start;
+        }
+
+        #centerPrograms .center-item {
+            margin: 0;
+        }
+
+        #centerPrograms .check-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        #centerPrograms .center-subtype {
+            height: 38px;
+            font-size: 14px;
+        }
     </style>
 <?php include __DIR__ . '/init.php'; ?>
 </head>
@@ -336,7 +359,7 @@
  
 <div class="top-strip"></div>
  
-<script src="sidebar.js?v=3"></script>
+<script src="sidebar.js?v=4"></script>
  
 <main class="main page-content">
  
@@ -377,7 +400,7 @@
  
             <div class="row">
  
-                <div class="col-lg-8">
+                <div class="col-lg-12">
  
                     <!-- PERSONAL INFORMATION (name, birth date, age, gender) -->
                     <div class="card-box">
@@ -704,6 +727,11 @@
                                     <label class="form-label" for="employmentOther">Please specify <span class="required">*</span></label>
                                     <input type="text" id="employmentOther" class="form-control" maxlength="60" placeholder="Employment status">
                                 </div>
+
+                                <div class="col-md-6 d-none" id="box_salaryIncome">
+                                    <label class="form-label" for="salaryIncome">Monthly Salary / Income (₱)</label>
+                                    <select id="salaryIncome" class="form-select"></select>
+                                </div>
  
                                 <div class="col-md-6 d-none" id="box_occupation">
                                     <label class="form-label" for="occupation">
@@ -796,9 +824,6 @@
                                 <div class="col-12">
                                     <label class="form-label">Program Interests</label>
  
-                                    <div class="group-title">General Youth Programs</div>
-                                    <div class="check-area mb-3" id="generalPrograms"></div>
- 
                                     <div class="group-title">10 Centers of Participation</div>
                                     <div class="check-area mb-3" id="centerPrograms"></div>
  
@@ -846,74 +871,6 @@
                                   data-normal="Register Youth"
                                   data-edit="Submit Changes">Register Youth</span>
                         </button>
- 
-                    </div>
- 
-                </div>
- 
-                <div class="col-lg-4">
- 
-                    <div class="summary">
- 
-                        <h5>
-                            <i class="bi bi-card-checklist me-2" style="color:var(--bs-primary-border-subtle);"></i>
-                            Registration Summary
-                        </h5>
- 
-                        <div class="summary-item">
-                            <span>Registration Type</span>
-                            <span>Youth Member</span>
-                        </div>
- 
-                        <div class="summary-item">
-                            <span>Barangay</span>
-                            <span>Sikat</span>
-                        </div>
- 
-                        <div class="summary-item">
-                            <span>City</span>
-                            <span>Alfonso</span>
-                        </div>
- 
-                        <div class="summary-item">
-                            <span>Province</span>
-                            <span>Cavite</span>
-                        </div>
- 
-                        <div class="summary-item">
-                            <span>Registration Year</span>
-                            <span id="summaryYear">2026</span>
-                        </div>
- 
-                        <div class="summary-item">
-                            <span>Age Eligibility</span>
-                            <span>15 – 30 years old</span>
-                        </div>
- 
-                        <div class="summary-item">
-                            <span>Status</span>
-                            <span style="color:var(--bs-primary-border-subtle);" id="summaryStatus"><?= is_public() ? 'For SK approval' : 'Active' ?></span>
-                        </div>
- 
-                        <div class="summary-item admin-only">
-                            <span>Active Youth</span>
-                            <span id="sumActive">0</span>
-                        </div>
- 
-                        <div class="summary-item admin-only">
-                            <span>Edit Requests Pending</span>
-                            <span id="sumRequests">0</span>
-                        </div>
- 
-                        <div class="summary-item admin-only">
-                            <span>Archived Records</span>
-                            <span id="sumArchived">0</span>
-                        </div>
- 
-                        <div style="margin-top:20px;padding:14px;background:rgba(var(--bs-white-rgb), .12);border-radius:8px;font-size:13px;color:rgba(var(--bs-white-rgb), .88);">
-                            <i class="bi bi-shield-check" style="color:var(--bs-primary-border-subtle);"></i>
-                            Information collected through this registration form will be used for KK youth profiling and SK program planning.
-                        </div>
  
                     </div>
  
@@ -1144,6 +1101,8 @@
     </div>
 </div>
  
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="app-alerts.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- members.js is no longer needed by this page: all registration logic is below -->
 <script>
@@ -1205,7 +1164,6 @@
         'Technological University of the Philippines - Cavite',
         'Unida Christian Colleges',
         'University of Perpetual Help System - GMA Campus',
-        'Other'
     ];
  
     /* ---------- Dropdown lists ---------- */
@@ -1214,17 +1172,39 @@
     var EDU_STATUS = ['Currently Enrolled', 'Graduated', 'Temporarily Not Studying', 'Dropped Out', 'Other'];
     var EMPLOYMENT = ['Employed', 'Self-Employed', 'Freelance / Gig Worker', 'Unemployed', 'Student',
         'Not in Education, Employment or Training', 'Other'];
+    var SALARY_INCOME_RANGES = ['No income', 'Below ₱5,000', '₱5,000–₱9,999', '₱10,000–₱14,999',
+        '₱15,000–₱19,999', '₱20,000–₱29,999', '₱30,000–₱39,999', '₱40,000–₱49,999', '₱50,000 or more'];
     var OCCUPATIONS = ['Student', 'Employee (Private Company)', 'Government Employee', 'Self-Employed / Business Owner', 'Teacher', 'Police',
         'Vendor / Sari-sari Store', 'Construction Worker', 'Driver / Tricycle', 'Factory / Production Worker', 'Call Center / BPO',
         'Service Crew / Sales', 'Freelancer / Online Worker', 'Household / Homemaker', 'Unemployed', 'Other'];
     var TRAININGS = ['No training yet', 'TESDA / Vocational Course', 'Livelihood Training', 'Leadership Training',
         'Computer / IT Training', 'Seminar / Workshop', 'Other'];
  
-    var GENERAL_PROGRAMS = ['Sports & Wellness', 'Arts & Culture', 'Education & Skills Training',
-        'Employment & Livelihood', 'Community Service', 'Leadership Training', 'Scholarship Assistance'];
     var CENTERS = ['Health', 'Education', 'Economic Empowerment', 'Social Inclusion and Equity',
         'Peace-Building and Security', 'Governance', 'Active Citizenship', 'Environment',
         'Global Mobility', 'Agriculture'];
+    var CENTER_CLASSIFICATIONS = {
+        'Health': ['Primary Health Care', 'Maternal and Child Health', 'Mental Health and Wellness', 'Nutrition and Food Security',
+            'Disease Prevention and Screening', 'Health Education and Advocacy', 'Other'],
+        'Education': ['Literacy and Basic Education', 'Formal School Support', 'Skills and Vocational Training',
+            'Youth Leadership and Learning', 'Digital and Career Readiness', 'Access to Education Programs', 'Other'],
+        'Economic Empowerment': ['Livelihood and Small Business Support', 'Job Placement and Employment', 'Financial Literacy',
+            'Cooperative Development', 'Agricultural Enterprise Support', 'Youth Entrepreneurship', 'Other'],
+        'Social Inclusion and Equity': ['Gender and Equality Programs', 'Persons with Disabilities Inclusion', 'Indigenous and Minority Support',
+            'Community Welfare', 'Anti-Discrimination Advocacy', 'Access to Social Services', 'Other'],
+        'Peace-Building and Security': ['Conflict Resolution', 'Community Safety', 'DRRM and Disaster Readiness',
+            'Civic Protection', 'Youth Peace Advocacy', 'Security Awareness', 'Other'],
+        'Governance': ['Local Governance Awareness', 'Citizen Participation', 'Public Policy Engagement', 'Leadership Development',
+            'Transparency and Accountability', 'Youth Governance Training', 'Other'],
+        'Active Citizenship': ['Volunteerism and Service Learning', 'Community Mobilization', 'Local Advocacy',
+            'Civic Education', 'Participation in Local Programs', 'Community Engagement', 'Other'],
+        'Environment': ['Waste Management and Recycling', 'Climate and Resilience', 'Tree Planting and Greening',
+            'Water and Sanitation', 'Clean-up Drives', 'Environmental Education', 'Other'],
+        'Global Mobility': ['Cultural Exchange', 'Study and Scholarship Opportunities', 'International Networking',
+            'Migration and Mobility Awareness', 'Youth Exchange Programs', 'Global Citizenship', 'Other'],
+        'Agriculture': ['Organic Farming', 'Urban Gardening', 'Agri-business and Market Support', 'Livestock and Poultry',
+            'Agricultural Skills Training', 'Food Production and Sustainability', 'Other']
+    };
  
     /* ---------- Classification rules: school / employment / occupation / training = 'req' | 'show' | 'hide' ---------- */
     var RULES = {
@@ -1265,6 +1245,7 @@
         ['educationStatus', 'Education Status'], ['educationStatusOther', 'Education Status (specified)'],
         ['school', 'School / Institution'], ['schoolOther', 'School / Institution (specified)'],
         ['employment', 'Employment Status'], ['employmentOther', 'Employment Status (specified)'],
+        ['salaryIncome', 'Monthly Salary / Income (₱)'],
         ['occupation', 'Occupation / Job'], ['occupationOther', 'Occupation (specified)'], ['training', 'Training / Skills Program'], ['trainingOther', 'Training (specified)'],
         ['pwd', 'PWD'], ['disabilityType', 'Disability Type'], ['disabilityOther', 'Disability (specified)'],
         ['skVoter', 'Registered SK Voter'], ['voterNo', 'Precinct Voter Number'],
@@ -1395,7 +1376,15 @@
     }
  
     function currentRule() { return RULES[$('classification').value] || null; }
- 
+
+    function refreshSalaryIncomeVisibility() {
+        var classification = $('classification').value;
+        var occupation = $('occupation').value;
+        var hasOccupation = !!occupation && (occupation !== 'Other' || !!$('occupationOther').value.trim());
+        show('box_salaryIncome', classification === 'Working Youth'
+            || (classification === 'Out-of-School Youth' && hasOccupation));
+    }
+
     function applyRules() {
         var r = currentRule();
         var level = EDU_LEVELS.filter(function (l) { return !(r && r.levelExclude && r.levelExclude.indexOf(l) !== -1); });
@@ -1404,7 +1393,7 @@
         setOptions($('educationLevel'), level, 'Select');
         setOptions($('educationStatus'), status, 'Select');
         setOptions($('employment'), r && r.empOnly ? r.empOnly : EMPLOYMENT, 'Select');
- 
+
         ['school', 'employment', 'occupation', 'training'].forEach(function (k) {
             var mode = r ? r[k] : 'hide';
             show('box_' + k, mode !== 'hide');
@@ -1412,6 +1401,7 @@
         });
         show('classHint', !r);
         refreshOthers();
+        refreshSalaryIncomeVisibility();
     }
  
     function refreshBoxes() {
@@ -1531,7 +1521,23 @@
             need('disabilityOther', 'Please specify the disability');
         }
         if (!document.querySelector('input[name="skVoter"]:checked')) bad($('voterGroup'), 'Please select Yes or No.');
- 
+
+        document.querySelectorAll('.center-item').forEach(function (item) {
+            var cb = item.querySelector('.center-interest');
+            var sel = item.querySelector('.center-subtype');
+            if (!cb || !sel) return;
+            if (cb.checked && !sel.value) {
+                setError(sel, 'Please select a classification for ' + cb.value + '.');
+                errs.push(sel);
+            } else if (cb.checked && sel.value === cb.value + ' | Other') {
+                var other = item.querySelector('.center-other');
+                if (other && !other.value.trim()) {
+                    setError(other, 'Please specify the ' + cb.value + ' classification.');
+                    errs.push(other);
+                }
+            }
+        });
+
         if (errs.length) {
             var first = errs[0];
             first.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1556,7 +1562,23 @@
         d.pwd = pwd ? pwd.value : '';
         d.skVoter = vot ? vot.value : '';
         d.interests = [];
-        document.querySelectorAll('.interest-box:checked').forEach(function (c) { d.interests.push(c.value); });
+        document.querySelectorAll('.interest-box:checked').forEach(function (c) {
+            if (c.classList.contains('center-interest')) return;
+            d.interests.push(c.value);
+        });
+        document.querySelectorAll('.center-item').forEach(function (item) {
+            var cb = item.querySelector('.center-interest');
+            var sel = item.querySelector('.center-subtype');
+            if (!cb || !cb.checked) return;
+            if (!sel || !sel.value) {
+                d.interests.push(cb.value);
+                return;
+            }
+            var other = item.querySelector('.center-other');
+            d.interests.push(sel.value === cb.value + ' | Other'
+                ? sel.value + ': ' + (other ? other.value.trim() : '')
+                : sel.value);
+        });
         d.photo = photoData;
         return d;
     }
@@ -1573,6 +1595,13 @@
         $('classification').value = m.classification || '';
         applyRules();
         INPUT_IDS.forEach(function (k) { if (k !== 'classification') $(k).value = m[k] || ''; });
+        if (m.salaryIncome && SALARY_INCOME_RANGES.indexOf(m.salaryIncome) === -1) {
+            var previousIncome = document.createElement('option');
+            previousIncome.value = m.salaryIncome;
+            previousIncome.textContent = 'Previously recorded: ₱' + m.salaryIncome;
+            $('salaryIncome').appendChild(previousIncome);
+            $('salaryIncome').value = m.salaryIncome;
+        }
         // older records saved occupation as free text: show it under "Other"
         if (m.occupation && OCCUPATIONS.indexOf(m.occupation) === -1) { $('occupation').value = 'Other'; $('occupationOther').value = m.occupation; }
         // older records may hold spaces / +63 in number fields: show them as digits only
@@ -1585,8 +1614,32 @@
         document.querySelectorAll('.interest-box').forEach(function (c) {
             c.checked = (m.interests || []).indexOf(c.value) !== -1;
         });
+        document.querySelectorAll('.center-item').forEach(function (item) {
+            var cb = item.querySelector('.center-interest');
+            var sel = item.querySelector('.center-subtype');
+            var other = item.querySelector('.center-other');
+            if (!cb || !sel) return;
+            var center = cb.value;
+            var found = null;
+            var otherText = '';
+            (m.interests || []).forEach(function (value) {
+                if (typeof value === 'string' && value.indexOf(center + ' | ') === 0) {
+                    var otherPrefix = center + ' | Other: ';
+                    if (value.indexOf(otherPrefix) === 0) {
+                        found = center + ' | Other';
+                        otherText = value.slice(otherPrefix.length);
+                    } else {
+                        found = value;
+                    }
+                }
+            });
+            cb.checked = !!((m.interests || []).indexOf(center) !== -1 || found);
+            sel.value = found || '';
+            if (other) other.value = otherText;
+        });
         setPhoto(m.photo);
         refreshBoxes();
+        refreshCenterTypeVisibility();
         applyRules();
         refreshAge();
     }
@@ -1598,6 +1651,7 @@
         $('barangay').value = BARANGAY; $('city').value = CITY; $('province').value = PROVINCE;
         applyRules();
         refreshBoxes();
+        refreshCenterTypeVisibility();
         refreshAge();
     }
  
@@ -1606,7 +1660,6 @@
         label.textContent = on ? label.dataset.edit : label.dataset.normal;
         show('cancelEditBtn', on);
         show('clearBtn', !on);
-        $('summaryStatus').textContent = on ? 'Edit Request (needs approval)' : 'Active';
         $('formMessage').innerHTML = on
             ? '<div class="alert alert-warning small"><i class="bi bi-pencil-square me-1"></i>Editing <strong>' + esc(fullName(m)) +
               '</strong> (' + esc(m.memberNo || '') + '). Changes will <strong>not</strong> replace the official record right away \u2013 ' +
@@ -1744,16 +1797,19 @@
             notify('danger', 'Cannot restore: this youth is now ' + age + ' years old, above the youth age limit.');
             return;
         }
-        if (!confirm('Restore ' + fullName(m) + ' to the active youth list?')) return;
-        m.status = 'Active';
-        m.restoredAt = nowISO();
-        m.archiveReason = ''; m.archivedAt = null; m.archivedBy = ''; m.archiveType = '';
-        m.history.push({ at: nowISO(), action: 'Restored', by: OFFICER, note: 'Moved back to the active list.' });
-        if (saveAll()) {
-            notify('success', fullName(m) + ' was restored.');
-            hideModal('detailsModal');
-            renderAll();
-        }
+        AppAlerts.confirm('Restore ' + fullName(m) + ' to the active youth list?', 'Restore archived member?', 'Restore')
+            .then(function (confirmed) {
+                if (!confirmed) return;
+                m.status = 'Active';
+                m.restoredAt = nowISO();
+                m.archiveReason = ''; m.archivedAt = null; m.archivedBy = ''; m.archiveType = '';
+                m.history.push({ at: nowISO(), action: 'Restored', by: OFFICER, note: 'Moved back to the active list.' });
+                if (saveAll()) {
+                    notify('success', fullName(m) + ' was restored.');
+                    hideModal('detailsModal');
+                    renderAll();
+                }
+            });
     }
  
     function openArchive(id) {
@@ -1894,13 +1950,7 @@
         }).join('') : '<tr><td colspan="4" class="text-center text-muted py-4">No archived records.</td></tr>';
     }
  
-    function renderCounts() {
-        $('sumActive').textContent = members.filter(function (m) { return m.status !== 'Archived'; }).length;
-        $('sumArchived').textContent = members.filter(function (m) { return m.status === 'Archived'; }).length;
-        $('sumRequests').textContent = requests.filter(function (r) { return r.status === 'Edit Request'; }).length;
-    }
- 
-    function renderAll() { renderRecent(); renderRequests(); renderArchive(); renderCounts(); renderPending(); }
+    function renderAll() { renderRecent(); renderRequests(); renderArchive(); renderPending(); }
 
     /* =====================================================
        PUBLIC REGISTRATIONS  (submitted from public-register.html)
@@ -2079,6 +2129,23 @@
        ===================================================== */
     var form = $('registrationForm');
  
+    function refreshCenterTypeVisibility() {
+        document.querySelectorAll('.center-item').forEach(function (item) {
+            var cb = item.querySelector('.center-interest');
+            var wrap = item.querySelector('.center-subtype-wrap');
+            var sel = item.querySelector('.center-subtype');
+            var otherWrap = item.querySelector('.center-other-wrap');
+            var other = item.querySelector('.center-other');
+            if (!cb || !wrap || !sel) return;
+            wrap.classList.toggle('d-none', !cb.checked);
+            if (!cb.checked) {
+                sel.value = '';
+                if (other) other.value = '';
+            }
+            if (otherWrap) otherWrap.classList.toggle('d-none', !cb.checked || sel.value !== cb.value + ' | Other');
+        });
+    }
+
     function handleFieldChange(e) {
         var t = e.target;
         clearError(t);
@@ -2089,8 +2156,10 @@
             if (t.value) { var msg = dobMessage(t.value); if (msg) setError(t, msg); }
         }
         if (t.id === 'classification') applyRules();
+        if (t.id === 'occupation' || t.id === 'occupationOther') applyRules();
         if (t.name === 'pwd' || t.name === 'skVoter' || t.id === 'interestOtherChk') refreshBoxes();
         if (t.matches && t.matches('select[data-other]')) refreshOthers();
+        if (t.matches && (t.matches('.center-interest') || t.matches('.center-subtype'))) refreshCenterTypeVisibility();
     }
     form.addEventListener('input', handleFieldChange);
     form.addEventListener('change', handleFieldChange);
@@ -2144,14 +2213,35 @@
             return '<label class="check-item"><input type="checkbox" class="interest-box" value="' + esc(t) + '"> ' + esc(t) + '</label>';
         }).join('');
     }
-    checkboxes('generalPrograms', GENERAL_PROGRAMS);
-    checkboxes('centerPrograms', CENTERS);
+    function renderCenterClassifications() {
+        var box = $('centerPrograms');
+        box.innerHTML = CENTERS.map(function (center) {
+            var options = (CENTER_CLASSIFICATIONS[center] || []).map(function (type) {
+                return '<option value="' + esc(center + ' | ' + type) + '">' + esc(type) + '</option>';
+            }).join('');
+            var otherId = 'centerOther' + CENTERS.indexOf(center);
+            return '<div class="center-item">' +
+                '<label class="check-item"><input type="checkbox" class="interest-box center-interest" value="' + esc(center) + '"> ' + esc(center) + '</label>' +
+                '<div class="center-subtype-wrap mt-2 d-none">' +
+                '<select class="form-select center-subtype" data-center="' + esc(center) + '">' +
+                '<option value="">Select ' + esc(center) + ' classification</option>' + options +
+                '</select>' +
+                '<div class="center-other-wrap mt-2 d-none">' +
+                '<label class="form-label" for="' + otherId + '">Please specify the ' + esc(center) + ' classification</label>' +
+                '<input type="text" id="' + otherId + '" class="form-control center-other" maxlength="80" placeholder="Type your classification">' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+        }).join('');
+        refreshCenterTypeVisibility();
+    }
+    renderCenterClassifications();
  
     setOptions($('school'), SCHOOLS.concat(['Others']), 'Select school / institution');
     setOptions($('training'), TRAININGS, 'Select');
     setOptions($('occupation'), OCCUPATIONS, 'Select');
+    setOptions($('salaryIncome'), SALARY_INCOME_RANGES, 'Select monthly salary / income');
  
-    $('summaryYear').textContent = new Date().getFullYear();
     $('barangay').value = BARANGAY; $('city').value = CITY; $('province').value = PROVINCE;
  
     applyRules();

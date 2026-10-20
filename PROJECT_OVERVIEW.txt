@@ -1,0 +1,130 @@
+KK YOUTH PROFILING SYSTEM
+Project and website overview
+
+PURPOSE
+-------
+This PHP/MySQL web application serves Sangguniang Kabataan (SK) officials
+and Katipunan ng Kabataan (KK) youth in Barangay Sikat, Alfonso, Cavite.
+It provides public information, KK youth registration and member records,
+SK role and meeting management, announcements and events, participation
+tracking, reports, budget transparency, and account administration.
+
+TECHNOLOGY AND DATA
+-------------------
+- Most application data is stored as JSON records in MySQL's app_data table.
+- init.php supplies page data. storage.js sends authorized changes to api.php,
+  which checks permissions before writing.
+- Bootstrap provides the interface; SweetAlert2 provides alerts and
+  confirmation dialogs.
+- The SK meeting editor uses local Summernote 0.9.1 (Bootstrap 5), jQuery
+  3.7.1 on the meeting page only, and local DOMPurify for minutes rendering.
+
+ACCESS AND ROLES
+----------------
+- Public visitors can view the landing page, SK officials, and announcements.
+- KK Member accounts have limited, view-only access.
+- Active SK accounts can use official management pages; write permissions
+  depend on SK role. The SK Chairperson/Chairman and Secretary have additional
+  role-management permissions.
+- Public registration submissions remain pending until reviewed by officials.
+- APIs enforce permissions for data changes.
+
+MAIN PAGES
+----------
+index.php
+  Public landing page with a KK youth count, current SK officials, upcoming
+  activities, and public-safe budget transparency information.
+
+login.php / logout.php / change-password.php
+  Sign-in, sign-out, and temporary-password change flow. Login attempts are
+  rate-limited.
+
+dashboard.php
+  Official overview of members, activities, budget, expenses, and upcoming
+  activities.
+
+registration.php
+  KK youth profiles, public registration and edit-request review, and member
+  archiving/restoration. Youth are eligible from age 15 through 30; members
+  older than 30 are automatically archived.
+
+members.php
+  Member list and SK role administration. Each person has one KK member
+  record; SK roles reference that member. Roles can be ended or archived.
+
+officials.php
+  Public listing of current SK officials, showing public-safe profile details.
+
+announcements.php
+  Public announcements and events, with official publishing and cancellation
+  controls. Account holders sign in before event sign-up. Officers can mark
+  sign-up attendance and record active KK members who attended as walk-ins.
+
+participation.php
+  Official view of event sign-ups and attendance, including walk-ins, linked
+  member details, filters, and summary counts.
+
+reports.php
+  Printable reports for KK members, SK meeting attendance, event participation,
+  programs, annual summary, and budget/expenses. Meeting and event attendance
+  are reported separately.
+
+sk-management.php
+  SK meeting scheduling and records, meeting attendance, and print views.
+  The SK Secretary can save draft minutes; only the SK Chairman can approve
+  or reopen approved minutes. Minutes are sanitized, audited without storing
+  their text in audit entries, and can be included in meeting and attendance
+  report printouts.
+
+archives.php
+  Searchable archive index for archived KK members, ended/inactive or archived
+  SK roles, and cancelled announcements/events. Records are managed or
+  restored from their original pages.
+
+settings.php
+  Application settings and account administration for authorized officials.
+
+DATA AREAS
+----------
+Important app_data keys include:
+- kkMembers: KK youth/member profiles.
+- skRoles: SK roles associated with KK member IDs.
+- skAnnouncements: announcements and event definitions.
+- skEventRegistrations: event sign-ups and attendance state for sign-ups.
+- skEventAttendance: walk-in attendance records.
+- skMeetings and skAttendance: SK meetings and their attendance.
+- Meeting records also carry private minutes, draft/approved state, and
+  updater metadata. Minutes are not included in public bootstrap data.
+- skTransparencyBudget and skTransparencyExpenses: budget and expense data.
+- kkPendingRegistrations and kkEditRequests: submissions awaiting review and
+  their review status.
+
+KEY WORKFLOWS
+-------------
+EVENT SIGN-UP AND ATTENDANCE
+- A sign-up is not proof of attendance; officers record attendance separately.
+- New sign-ups from linked accounts are associated with the KK member record.
+- Officers can add active KK members who attended as walk-ins. Participation
+  and reports count walk-ins as attendance, not as sign-ups.
+- The walk-in workflow prevents duplicate attendance for the same member/event.
+  Older or unlinked sign-ups cannot be automatically tied to a member.
+
+ARCHIVING
+- Archived KK members retain their records and may be restored if eligible.
+- Ending an SK role marks it Inactive; explicit role archiving marks it
+  Archived. Both appear in Archives.
+- Cancelled announcements/events remain available to officials for restoration.
+
+BUDGET TRANSPARENCY
+-------------------
+Budget and expense summaries appear on the public landing page and dashboard.
+Public summaries omit expense recipients and descriptions; officials can view
+detailed expense records in Reports.
+
+MEETING MINUTES
+---------------
+Minutes are edited with the local Summernote Bootstrap 5 editor and sanitized
+before saving and rendering. Only the SK Secretary and SK Chairman can edit
+draft minutes; only the Chairman can approve or reopen them. The server limits
+minutes to 20,000 text characters and writes audit entries for saves, approvals,
+and reopens without recording the minutes content.

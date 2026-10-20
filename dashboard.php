@@ -35,6 +35,13 @@
             font-size:1.25rem;
         }
         .dashboard-panel{padding:1.35rem}
+        .budget-stat{
+            height:100%;
+            padding:1rem;
+            border:1px solid var(--bs-border-color);
+            border-radius:.8rem;
+            background:var(--bs-tertiary-bg);
+        }
         .announcement-row+.announcement-row{border-top:1px solid var(--bs-border-color)}
         .quick-link{
             display:flex;
@@ -71,12 +78,42 @@
     });
     $upcomingAnnouncementCount = count($upcomingAnnouncements);
     $upcomingAnnouncements = array_slice($upcomingAnnouncements, 0, 5);
+    $dashboardBudget = json_decode($__data['skTransparencyBudget'] ?? 'null', true);
+    $dashboardBudget = is_array($dashboardBudget) ? $dashboardBudget : [];
+    $dashboardBudgetPublished = isset($dashboardBudget['amount']) && is_numeric($dashboardBudget['amount']);
+    $dashboardBudgetAmount = $dashboardBudgetPublished ? max(0, (float)$dashboardBudget['amount']) : 0;
+    $dashboardExpenses = json_decode($__data['skTransparencyExpenses'] ?? '[]', true);
+    $dashboardExpenses = is_array($dashboardExpenses) ? $dashboardExpenses : [];
+    $dashboardExpenseRows = [];
+    $dashboardCategoryTotals = [];
+    $dashboardTotalSpent = 0;
+    foreach ($dashboardExpenses as $expense) {
+        if (!is_array($expense) || !isset($expense['amount']) || !is_numeric($expense['amount'])) continue;
+        $amount = max(0, (float)$expense['amount']);
+        $category = trim((string)($expense['category'] ?? '')) ?: 'Other';
+        $dashboardTotalSpent += $amount;
+        $dashboardCategoryTotals[$category] = ($dashboardCategoryTotals[$category] ?? 0) + $amount;
+        $dashboardExpenseRows[] = [
+            'date' => (string)($expense['date'] ?? ''),
+            'title' => trim((string)($expense['title'] ?? '')) ?: 'Expense',
+            'category' => $category,
+            'amount' => $amount,
+        ];
+    }
+    usort($dashboardExpenseRows, function ($a, $b) {
+        return strcmp($b['date'], $a['date']);
+    });
+    $dashboardExpenseRows = array_slice($dashboardExpenseRows, 0, 5);
+    arsort($dashboardCategoryTotals, SORT_NUMERIC);
+    $dashboardCurrency = function ($amount) {
+        return '₱' . number_format((float)$amount, 2);
+    };
     ?>
 </head>
 
 <body>
 <div class="top-strip"></div>
-<script src="sidebar.js?v=3"></script>
+<script src="sidebar.js?v=4"></script>
 
 <div class="page-content">
     <header class="bg-white border-bottom sticky-top">
@@ -148,6 +185,88 @@
             </div>
         </section>
 
+        <section class="dashboard-panel mb-4" aria-labelledby="budgetTransparencyTitle">
+            <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                <div>
+                    <h2 class="h5 fw-bold mb-1" id="budgetTransparencyTitle">
+                        <i class="bi bi-shield-check text-primary me-2"></i>Budget transparency
+                    </h2>
+                    <p class="small text-muted mb-0">
+                        <?php if (!empty($dashboardBudget['fy'])): ?>
+                            Fiscal year <?= e($dashboardBudget['fy']) ?>
+                        <?php else: ?>
+                            SK budget and recorded expenses
+                        <?php endif; ?>
+                    </p>
+                </div>
+                <a href="reports.php" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-bar-graph me-1"></i>Manage budget &amp; reports
+                </a>
+            </div>
+
+            <div class="row g-2 mb-4">
+                <div class="col-md-4">
+                    <div class="budget-stat">
+                        <div class="small text-muted mb-1">Available budget</div>
+                        <div class="h4 fw-bold mb-0"><?= $dashboardBudgetPublished ? e($dashboardCurrency($dashboardBudgetAmount)) : 'Not published' ?></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="budget-stat">
+                        <div class="small text-muted mb-1">Recorded expenses</div>
+                        <div class="h4 fw-bold mb-0"><?= e($dashboardCurrency($dashboardTotalSpent)) ?></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="budget-stat">
+                        <div class="small text-muted mb-1">Remaining balance</div>
+                        <div class="h4 fw-bold mb-0"><?= $dashboardBudgetPublished ? e($dashboardCurrency($dashboardBudgetAmount - $dashboardTotalSpent)) : '—' ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <h3 class="h6 fw-bold">Spending by category</h3>
+                    <?php if (!$dashboardCategoryTotals): ?>
+                        <p class="small text-muted mb-0">No expenses recorded yet.</p>
+                    <?php else: ?>
+                        <ul class="list-group list-group-flush">
+                            <?php foreach ($dashboardCategoryTotals as $category => $amount): ?>
+                                <li class="list-group-item px-0 d-flex justify-content-between gap-2">
+                                    <span><?= e($category) ?></span>
+                                    <strong class="text-nowrap"><?= e($dashboardCurrency($amount)) ?></strong>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+                <div class="col-lg-8">
+                    <h3 class="h6 fw-bold">Recent expense records</h3>
+                    <?php if (!$dashboardExpenseRows): ?>
+                        <p class="small text-muted mb-0">No expenses recorded yet.</p>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead><tr><th scope="col">Date</th><th scope="col">Program / expense</th><th scope="col">Category</th><th scope="col" class="text-end">Amount</th></tr></thead>
+                                <tbody>
+                                    <?php foreach ($dashboardExpenseRows as $expense): ?>
+                                        <tr>
+                                            <td class="text-nowrap"><?= e($expense['date']) ?></td>
+                                            <td><?= e($expense['title']) ?></td>
+                                            <td><?= e($expense['category']) ?></td>
+                                            <td class="text-end text-nowrap"><?= e($dashboardCurrency($expense['amount'])) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="small text-muted mt-2 mb-0">Showing the five most recent expenses. Recipient and description fields are not displayed here.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+
         <div class="row g-3">
             <section class="col-lg-7" aria-labelledby="upcomingTitle">
                 <div class="dashboard-panel">
@@ -201,6 +320,8 @@
     </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="app-alerts.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

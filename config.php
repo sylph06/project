@@ -153,10 +153,10 @@ function is_limited_viewer() {
 }
 
 function limited_viewer_can_open_page($page) {
-    return in_array(basename((string)$page), ['announcements.php', 'officials.php'], true);
+    return in_array(basename((string)$page), ['index.php', 'announcements.php', 'officials.php'], true);
 }
 
-/* Public viewers can open only announcements and officials; other viewer pages require an officer. */
+/* Limited viewers can open the public landing page, announcements, and officials only. */
 function require_viewer() {
     $user = current_user();
     if ($user && !empty($user['must_change_password'])) {

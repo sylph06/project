@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Meeting minutes rendering checks</title>
+</head>
+<body>
+    <div id="screen-output"></div>
+    <div id="print-output"></div>
+    <pre id="test-results">Running checks...</pre>
+    <script src="../vendor/dompurify/purify.min.js"></script>
+    <script src="../minutes-render.js"></script>
+    <script>
+        (function () {
+            var payload = '<p onclick="alert(1)">Safe <script>alert(2)<\/script>' +
+                '<a href="javascript:alert(3)" onclick="alert(4)">bad link</a>' +
+                '<img src=x onerror=alert(5)>' +
+                '<a href="https://example.com" target="_blank" onclick="alert(6)">good link</a></p>';
+            var checks = 0;
+            function assert(condition, message) {
+                checks++;
+                if (!condition) throw new Error(message);
+            }
+            ['screen-output', 'print-output'].forEach(function (id) {
+                var output = document.getElementById(id);
+                output.innerHTML = window.SKMinutes.sanitize(payload);
+                assert(!output.querySelector('script'), id + ' must not contain scripts.');
+                assert(!output.querySelector('img'), id + ' must not contain images.');
+                assert(!output.querySelector('[onclick],[onerror]'), id + ' must not contain event handlers.');
+                assert(!output.querySelector('a[href^="javascript:"]'), id + ' must not contain javascript links.');
+                var safeLink = output.querySelector('a[href="https://example.com"]');
+                assert(!!safeLink, id + ' must retain safe HTTPS links.');
+                assert(safeLink.getAttribute('rel') === 'noopener noreferrer', id + ' must secure links.');
+            });
+            document.getElementById('test-results').textContent = 'Passed checks: ' + checks;
+        })();
+    </script>
+</body>
+</html>

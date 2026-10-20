@@ -542,7 +542,7 @@
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=3"></script>
+<script src="sidebar.js?v=4"></script>
 
 <main class="main page-content">
 
@@ -651,23 +651,28 @@
                 <option>Attendance Report</option>
                 <option>Participation Report</option>
                 <option>Programs Report</option>
+                <option>Annual Summary</option>
                 <option>Budget & Expense Report</option>
             </select>
         </div>
 
         <div class="col-md-3">
             <label class="form-label" style="font-size:14px;font-weight:bold;">Start Date</label>
-            <input type="date" class="form-control">
+            <input type="date" class="form-control" id="filterStartDate">
         </div>
 
         <div class="col-md-3">
             <label class="form-label" style="font-size:14px;font-weight:bold;">End Date</label>
-            <input type="date" class="form-control">
+            <input type="date" class="form-control" id="filterEndDate">
         </div>
 
         <div class="col-md-2 d-flex align-items-end">
             <button class="btn-report w-100" onclick="generateFilteredReport()">Generate</button>
         </div>
+    </div>
+    <div class="form-check mt-3">
+        <input class="form-check-input" type="checkbox" id="includeMinutes">
+        <label class="form-check-label" for="includeMinutes">Include minutes in the SK meeting attendance report</label>
     </div>
 </div>
 
@@ -881,6 +886,8 @@
     </div>
 </div>
 
+<script src="vendor/dompurify/purify.min.js"></script>
+<script src="minutes-render.js"></script>
 <script>
 const BUDGET_KEY = 'skTransparencyBudget';
 const EXPENSE_KEY = 'skTransparencyExpenses';
@@ -906,7 +913,7 @@ function escapeReportHtml(value) {
         .replace(/</g,'&lt;')
         .replace(/>/g,'&gt;')
         .replace(/"/g,'&quot;')
-        .replace(/'/g,'&#052c65;');
+        .replace(/'/g,'&#39;');
 }
 
 function loadBudgetData() {
@@ -938,7 +945,7 @@ function saveBudget() {
 
     updateBudgetInterface();
 
-    alert('Budget saved successfully.');
+    AppAlerts.success('Budget saved successfully.');
 }
 
 function updateBudgetInterface() {
@@ -976,7 +983,7 @@ function addOrUpdateExpense() {
     const description = document.getElementById('expenseDescription').value.trim();
 
     if (!date || !title || !category || amount <= 0 || !recipient || !description) {
-        alert('Please complete all expense fields.');
+        AppAlerts.warning('Please complete all expense fields.');
         return;
     }
 
@@ -1045,16 +1052,18 @@ function cancelExpenseEdit() {
 function deleteExpense(index) {
     if (!expenseData[index]) return;
 
-    if (!confirm('Delete this expense record?')) return;
+    AppAlerts.confirm('Delete this expense record?', 'Delete expense?', 'Delete')
+        .then(function (confirmed) {
+            if (!confirmed) return;
+            expenseData.splice(index, 1);
+            DB.setItem(EXPENSE_KEY, JSON.stringify(expenseData));
 
-    expenseData.splice(index, 1);
-    DB.setItem(EXPENSE_KEY, JSON.stringify(expenseData));
+            if (editingExpenseIndex === index) {
+                cancelExpenseEdit();
+            }
 
-    if (editingExpenseIndex === index) {
-        cancelExpenseEdit();
-    }
-
-    updateBudgetInterface();
+            updateBudgetInterface();
+        });
 }
 
 function clearExpenseForm() {
@@ -1218,7 +1227,7 @@ function generateBudgetPDF() {
     const reportWindow = window.open('', '_blank', 'width=1200,height=800');
 
     if (!reportWindow) {
-        alert('Please allow pop-ups in your browser to generate the PDF-ready report.');
+        AppAlerts.warning('Please allow pop-ups in your browser to generate the PDF-ready report.');
         return;
     }
 
@@ -1456,33 +1465,451 @@ function generateBudgetPDF() {
     reportWindow.document.close();
 }
 
+function reportArray(key) {
+    const raw = DB.getItem(key);
+    if (raw === null) return [];
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) throw new Error('Saved ' + key + ' data is not a list.');
+    return data;
+}
+
+function reportObject(key) {
+    const raw = DB.getItem(key);
+    if (raw === null) return {};
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('Saved ' + key + ' data is invalid.');
+    }
+    return data;
+}
+
+function reportDateInRange(value, startDate, endDate) {
+    const date = String(value || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return !startDate && !endDate;
+    return (!startDate || date >= startDate) && (!endDate || date <= endDate);
+}
+
+function reportMemberName(member) {
+    return [member.firstName, member.middleName, member.lastName, member.suffix]
+        .filter(Boolean).join(' ').trim() || 'Unnamed member';
+}
+
+function reportMemberAge(member) {
+    if (!member.birthDate) return '';
+    const birth = new Date(String(member.birthDate).slice(0, 10) + 'T00:00:00');
+    if (Number.isNaN(birth.getTime())) return '';
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    if (today.getMonth() < birth.getMonth() ||
+        (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
+    return age >= 0 && age <= 120 ? String(age) : '';
+}
+
+function reportDateLabel(startDate, endDate) {
+    if (startDate && endDate) return startDate + ' to ' + endDate;
+    if (startDate) return 'From ' + startDate;
+    if (endDate) return 'Through ' + endDate;
+    return 'All dates';
+}
+
+function openDataReport(title, subtitle, columns, rows, notes, metrics, sectionsHtml) {
+    const reportWindow = window.open('', '_blank', 'width=1200,height=800');
+    if (!reportWindow) {
+        AppAlerts.warning('Please allow pop-ups in your browser to generate a printable report.');
+        return;
+    }
+
+    const metricHtml = (metrics || []).map(function (metric) {
+        return '<div class="metric"><span>' + escapeReportHtml(metric.label) +
+            '</span><strong>' + escapeReportHtml(metric.value) + '</strong></div>';
+    }).join('');
+    const headerHtml = columns.map(function (column) {
+        return '<th>' + escapeReportHtml(column) + '</th>';
+    }).join('');
+    const rowHtml = rows.length
+        ? rows.map(function (row) {
+            return '<tr>' + row.map(function (cell) {
+                return '<td>' + escapeReportHtml(cell) + '</td>';
+            }).join('') + '</tr>';
+        }).join('')
+        : '<tr><td class="empty" colspan="' + Math.max(columns.length, 1) + '">No records match this report and date range.</td></tr>';
+    const notesHtml = (notes || []).map(function (note) {
+        return '<p class="note">' + escapeReportHtml(note) + '</p>';
+    }).join('');
+    const extraHtml = sectionsHtml || '';
+
+    reportWindow.document.write('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
+        '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<title>' + escapeReportHtml(title) + '</title><style>' +
+        '*{box-sizing:border-box}body{font:14px Arial,sans-serif;color:#212529;margin:0;background:#fff}' +
+        '.top{height:8px;background:#0d6efd}.page{padding:32px;max-width:1200px;margin:auto}' +
+        'h1{font-size:28px;margin:0 0 6px}.subtitle,.meta{color:#6c757d}.meta{margin-top:6px;font-size:12px}' +
+        '.metrics{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0}.metric{flex:1 1 170px;border:1px solid #dee2e6;border-radius:8px;padding:14px}' +
+        '.metric span{display:block;color:#6c757d;font-size:12px;margin-bottom:8px}.metric strong{font-size:19px}' +
+        'table{border-collapse:collapse;width:100%;font-size:12px}th{background:#0d6efd;color:#fff;text-align:left}' +
+        'th,td{padding:8px;border:1px solid #dee2e6;vertical-align:top}.empty{text-align:center;color:#6c757d;padding:20px}' +
+        '.note{padding:10px 12px;margin:12px 0 0;background:#f1f3f5;border-left:3px solid #0d6efd;color:#495057}' +
+        '.minutes-section{page-break-inside:avoid;margin-top:24px}.minutes-section h2{font-size:18px;margin-bottom:8px}' +
+        '.minutes-content p{margin:0 0 6px}.minutes-content ul,.minutes-content ol{margin:4px 0 8px;padding-left:22px}' +
+        '.minutes-content img{display:none!important}' +
+        '.footer{margin-top:24px;padding-top:10px;border-top:1px solid #dee2e6;color:#6c757d;font-size:11px;text-align:center}' +
+        '.print{position:fixed;right:20px;top:16px;border:0;border-radius:6px;background:#052c65;color:#fff;padding:10px 14px;font-weight:bold;cursor:pointer}' +
+        '@media print{.print{display:none}.page{padding:12px}@page{size:A4 landscape;margin:10mm}}' +
+        '</style></head><body><div class="top"></div><button class="print" onclick="window.print()">Print / Save as PDF</button>' +
+        '<main class="page"><h1>' + escapeReportHtml(title) + '</h1><div class="subtitle">KK Youth Profiling System | SK Barangay Sikat</div>' +
+        '<div class="meta">' + escapeReportHtml(subtitle) + ' · Generated ' + escapeReportHtml(new Date().toLocaleString()) + '</div>' +
+        (metricHtml ? '<section class="metrics">' + metricHtml + '</section>' : '') +
+        '<table><thead><tr>' + headerHtml + '</tr></thead><tbody>' + rowHtml + '</tbody></table>' +
+        notesHtml + extraHtml + '<div class="footer">Prepared from records currently saved in the KK Youth Profiling System.</div>' +
+        '</main></body></html>');
+    reportWindow.document.close();
+}
+
+function buildMemberReport(startDate, endDate) {
+    const members = reportArray('kkMembers').filter(function (member) {
+        return member && typeof member === 'object' &&
+            reportDateInRange(member.createdAt || member.created_at, startDate, endDate);
+    });
+    const active = members.filter(function (member) { return member.status === 'Active'; }).length;
+    const rows = members.map(function (member) {
+        return [
+            member.memberNo || member.id || '',
+            reportMemberName(member),
+            reportMemberAge(member),
+            member.gender || '',
+            member.purok || '',
+            member.status || 'Unknown'
+        ];
+    });
+    const notes = [];
+    if (startDate || endDate) {
+        notes.push('The date range filters by member registration date. Records without a registration date are omitted when a date range is set.');
+    } else {
+        notes.push('Age is calculated from birth date; the birth date and contact information are not included.');
+    }
+    openDataReport('KK Member Report', reportDateLabel(startDate, endDate),
+        ['Member ID', 'Name', 'Age', 'Gender', 'Purok', 'Status'], rows, notes,
+        [{ label: 'Members in report', value: String(members.length) }, { label: 'Active members', value: String(active) }]);
+}
+
+function buildAttendanceReport(startDate, endDate, includeMinutes) {
+    const meetings = reportArray('skMeetings');
+    const attendance = reportObject('skAttendance');
+    const members = reportArray('kkMembers');
+    const memberById = {};
+    members.forEach(function (member) {
+        if (member && member.id != null) memberById[String(member.id)] = member;
+    });
+    const rows = [];
+    const minutesSections = [];
+    let present = 0, late = 0, excused = 0, absent = 0;
+    meetings.filter(function (meeting) {
+        return meeting && reportDateInRange(meeting.startDate || meeting.date, startDate, endDate);
+    }).forEach(function (meeting) {
+        if (includeMinutes && meeting.minutes) {
+            minutesSections.push(
+                '<section class="minutes-section"><h2>' + escapeReportHtml(meeting.title || 'Untitled meeting') + '</h2>' +
+                '<p class="note">Minutes status: ' + escapeReportHtml(meeting.minutesStatus === 'Approved' ? 'Approved' : 'Draft') + '</p>' +
+                '<div class="minutes-content">' + window.SKMinutes.sanitize(meeting.minutes) + '</div></section>'
+            );
+        }
+        const records = attendance[meeting.id] || {};
+        Object.keys(records).forEach(function (memberId) {
+            const record = records[memberId] || {};
+            const status = String(record.status || 'Unknown');
+            if (status === 'Present') present++;
+            else if (status === 'Late') late++;
+            else if (status === 'Excused') excused++;
+            else if (status === 'Absent') absent++;
+            const member = memberById[String(memberId)];
+            rows.push([
+                meeting.startDate || meeting.date || '',
+                meeting.title || 'Untitled meeting',
+                member ? reportMemberName(member) : 'Removed member',
+                member && (member.memberNo || member.id) || memberId,
+                status,
+                record.remarks || ''
+            ]);
+        });
+    });
+    rows.sort(function (a, b) {
+        return String(a[0]).localeCompare(String(b[0])) || String(a[1]).localeCompare(String(b[1]));
+    });
+    const total = present + late + excused + absent;
+    const reportNotes = ['This report uses attendance recorded for SK meetings. It is not youth program/event attendance.'];
+    if (includeMinutes && !minutesSections.length) reportNotes.push('No meeting minutes are available for the selected date range.');
+    openDataReport('Attendance Report', reportDateLabel(startDate, endDate),
+        ['Date', 'SK meeting', 'Member', 'Member ID', 'Status', 'Remarks'], rows,
+        reportNotes,
+        [
+            { label: 'Attendance records', value: String(total) },
+            { label: 'Present', value: String(present) },
+            { label: 'Late', value: String(late) },
+            { label: 'Excused', value: String(excused) },
+            { label: 'Absent', value: String(absent) }
+        ],
+        minutesSections.join(''));
+}
+
+function buildParticipationReport(startDate, endDate) {
+    const signups = reportArray('skEventRegistrations').filter(function (signup) {
+        return signup && reportDateInRange(signup.submittedAt || signup.date, startDate, endDate);
+    });
+    const walkins = reportArray('skEventAttendance').filter(function (record) {
+        return record && reportDateInRange(record.attendanceMarkedAt, startDate, endDate);
+    });
+    const announcements = reportArray('skAnnouncements');
+    const eventTitles = {};
+    announcements.forEach(function (event) {
+        if (event && event.id != null) eventTitles[String(event.id)] = event.title || 'Untitled event';
+    });
+    const totals = {};
+    const linkedAttendees = {};
+    const signupMemberEvents = {};
+    const walkinMemberEvents = {};
+    reportArray('skEventRegistrations').forEach(function (signup) {
+        if (signup && signup.memberId) {
+            signupMemberEvents[String(signup.eventId || '') + ':' + String(signup.memberId)] = true;
+        }
+    });
+    signups.forEach(function (signup) {
+        const eventId = String(signup.eventId || '');
+        const title = signup.eventTitle || eventTitles[eventId] || 'Unknown event';
+        const key = eventId || title;
+        if (!totals[key]) totals[key] = { title: title, signups: 0, attended: 0, absent: 0, unmarked: 0, members: {} };
+        totals[key].signups++;
+        const status = signup.attendanceStatus || 'Not recorded';
+        if (status === 'Attended') {
+            totals[key].attended++;
+            if (signup.memberId) {
+                totals[key].members[String(signup.memberId)] = true;
+                linkedAttendees[String(signup.memberId)] = true;
+            }
+        } else if (status === 'Did not attend') totals[key].absent++;
+        else totals[key].unmarked++;
+    });
+    walkins.forEach(function (record) {
+        const eventId = String(record.eventId || '');
+        const memberId = String(record.memberId || '');
+        const memberEventKey = eventId + ':' + memberId;
+        if (memberId && (signupMemberEvents[memberEventKey] || walkinMemberEvents[memberEventKey])) return;
+        if (memberId) walkinMemberEvents[memberEventKey] = true;
+        const title = record.eventTitle || eventTitles[eventId] || 'Unknown event';
+        const key = eventId || title;
+        if (!totals[key]) totals[key] = { title: title, signups: 0, attended: 0, absent: 0, unmarked: 0, members: {} };
+        totals[key].attended++;
+        if (memberId) {
+            totals[key].members[memberId] = true;
+            linkedAttendees[memberId] = true;
+        }
+    });
+    const rows = Object.keys(totals).map(function (key) {
+        return [
+            totals[key].title,
+            String(totals[key].signups),
+            String(totals[key].attended),
+            String(totals[key].absent),
+            String(totals[key].unmarked),
+            String(Object.keys(totals[key].members).length)
+        ];
+    }).sort(function (a, b) {
+        return Number(b[2]) - Number(a[2]) || Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]);
+    });
+    openDataReport('Participation Report', reportDateLabel(startDate, endDate),
+        ['Event / program', 'Sign-ups', 'Attended', 'Did not attend', 'Not recorded', 'Linked KK members attended'], rows,
+        [
+            'Sign-up totals and confirmed attendance are tracked separately. Unmarked sign-ups are not counted as attendees; walk-in attendance is included.',
+            'The date filter applies to registration submission dates for sign-ups and attendance-marked dates for walk-ins.',
+            'Linked KK member totals include registrations associated with member accounts and walk-ins. Older sign-ups and sign-ups from unlinked accounts are counted in event totals but not linked member totals.'
+        ],
+        [
+            { label: 'Sign-ups in range', value: String(signups.length) },
+            { label: 'Confirmed attendance records', value: String(rows.reduce(function (total, row) { return total + Number(row[2]); }, 0)) },
+            { label: 'Linked KK members attended', value: String(Object.keys(linkedAttendees).length) },
+            { label: 'Events with attendance or sign-ups', value: String(rows.length) }
+        ]);
+}
+
+function buildProgramsReport(startDate, endDate) {
+    const events = reportArray('skAnnouncements').filter(function (event) {
+        return event && reportDateInRange(event.date, startDate, endDate);
+    }).sort(function (a, b) {
+        return String(a.date || '').localeCompare(String(b.date || ''));
+    });
+    const signupTotals = {};
+    const attendanceTotals = {};
+    const signupMemberEvents = {};
+    reportArray('skEventRegistrations').forEach(function (signup) {
+        if (signup && signup.eventId != null) {
+            const id = String(signup.eventId);
+            signupTotals[id] = (signupTotals[id] || 0) + 1;
+            if (signup.memberId) signupMemberEvents[id + ':' + String(signup.memberId)] = true;
+            if (signup.attendanceStatus === 'Attended') {
+                attendanceTotals[id] = (attendanceTotals[id] || 0) + 1;
+            }
+        }
+    });
+    const walkinMemberEvents = {};
+    reportArray('skEventAttendance').forEach(function (record) {
+        if (!record || record.eventId == null) return;
+        const id = String(record.eventId);
+        const memberId = String(record.memberId || '');
+        const memberEventKey = id + ':' + memberId;
+        if (memberId && (signupMemberEvents[memberEventKey] || walkinMemberEvents[memberEventKey])) return;
+        if (memberId) walkinMemberEvents[memberEventKey] = true;
+        attendanceTotals[id] = (attendanceTotals[id] || 0) + 1;
+    });
+    const now = new Date();
+    const today = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
+    const rows = events.map(function (event) {
+        return [
+            event.date || '',
+            event.title || 'Untitled activity',
+            event.category || '',
+            event.venue || '',
+            event.publishState || 'Draft',
+            event.cancelled ? 'Cancelled' : (event.date && event.date < today ? 'Past' : 'Scheduled'),
+            String(signupTotals[String(event.id)] || 0),
+            String(attendanceTotals[String(event.id)] || 0)
+        ];
+    });
+    openDataReport('Programs Report', reportDateLabel(startDate, endDate),
+        ['Date', 'Program / activity', 'Category', 'Venue', 'Publication', 'Status', 'Sign-ups', 'Attended'], rows,
+        ['Program data comes from SK announcements. Sign-ups are submitted registrations; attendance includes sign-ups marked Attended and walk-in KK members.'],
+        [{ label: 'Programs in report', value: String(events.length) }]);
+}
+
+function buildAnnualSummary(startDate, endDate) {
+    const members = reportArray('kkMembers');
+    const announcements = reportArray('skAnnouncements').filter(function (event) {
+        return event && reportDateInRange(event.date, startDate, endDate);
+    });
+    const meetings = reportArray('skMeetings').filter(function (meeting) {
+        return meeting && reportDateInRange(meeting.startDate || meeting.date, startDate, endDate);
+    });
+    const signups = reportArray('skEventRegistrations').filter(function (signup) {
+        return signup && reportDateInRange(signup.submittedAt || signup.date, startDate, endDate);
+    });
+    const confirmedEventSignups = reportArray('skEventRegistrations').filter(function (signup) {
+        return signup && signup.attendanceStatus === 'Attended' &&
+            reportDateInRange(signup.attendanceMarkedAt || signup.submittedAt || signup.date, startDate, endDate);
+    });
+    const signupMemberEvents = {};
+    reportArray('skEventRegistrations').forEach(function (signup) {
+        if (signup && signup.eventId != null && signup.memberId) {
+            signupMemberEvents[String(signup.eventId) + ':' + String(signup.memberId)] = true;
+        }
+    });
+    const walkinMemberEvents = {};
+    const walkins = reportArray('skEventAttendance').filter(function (record) {
+        if (!record || !reportDateInRange(record.attendanceMarkedAt, startDate, endDate)) return false;
+        const memberEventKey = String(record.eventId || '') + ':' + String(record.memberId || '');
+        if (!record.memberId) return true;
+        if (signupMemberEvents[memberEventKey] || walkinMemberEvents[memberEventKey]) return false;
+        walkinMemberEvents[memberEventKey] = true;
+        return true;
+    });
+    const attendance = reportObject('skAttendance');
+    const meetingIds = {};
+    meetings.forEach(function (meeting) { meetingIds[String(meeting.id)] = true; });
+    let attendanceRecords = 0, attended = 0, absent = 0, excused = 0;
+    Object.keys(attendance).forEach(function (meetingId) {
+        if (!meetingIds[meetingId] || !attendance[meetingId] ||
+            typeof attendance[meetingId] !== 'object') return;
+        Object.keys(attendance[meetingId]).forEach(function (memberId) {
+            const record = attendance[meetingId][memberId] || {};
+            attendanceRecords++;
+            if (record.status === 'Present' || record.status === 'Late') attended++;
+            else if (record.status === 'Absent') absent++;
+            else if (record.status === 'Excused') excused++;
+        });
+    });
+    const activeMembers = members.filter(function (member) {
+        return member && member.status === 'Active';
+    }).length;
+    const publishedPrograms = announcements.filter(function (event) {
+        return event.publishState === 'Published';
+    }).length;
+    const rows = [
+        ['KK members (current total)', String(members.filter(Boolean).length)],
+        ['Active KK members (current)', String(activeMembers)],
+        ['Programs / announcements in date range', String(announcements.length)],
+        ['Published programs in date range', String(publishedPrograms)],
+        ['SK meetings in date range', String(meetings.length)],
+        ['SK meeting attendance records', String(attendanceRecords)],
+        ['Present or late', String(attended)],
+        ['Excused', String(excused)],
+        ['Absent', String(absent)],
+        ['Event sign-ups submitted in date range', String(signups.length)],
+        ['Confirmed event attendances (including walk-ins)', String(confirmedEventSignups.length + walkins.length)],
+        ['Linked KK members with confirmed attendance', String(new Set(
+            confirmedEventSignups.filter(function (signup) { return !!signup.memberId; }).map(function (signup) { return String(signup.memberId); })
+                .concat(walkins.filter(function (record) { return !!record.memberId; }).map(function (record) { return String(record.memberId); }))
+        ).size)]
+    ];
+    openDataReport('Annual Summary', reportDateLabel(startDate, endDate),
+        ['Measure', 'Total'], rows,
+        [
+            'Member totals are current totals and are not limited by the selected date range.',
+            'SK meeting attendance and event attendance are reported separately. Event sign-ups are not confirmed attendance.',
+            'Event attendance counts confirmed sign-ups and walk-ins by the date attendance was recorded. Older sign-ups and unlinked accounts cannot be attributed to individual members.'
+        ]);
+}
+
 function generateFilteredReport() {
     const selected = document.getElementById('filterReportType').value;
-
+    const startDate = document.getElementById('filterStartDate').value;
+    const endDate = document.getElementById('filterEndDate').value;
+    if (startDate && endDate && startDate > endDate) {
+        AppAlerts.warning('The start date must be on or before the end date.');
+        return;
+    }
     if (selected === 'Budget & Expense Report') {
         generateBudgetReport();
         return;
     }
-
-    generateReport(selected);
+    generateReport(selected, startDate, endDate);
 }
 
-function generateReport(reportName) {
+function generateReport(reportName, startDate, endDate) {
     if (reportName === 'Budget & Expense Report') {
         generateBudgetReport();
         return;
     }
-
-    alert(
-        reportName +
-        '\n\nReport generation selected.\n\n' +
-        'This report is ready for connection to the PHP and MySQL database.'
-    );
+    startDate = startDate || '';
+    endDate = endDate || '';
+    try {
+        if (reportName === 'KK Member Report') buildMemberReport(startDate, endDate);
+        else if (reportName === 'Attendance Report') buildAttendanceReport(
+            startDate,
+            endDate,
+            document.getElementById('includeMinutes').checked
+        );
+        else if (reportName === 'Participation Report') buildParticipationReport(startDate, endDate);
+        else if (reportName === 'Programs Report') buildProgramsReport(startDate, endDate);
+        else if (reportName === 'Annual Summary') buildAnnualSummary(startDate, endDate);
+        else throw new Error('This report type is not supported.');
+    } catch (error) {
+        AppAlerts.error('Could not generate ' + reportName + ': ' + error.message);
+    }
 }
+
+const reportTypeSelect = document.getElementById('filterReportType');
+const includeMinutesCheckbox = document.getElementById('includeMinutes');
+function updateMinutesReportOption() {
+    includeMinutesCheckbox.disabled = reportTypeSelect.value !== 'Attendance Report';
+    if (includeMinutesCheckbox.disabled) includeMinutesCheckbox.checked = false;
+}
+reportTypeSelect.addEventListener('change', updateMinutesReportOption);
+updateMinutesReportOption();
 
 loadBudgetData();
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="app-alerts.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

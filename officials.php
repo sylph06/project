@@ -93,7 +93,7 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 <div class="top-strip"></div>
 
 <script>window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;</script>
-<script src="sidebar.js?v=3"></script>
+<script src="sidebar.js?v=4"></script>
 
 <main class="main page-content">
 

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../vendor/summernote/summernote-bs5.min.css">
+    <title>Meeting minutes editor checks</title>
+</head>
+<body class="p-3">
+    <textarea id="editor"></textarea>
+    <pre id="test-results">Running checks...</pre>
+    <script src="../vendor/jquery/jquery.min.js"></script>
+    <script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../vendor/summernote/summernote-bs5.min.js"></script>
+    <script>
+        (function () {
+            var checks = 0;
+            function assert(condition, message) {
+                checks++;
+                if (!condition) throw new Error(message);
+            }
+            $('#editor').summernote({
+                height: 250,
+                dialogsInBody: true,
+                tooltip: false,
+                toolbar: [
+                    ['style', ['bold', 'italic', 'underline']],
+                    ['para', ['ul', 'ol']],
+                    ['insert', ['link']],
+                    ['misc', ['undo', 'redo']]
+                ]
+            });
+            var buttons = Array.prototype.map.call(document.querySelectorAll('.note-toolbar button'), function (button) {
+                return button.className + ' ' + button.innerHTML;
+            }).join('|').toLowerCase();
+            assert(buttons.indexOf('note-icon-bold') !== -1, 'Bold formatting must be available.');
+            assert(buttons.indexOf('note-icon-italic') !== -1, 'Italic formatting must be available.');
+            assert(buttons.indexOf('note-icon-underline') !== -1, 'Underline formatting must be available.');
+            assert(buttons.indexOf('note-icon-unorderedlist') !== -1, 'Bulleted lists must be available.');
+            assert(buttons.indexOf('note-icon-orderedlist') !== -1, 'Numbered lists must be available.');
+            assert(buttons.indexOf('note-icon-link') !== -1, 'Links must be available.');
+            assert(buttons.indexOf('note-icon-undo') !== -1 && buttons.indexOf('note-icon-redo') !== -1, 'Undo and redo must be available.');
+            assert(buttons.indexOf('note-icon-picture') === -1 && buttons.indexOf('note-icon-video') === -1, 'Images and video must not be available.');
+            document.getElementById('test-results').textContent = 'Passed checks: ' + checks;
+        })();
+    </script>
+</body>
+</html>

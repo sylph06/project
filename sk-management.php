@@ -9,6 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="sidebar.css" rel="stylesheet">
+    <link href="vendor/summernote/summernote-bs5.min.css" rel="stylesheet">
 
     <style>
 :root{
@@ -457,6 +458,9 @@ html{
     #printArea .group-title{ border-bottom:2px solid #000; }
     #printArea table{ width:100%; border-collapse:collapse; }
     #printArea th,#printArea td{ border:1px solid #999; padding:4px 6px; text-align:left; vertical-align:top; }
+    #printArea .minutes-content p{ margin:0 0 6px; }
+    #printArea .minutes-content ul,#printArea .minutes-content ol{ margin:4px 0 8px; padding-left:22px; }
+    #printArea .minutes-content img{ display:none!important; }
 }
 
 /* ---- add / edit meeting: scrollable form, Save always visible ---- */
@@ -470,7 +474,7 @@ html{
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=3"></script>
+<script src="sidebar.js?v=4"></script>
 
 
 <div class="page-content">
@@ -775,6 +779,24 @@ html{
                             <textarea class="form-control" id="meetingRemarks" rows="2" maxlength="500" placeholder="Optional notes about this meeting"></textarea>
                         </div>
 
+                        <div class="col-12" id="minutesPanel">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                <label class="form-label fw-semibold mb-0" for="meetingMinutes">Minutes</label>
+                                <span class="badge text-bg-secondary" id="minutesStatus">Draft</span>
+                            </div>
+                            <textarea class="form-control" id="meetingMinutes"></textarea>
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2">
+                                <small class="text-muted" id="minutesCount">0 / 20,000 characters</small>
+                                <small class="text-muted" id="minutesUpdated"></small>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <button type="button" class="btn btn-outline-success btn-sm" id="minutesSaveBtn">Save Draft</button>
+                                <button type="button" class="btn btn-success btn-sm" id="minutesApproveBtn">Approve Minutes</button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" id="minutesReopenBtn">Reopen Minutes</button>
+                            </div>
+                            <div class="form-text">Only the SK Secretary and SK Chairman can edit draft minutes. Only the Chairman can approve or reopen approved minutes.</div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -806,7 +828,13 @@ html{
 
 <div id="printArea"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="app-alerts.js"></script>
+<script src="vendor/jquery/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/summernote/summernote-bs5.min.js"></script>
+<script src="vendor/dompurify/purify.min.js"></script>
+<script src="minutes-render.js"></script>
 <script src="sk-data.js"></script>
 <script>
 (function () {
@@ -814,6 +842,10 @@ html{
 
     var D = window.SKData;
     var MEET_KEY = D.KEYS.MEET, ATT_KEY = D.KEYS.ATT;
+    var MINUTES_ROLE = <?= json_encode(urole(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var MINUTES_CAN_EDIT = MINUTES_ROLE === 'SK Secretary' || MINUTES_ROLE === 'SK Chairman';
+    var MINUTES_IS_CHAIRMAN = MINUTES_ROLE === 'SK Chairman';
+    var MINUTES_LIMIT = 20000;
     var TYPES = ['Regular Meeting', 'Special Meeting', 'Emergency Meeting', 'Committee Meeting', 'Planning Meeting', 'Budget Meeting', 'Other'];
     var MSTATUS = ['Scheduled', 'Ongoing', 'Completed', 'Postponed', 'Cancelled'];
     var ASTATUS = ['Present', 'Late', 'Excused', 'Absent'];
@@ -873,6 +905,10 @@ html{
         m.agenda = m.agenda || '';
         m.remarks = m.remarks || '';
         m.attendees = Array.isArray(m.attendees) ? m.attendees : [];
+        m.minutes = typeof m.minutes === 'string' ? m.minutes : '';
+        m.minutesStatus = m.minutesStatus === 'Approved' ? 'Approved' : 'Draft';
+        m.minutesUpdatedBy = typeof m.minutesUpdatedBy === 'string' ? m.minutesUpdatedBy : '';
+        m.minutesUpdatedAt = typeof m.minutesUpdatedAt === 'string' ? m.minutesUpdatedAt : '';
         if (MSTATUS.indexOf(m.status) < 0) m.status = (m.startDate && m.startDate < D.todayISO()) ? 'Completed' : 'Scheduled';
         delete m.date; delete m.time; delete m.venue;
         return m;
@@ -949,6 +985,117 @@ html{
 
     /* ---------- add / edit meeting ---------- */
     var editingMeeting = null, formAttendees = [];
+    var initialMinutes = '';
+
+    function editorMinutes() { return window.jQuery('#meetingMinutes').summernote('code') || ''; }
+    function safeMinutes(html) { return window.SKMinutes.sanitize(html); }
+    function minutesTextCount(html) {
+        var box = document.createElement('div');
+        box.innerHTML = safeMinutes(html);
+        return Array.from(box.textContent || '').length;
+    }
+    function minutesChanged(html) {
+        var current = safeMinutes(html), initial = safeMinutes(initialMinutes);
+        if (minutesTextCount(current) === 0 && minutesTextCount(initial) === 0) return false;
+        return current !== initial;
+    }
+    function updateMinutesControls(meeting) {
+        if (!MINUTES_CAN_EDIT) return;
+        meeting = meeting || meetings.filter(function (item) { return item.id === editingMeeting; })[0] || null;
+        var status = meeting ? meeting.minutesStatus : 'Draft';
+        var locked = status === 'Approved';
+        var html = editorMinutes();
+        var count = minutesTextCount(html);
+        var changed = minutesChanged(html);
+        $('minutesStatus').textContent = status;
+        $('minutesStatus').className = 'badge ' + (locked ? 'text-bg-success' : 'text-bg-secondary');
+        $('minutesCount').textContent = count.toLocaleString() + ' / 20,000 characters';
+        $('minutesCount').classList.toggle('text-danger', count > MINUTES_LIMIT);
+        $('minutesUpdated').textContent = meeting && meeting.minutesUpdatedAt
+            ? 'Last updated ' + meeting.minutesUpdatedAt + (meeting.minutesUpdatedBy ? ' by ' + meeting.minutesUpdatedBy : '')
+            : '';
+        if (window.jQuery('#meetingMinutes').data('summernote')) {
+            if (locked) window.jQuery('#meetingMinutes').summernote('disable');
+            else window.jQuery('#meetingMinutes').summernote('enable');
+        }
+        $('minutesSaveBtn').disabled = !editingMeeting || locked || count > MINUTES_LIMIT || !changed;
+        $('minutesApproveBtn').classList.toggle('d-none', !MINUTES_IS_CHAIRMAN || status !== 'Draft');
+        $('minutesApproveBtn').disabled = !editingMeeting || locked || count === 0 || count > MINUTES_LIMIT || changed;
+        $('minutesReopenBtn').classList.toggle('d-none', !MINUTES_IS_CHAIRMAN || status !== 'Approved');
+        $('minutesReopenBtn').disabled = !editingMeeting;
+    }
+    function replaceMeetingMinutes(updated) {
+        meetings = meetings.map(function (meeting) {
+            return meeting.id === updated.id ? normMeeting(updated) : meeting;
+        });
+        var current = meetings.filter(function (meeting) { return meeting.id === editingMeeting; })[0];
+        if (current) {
+            window.jQuery('#meetingMinutes').summernote('code', current.minutes);
+            initialMinutes = current.minutes;
+            updateMinutesControls(current);
+        }
+        renderMeetings();
+    }
+    function runMinutesAction(action, meetingId, html) {
+        var updated = D.meetingMinutes(action, meetingId, html);
+        replaceMeetingMinutes(updated);
+        return updated;
+    }
+
+    window.jQuery('#meetingMinutes').summernote({
+        height: 250,
+        dialogsInBody: true,
+        tooltip: false,
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline']],
+            ['para', ['ul', 'ol']],
+            ['insert', ['link']],
+            ['misc', ['undo', 'redo']]
+        ],
+        callbacks: {
+            onChange: function () { updateMinutesControls(); },
+            onKeydown: function (event) {
+                if (event.ctrlKey || event.metaKey || event.altKey || Array.from(event.key || '').length !== 1) return;
+                var selection = window.getSelection();
+                var selectedLength = selection ? Array.from(selection.toString()).length : 0;
+                if (minutesTextCount(editorMinutes()) - selectedLength + 1 > MINUTES_LIMIT) {
+                    event.preventDefault();
+                }
+            },
+            onImageUpload: function () {},
+            onInit: function () {
+                var editor = window.jQuery('#meetingMinutes').next('.note-editor').find('.note-editable');
+                editor[0].addEventListener('paste', function (event) {
+                    var clipboard = event.clipboardData;
+                    if (!clipboard) return;
+                    var pastedHtml = clipboard.getData('text/html') || '';
+                    var pastedText = clipboard.getData('text/plain') || '';
+                    var hasImage = /<img\b/i.test(pastedHtml) ||
+                        Array.prototype.some.call(clipboard.items || [], function (item) { return item.type.indexOf('image/') === 0; });
+                    var selection = window.getSelection();
+                    var selectedLength = selection ? Array.from(selection.toString()).length : 0;
+                    var available = MINUTES_LIMIT - minutesTextCount(editorMinutes()) + selectedLength;
+                    if (!hasImage && minutesTextCount(pastedHtml || pastedText) <= available) return;
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    if (hasImage && Array.from(pastedText).length <= available) {
+                        document.execCommand('insertText', false, pastedText);
+                    }
+                }, true);
+                editor[0].addEventListener('drop', function (event) {
+                    var transfer = event.dataTransfer;
+                    var hasImage = transfer && (Array.prototype.some.call(transfer.files || [], function (file) {
+                        return file.type.indexOf('image/') === 0;
+                    }) || /<img\b/i.test(transfer.getData('text/html') || ''));
+                    if (hasImage) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                    }
+                }, true);
+            }
+        }
+    });
+    if (!MINUTES_CAN_EDIT) $('minutesPanel').classList.add('d-none');
 
     function renderAttendeeBox() {
         var offs = D.officers(), ids = offs.map(function (o) { return o.id; });
@@ -972,6 +1119,8 @@ html{
         $('meetingModalTitle').textContent = m ? 'Edit Meeting' : 'Add Meeting';
         $('meetingSubmitBtn').textContent = m ? 'Update Meeting' : 'Save Meeting';
         formAttendees = m ? m.attendees.slice() : [];
+        initialMinutes = m ? safeMinutes(m.minutes) : '';
+        window.jQuery('#meetingMinutes').summernote('code', initialMinutes);
         if (m) {
             $('meetingTitle').value = m.title; $('meetingType').value = m.type; $('startDate').value = m.startDate; $('startTime').value = m.startTime;
             $('endDate').value = m.endDate; $('endTime').value = m.endTime; $('meetingStatus').value = m.status;
@@ -982,6 +1131,7 @@ html{
         }
         syncOther();
         renderAttendeeBox();
+        updateMinutesControls(m);
         modal('meetingModal').show();
     };
     function syncOther() {
@@ -997,6 +1147,13 @@ html{
     $('meetingForm').addEventListener('submit', function (e) {
         e.preventDefault();
         var form = this; clearErrs(form);
+        var currentMinutes = MINUTES_CAN_EDIT ? editorMinutes() : '';
+        var minutesCount = MINUTES_CAN_EDIT ? minutesTextCount(currentMinutes) : 0;
+        if (minutesCount > MINUTES_LIMIT) {
+            AppAlerts.warning('Minutes cannot exceed 20,000 characters.');
+            return;
+        }
+        var minutesEdited = MINUTES_CAN_EDIT && minutesChanged(currentMinutes);
         var rec = {
             id: editingMeeting || D.uid('mt'), title: $('meetingTitle').value.trim(), type: $('meetingType').value,
             startDate: $('startDate').value, startTime: $('startTime').value, endDate: $('endDate').value, endTime: $('endTime').value,
@@ -1024,23 +1181,80 @@ html{
         var before = meetings.slice();
         if (editingMeeting) meetings = meetings.map(function (m) { return m.id === rec.id ? rec : m; });
         else meetings.push(rec);
-        if (!saveMeetings()) { meetings = before; alert('Could not save the meeting (browser storage problem).'); return; }
+        if (!saveMeetings()) { meetings = before; AppAlerts.error('Could not save the meeting (browser storage problem).'); return; }
+        editingMeeting = rec.id;
+        D.load();
+        var savedMeetings = D.read(MEET_KEY, []);
+        meetings = (Array.isArray(savedMeetings) ? savedMeetings : []).filter(function (m) { return m && m.id; }).map(normMeeting);
+        if (minutesEdited) {
+            try {
+                var updated = runMinutesAction('meeting_minutes_save', rec.id, currentMinutes);
+                initialMinutes = updated.minutes;
+            } catch (error) {
+                AppAlerts.error('The meeting was saved, but its minutes were not saved: ' + error.message);
+                $('meetingModalTitle').textContent = 'Edit Meeting';
+                $('meetingSubmitBtn').textContent = 'Update Meeting';
+                renderAll(rec.id);
+                updateMinutesControls();
+                return;
+            }
+        }
         modal('meetingModal').hide();
         renderAll(rec.id);
     });
 
+    $('minutesSaveBtn').addEventListener('click', function () {
+        if (!editingMeeting) return;
+        try {
+            runMinutesAction('meeting_minutes_save', editingMeeting, editorMinutes());
+        } catch (error) {
+            AppAlerts.error(error.message);
+        }
+    });
+    $('minutesApproveBtn').addEventListener('click', function () {
+        if (!editingMeeting) return;
+        try {
+            runMinutesAction('meeting_minutes_approve', editingMeeting);
+        } catch (error) {
+            AppAlerts.error(error.message);
+        }
+    });
+    $('minutesReopenBtn').addEventListener('click', function () {
+        if (!editingMeeting) return;
+        AppAlerts.confirm('Reopen the approved minutes for editing?', 'Reopen minutes?', 'Reopen')
+            .then(function (confirmed) {
+                if (!confirmed) return;
+                try {
+                    runMinutesAction('meeting_minutes_reopen', editingMeeting);
+                } catch (error) {
+                    AppAlerts.error(error.message);
+                }
+            });
+    });
+
     function deleteMeeting(id) {
         var m = meetings.filter(function (x) { return x.id === id; })[0];
-        if (!m || !confirm('Delete the meeting "' + m.title + '"? Its attendance record will also be deleted.')) return;
-        meetings = meetings.filter(function (x) { return x.id !== id; });
-        delete attendance[id];
-        saveMeetings(); D.write(ATT_KEY, attendance);
-        renderAll();
+        if (!m) return;
+        AppAlerts.confirm('Delete the meeting "' + m.title + '"? Its attendance record will also be deleted.', 'Delete meeting?', 'Delete')
+            .then(function (confirmed) {
+                if (!confirmed) return;
+                var before = meetings.slice();
+                meetings = meetings.filter(function (x) { return x.id !== id; });
+                if (!saveMeetings()) {
+                    meetings = before;
+                    AppAlerts.error('Could not delete the meeting. You may not have permission to remove its minutes.');
+                    renderAll();
+                    return;
+                }
+                delete attendance[id];
+                D.write(ATT_KEY, attendance);
+                renderAll();
+            });
     }
 
     /* ---------- view / print ---------- */
     function kv(l, v) { return '<div class="col-sm-6"><div class="kv-l">' + esc(l) + '</div><div class="kv-v">' + (v === '' || v == null ? '\u2014' : esc(v)) + '</div></div>'; }
-    function meetingHtml(m) {
+    function meetingHtml(m, includeMinutes) {
         var rec = attendance[m.id] || {}, ids = attendeeIds(m);
         var rows = ids.length ? '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>SK Member</th><th>Position</th><th>Attendance</th><th>Remarks</th></tr></thead><tbody>' +
             ids.map(function (id) {
@@ -1052,12 +1266,15 @@ html{
             kv('End', fmtDate(m.endDate) + (m.endTime ? ', ' + fmtTime(m.endTime) : '')) + kv('Location', m.location) + kv('Attendees invited', String(m.attendees.length)) + '</div>' +
             '<div class="group-title">Description / Agenda</div><div class="small">' + esc(m.agenda || 'No agenda added.').replace(/\n/g, '<br>') + '</div>' +
             '<div class="group-title">Attendees and Attendance</div>' + rows +
-            '<div class="group-title">Remarks</div><div class="small">' + esc(m.remarks || 'No remarks.').replace(/\n/g, '<br>') + '</div>';
+            '<div class="group-title">Remarks</div><div class="small">' + esc(m.remarks || 'No remarks.').replace(/\n/g, '<br>') + '</div>' +
+            (includeMinutes && m.minutes ? '<div class="group-title">Minutes <span class="badge ' +
+                (m.minutesStatus === 'Approved' ? 'bg-success' : 'bg-secondary') + '">' + esc(m.minutesStatus) +
+                '</span></div><div class="minutes-content">' + safeMinutes(m.minutes) + '</div>' : '');
     }
     function openView(id) {
         var m = meetings.filter(function (x) { return x.id === id; })[0];
         if (!m) return;
-        $('viewBody').innerHTML = meetingHtml(m);
+        $('viewBody').innerHTML = meetingHtml(m, true);
         $('viewFooter').innerHTML =
             '<button type="button" class="btn btn-outline-success btn-sm" data-print="' + esc(id) + '"><i class="bi bi-printer me-1"></i>Print</button>' +
             '<button type="button" class="btn btn-outline-success btn-sm" data-att="' + esc(id) + '"><i class="bi bi-clipboard2-check me-1"></i>Attendance</button>' +
@@ -1073,11 +1290,22 @@ html{
     function doPrint(html) { $('printArea').innerHTML = html; setTimeout(function () { window.print(); }, 150); }
     function printMeeting(id) {
         var m = meetings.filter(function (x) { return x.id === id; })[0];
-        if (m) doPrint(printHeader('SK Meeting Record') + meetingHtml(m));
+        if (!m) return;
+        Swal.fire({
+            title: 'Print meeting record',
+            input: 'checkbox',
+            inputPlaceholder: 'Include minutes',
+            inputValue: 0,
+            showCancelButton: true,
+            confirmButtonText: 'Print',
+            cancelButtonText: 'Cancel'
+        }).then(function (result) {
+            if (result.isConfirmed) doPrint(printHeader('SK Meeting Record') + meetingHtml(m, !!result.value));
+        });
     }
     function printList() {
         var list = filteredMeetings();
-        if (!list.length) { alert('There are no meetings to print.'); return; }
+        if (!list.length) { AppAlerts.warning('There are no meetings to print.'); return; }
         doPrint(printHeader('SK Meetings') + '<table><thead><tr><th>#</th><th>Title</th><th>Type</th><th>Start</th><th>End</th><th>Location</th><th>Status</th><th>Attendees</th><th>Remarks</th></tr></thead><tbody>' +
             list.map(function (m, i) {
                 return '<tr><td>' + (i + 1) + '</td><td>' + esc(m.title) + '</td><td>' + esc(typeText(m)) + '</td><td>' + esc(fmtDate(m.startDate) + ' ' + fmtTime(m.startTime)) + '</td><td>' +

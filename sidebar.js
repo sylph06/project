@@ -26,6 +26,7 @@
         { title: 'KK Youth', items: [
             ['registration.php',   'bi-person-plus-fill',         'KK Youth Registration'],  
             ['members.php',       'bi-people',                    'Member List'],
+            ['archives.php',      'bi-archive',                   'Archives'],
             ['announcements.php', 'bi-megaphone',                 'Announcements'],
             ['participation.php', 'bi-graph-up-arrow',            'Participation Tracking'],
             ['reports.php',       'bi-file-earmark-bar-graph',    'Reports']
@@ -39,6 +40,7 @@
     if (publicMode) {
         MENU = [
             { title: null, items: [
+                ['index.php',         'bi-house-door',   'Landing Page'],
                 ['officials.php',     'bi-person-badge', 'SK Officials'],
                 ['announcements.php', 'bi-megaphone',    'Announcements']
             ]}

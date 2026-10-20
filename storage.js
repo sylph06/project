@@ -54,8 +54,27 @@
             if (key === 'kkMembers' && w.USE_MEMBERS_TABLE) {
                 throw new Error('Use DB.saveMembers to save KK member records.');
             }
-            post('set', { key: key, value: value });
-            cache[key] = value;
+            var result = post('set', { key: key, value: value });
+            cache[key] = typeof result.value === 'string' ? result.value : value;
+        },
+        meetingMinutes: function (action, meetingId, minutes) {
+            if (['meeting_minutes_save', 'meeting_minutes_approve', 'meeting_minutes_reopen'].indexOf(action) < 0) {
+                throw new Error('Unknown meeting minutes action.');
+            }
+            var body = { meetingId: meetingId };
+            if (action === 'meeting_minutes_save') body.minutes = String(minutes || '');
+            var result = post(action, body);
+            var meetings;
+            try {
+                meetings = JSON.parse(cache.skMeetings || '[]');
+            } catch (e) {
+                throw new Error('Could not read the current meeting data.');
+            }
+            if (!Array.isArray(meetings)) throw new Error('Meeting data must be a list.');
+            cache.skMeetings = JSON.stringify(meetings.map(function (meeting) {
+                return meeting && String(meeting.id) === String(meetingId) ? result.meeting : meeting;
+            }));
+            return result.meeting;
         },
         saveMembers: function (members) {
             if (VIEW_ONLY) return;
