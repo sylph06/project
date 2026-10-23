@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css" rel="stylesheet">
+    <link href="sidebar.css?v=9" rel="stylesheet">
 
     <style>
         :root {
@@ -182,7 +182,7 @@
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=4"></script>
+<script src="sidebar.js?v=6"></script>
 
 <main class="main page-content">
 
@@ -195,16 +195,20 @@
         <small>KK Youth Profiling System</small>
     </div></div>
 
-    <div class="user-area">
-
-        <div>
-            <div style="font-size:15px;font-weight:bold;">
-                <?= e(uname()) ?>
-            </div>
-            <small><?= e(strtoupper(urole())) ?></small>
+    <div class="header-account-area">
+        <a href="announcements.php" class="header-notification" aria-label="Notifications">
+            <i class="bi bi-bell"></i><span class="header-notification-count">3</span>
+        </a>
+        <div class="header-avatar"><?= e(uinit()) ?></div>
+        <div class="d-none d-md-block header-identity">
+            <div class="header-identity-name"><?= e(uname()) ?></div>
+            <div class="header-identity-role"><?= e(strtoupper(urole())) ?></div>
         </div>
 
-        <div class="avatar"><?= e(uinit()) ?></div>
+        <a href="<?= is_public() ? 'login.php' : 'logout.php' ?>" class="btn btn-sm header-logout">
+            <i class="bi bi-box-arrow-right me-1"></i>
+            <?= is_public() ? 'Official Login' : 'Logout' ?>
+        </a>
 
     </div>
 
@@ -229,11 +233,9 @@
                         <div class="mb-1"><span class="label">Name</span><div class="fw-bold"><?= e($u['name']) ?></div></div>
                         <div class="mb-1"><span class="label">Position</span><div class="fw-bold"><?= e($u['role']) ?></div></div>
                         <div class="mb-3"><span class="label">Username</span><div class="fw-bold"><?= e($u['username']) ?></div></div>
-                        <a href="logout.php" class="btn btn-outline-dark btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
                     <?php else: ?>
                         <p class="mb-2">You are using the system as a <b>Public Viewer</b> (view only). You can read the pages and send a KK registration, but you cannot change any records.</p>
                         <a href="registration.php" class="btn btn-primary btn-sm me-1"><i class="bi bi-person-plus-fill me-1"></i>KK Youth Registration</a>
-                        <a href="logout.php" class="btn btn-outline-dark btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i>Official Login</a>
                     <?php endif; ?>
                 </div>
             </div>

@@ -542,6 +542,12 @@ if (in_array($action, ['role_assign', 'role_update', 'role_end', 'role_archive',
             }
             if ($roleId === '' || $oldRole) throw new RuntimeException('The role id is missing or already exists.');
             $validated = sk_role_validate_payload($inputRole);
+            $seatError = sk_role_seat_error($pdo, $roles, $validated['position']);
+            if ($seatError !== '') throw new RuntimeException($seatError);
+            if ($validated['position'] === 'SK Kagawad'
+                && sk_role_committee_is_assigned($roles, (string)$validated['committee'])) {
+                throw new RuntimeException('This committee is already assigned to an active SK Kagawad.');
+            }
             $newRole = array_merge($validated, [
                 'id' => $roleId,
                 'kkId' => $kkId,
@@ -572,11 +578,26 @@ if (in_array($action, ['role_assign', 'role_update', 'role_end', 'role_archive',
                 throw new RuntimeException('Only an active KK member can hold an SK role.');
             }
             $roleInput = $in['role'] ?? null;
-            $validated = sk_role_validate_payload($roleInput);
+            $validated = sk_role_validate_payload(
+                $roleInput,
+                ($oldRole['position'] ?? '') === 'SK Vice Chairperson'
+            );
             $newRole = array_merge($oldRole, $validated);
             $newStatus = is_array($roleInput) ? (string)($roleInput['status'] ?? $oldRole['status']) : '';
             if (!in_array($newStatus, ['Active', 'Inactive'], true)) {
                 throw new RuntimeException('Use the dedicated archive action to archive an SK role.');
+            }
+            $wasOccupyingSeat = ($oldRole['status'] ?? '') === 'Active'
+                && (empty($oldRole['termStart']) || $oldRole['termStart'] <= date('Y-m-d'))
+                && (empty($oldRole['termEnd']) || $oldRole['termEnd'] >= date('Y-m-d'));
+            if ($newStatus === 'Active'
+                && (!$wasOccupyingSeat || $validated['position'] !== ($oldRole['position'] ?? ''))) {
+                $seatError = sk_role_seat_error($pdo, $roles, $validated['position'], (string)$oldRole['id']);
+                if ($seatError !== '') throw new RuntimeException($seatError);
+            }
+            if ($newStatus === 'Active' && $validated['position'] === 'SK Kagawad'
+                && sk_role_committee_is_assigned($roles, (string)$validated['committee'], (string)$oldRole['id'])) {
+                throw new RuntimeException('This committee is already assigned to an active SK Kagawad.');
             }
             $newRole['status'] = $newStatus;
             if (!isset($newRole['history']) || !is_array($newRole['history'])) $newRole['history'] = [];

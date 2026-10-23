@@ -8,7 +8,7 @@
  
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css" rel="stylesheet">
+    <link href="sidebar.css?v=9" rel="stylesheet">
  
     <style>
         :root {
@@ -114,7 +114,7 @@
             margin-bottom: 22px;
             overflow: hidden;
         }
- 
+
         .card-header {
             background:var(--bs-primary-text-emphasis);
             color: white;
@@ -359,7 +359,7 @@
  
 <div class="top-strip"></div>
  
-<script src="sidebar.js?v=4"></script>
+<script src="sidebar.js?v=6"></script>
  
 <main class="main page-content">
  
@@ -371,13 +371,19 @@
             <small>KK Youth Profiling System</small>
         </div></div>
  
-        <div class="user-area">
-            <div>
-                <div style="font-size:15px;font-weight:bold;"><?= e(uname()) ?></div>
-                <small><?= e(strtoupper(urole())) ?></small>
+        <div class="header-account-area">
+            <a href="announcements.php" class="header-notification" aria-label="Notifications">
+                <i class="bi bi-bell"></i><span class="header-notification-count">3</span>
+            </a>
+            <span class="header-avatar"><?= e(uinit()) ?></span>
+            <div class="d-none d-md-block header-identity">
+                <div class="header-identity-name"><?= e(uname()) ?></div>
+                <div class="header-identity-role"><?= e(strtoupper(urole())) ?></div>
             </div>
- 
-            <div class="avatar"><?= e(uinit()) ?></div>
+            <a href="<?= is_public() ? 'login.php' : 'logout.php' ?>" class="btn btn-sm header-logout">
+                <i class="bi bi-box-arrow-right me-1"></i>
+                <?= is_public() ? 'Official Login' : 'Logout' ?>
+            </a>
         </div>
     </header>
  
@@ -880,32 +886,6 @@
  
         </form>
  
-        <!-- PUBLIC REGISTRATIONS (PENDING REVIEW) -->
-        <div class="card-box admin-only">
-
-            <div class="card-header">
-                <i class="bi bi-inbox-fill"></i>
-                Public Registrations (Pending Review)
-                <small class="text-muted fw-normal ms-2" id="pubCount">0 pending</small>
-            </div>
-
-            <div class="table-responsive" style="max-height:420px;overflow:auto;">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th>Applicant</th>
-                            <th>Purok / Sitio</th>
-                            <th>Submitted</th>
-                            <th>Status</th>
-                            <th class="text-end">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pubBody"></tbody>
-                </table>
-            </div>
-
-        </div>
-
         <!-- RECENTLY REGISTERED MEMBERS -->
         <div class="card-box admin-only">
  
@@ -936,37 +916,6 @@
                     </thead>
  
                     <tbody id="recentMembersBody"></tbody>
- 
-                </table>
- 
-            </div>
- 
-        </div>
- 
-        <!-- EDIT REQUESTS -->
-        <div class="card-box admin-only">
- 
-            <div class="card-header">
-                <i class="bi bi-pencil-square"></i>
-                Profile Edit Requests
-                <small class="text-muted fw-normal ms-2" id="reqCount">0 pending</small>
-            </div>
- 
-            <div class="table-responsive" style="max-height:420px;overflow:auto;">
- 
-                <table class="table table-hover align-middle mb-0">
- 
-                    <thead>
-                        <tr>
-                            <th>Member</th>
-                            <th>Requested On</th>
-                            <th>Fields Changed</th>
-                            <th>Status</th>
-                            <th class="text-end">Action</th>
-                        </tr>
-                    </thead>
- 
-                    <tbody id="requestsBody"></tbody>
  
                 </table>
  
@@ -1028,26 +977,6 @@
     </div>
 </div>
  
-<!-- PUBLIC REGISTRATION REVIEW -->
-<div class="modal fade" id="pubModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h6 class="modal-title fw-bold"><i class="bi bi-inbox-fill me-2" style="color:var(--bs-primary-border-subtle);"></i>Public Registration</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="pubBodyDetail"></div>
-                <div id="pubRemarksBox" class="mt-3">
-                    <label class="form-label small fw-bold" for="pubRemarks">Remarks (required when rejecting)</label>
-                    <textarea id="pubRemarks" class="form-control" rows="2" maxlength="200"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer" id="pubFooter"></div>
-        </div>
-    </div>
-</div>
-
 <!-- ARCHIVE -->
 <div class="modal fade" id="archiveModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -1078,24 +1007,6 @@
             <div class="modal-footer">
                 <button type="button" class="btn-outline" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn-black" id="confirmArchiveBtn"><i class="bi bi-archive"></i> Archive</button>
-            </div>
-        </div>
-    </div>
-</div>
- 
-<!-- REVIEW EDIT REQUEST -->
-<div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h6 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2" style="color:var(--bs-primary-border-subtle);"></i>Edit Request</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="reviewBody"></div>
-            <div class="modal-footer" id="reviewFooter">
-                <button type="button" class="btn-outline" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn-black" id="rejectBtn"><i class="bi bi-x-circle"></i> Reject Changes</button>
-                <button type="button" class="btn-primary" id="approveBtn"><i class="bi bi-check-circle"></i> Approve Changes</button>
             </div>
         </div>
     </div>
@@ -1309,7 +1220,6 @@
     var editingId = null;
     var photoData = '';
     var showAll = false;
-    var currentRequestId = null;
     var archiveTargetId = null;
  
     function normalizeMember(m) {
@@ -1344,7 +1254,6 @@
         }
     }
     function findMember(id) { return members.filter(function (m) { return m.id === id; })[0]; }
-    function findRequest(id) { return requests.filter(function (r) { return r.id === id; })[0]; }
     function pendingFor(id) {
         return requests.filter(function (r) { return r.memberId === id && r.status === 'Edit Request'; })[0];
     }
@@ -1495,7 +1404,7 @@
         if ($('interestOtherChk').checked) need('interestOther', 'Please specify the other program interest');
  
         var em = $('email');
-        if (em.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value.trim())) bad(em, 'Enter a valid email address.');
+        if (em.value && !em.checkValidity()) bad(em, 'Enter a valid email address.');
  
         need('classification', 'Youth classification');
         need('classificationOther', 'Please specify the classification');
@@ -1855,30 +1764,6 @@
         }
     }
  
-    function reviewRequest(approve) {
-        var rq = findRequest(currentRequestId);
-        if (!rq || rq.status !== 'Edit Request') return;
-        var m = findMember(rq.memberId);
-        var remarks = ($('reviewRemarks') ? $('reviewRemarks').value.trim() : '');
-        if (approve) {
-            if (!m || m.status === 'Archived') { notify('danger', 'This profile is archived, so the changes cannot be applied.'); return; }
-            Object.keys(rq.changes).forEach(function (k) { m[k] = rq.changes[k]; });
-            m.updatedAt = nowISO();
-            m.history.push({ at: nowISO(), action: 'Edit approved', by: OFFICER,
-                note: Object.keys(rq.changes).map(function (k) { return LABELS[k]; }).join(', ') });
-            rq.status = 'Approved';
-        } else {
-            rq.status = 'Rejected';
-            if (m) m.history.push({ at: nowISO(), action: 'Edit rejected', by: OFFICER, note: remarks || 'Changes were not approved.' });
-        }
-        rq.reviewedAt = nowISO(); rq.reviewedBy = OFFICER; rq.remarks = remarks;
-        if (!saveAll()) return;
-        hideModal('reviewModal');
-        notify('success', approve ? 'Changes approved and the profile was updated.' : 'Changes rejected. The profile was left unchanged.');
-        runAgeCheck();
-        renderAll();
-    }
- 
     /* =====================================================
        RENDER
        ===================================================== */
@@ -1921,23 +1806,6 @@
         }).join('') : '<tr><td colspan="4" class="text-center text-muted py-4">No youth registered yet.</td></tr>';
     }
  
-    function reqBadge(s) {
-        var c = s === 'Approved' ? 'bg-success' : s === 'Rejected' ? 'bg-danger' : 'bg-warning text-dark';
-        return '<span class="badge ' + c + '">' + esc(s) + '</span>';
-    }
- 
-    function renderRequests() {
-        var list = requests.slice().sort(byDesc('requestedAt'));
-        var pending = list.filter(function (r) { return r.status === 'Edit Request'; }).length;
-        $('reqCount').textContent = pending + ' pending';
-        $('requestsBody').innerHTML = list.length ? list.map(function (r) {
-            var m = findMember(r.memberId);
-            return '<tr><td><div class="fw-bold">' + esc(m ? fullName(m) : r.memberName) + '</div><small class="text-muted">' + esc(r.memberNo || '') + '</small></td>' +
-                '<td>' + fmtDate(r.requestedAt) + '</td><td>' + Object.keys(r.changes).length + '</td><td>' + reqBadge(r.status) + '</td>' +
-                '<td class="text-end">' + btn('review', r.id, 'View Details', 'btn-outline-dark') + '</td></tr>';
-        }).join('') : '<tr><td colspan="5" class="text-center text-muted py-4">No edit requests yet.</td></tr>';
-    }
- 
     function renderArchive() {
         var list = members.filter(function (m) { return m.status === 'Archived'; }).sort(byDesc('archivedAt'));
         $('archiveCount').textContent = list.length + ' archived';
@@ -1950,96 +1818,8 @@
         }).join('') : '<tr><td colspan="4" class="text-center text-muted py-4">No archived records.</td></tr>';
     }
  
-    function renderAll() { renderRecent(); renderRequests(); renderArchive(); renderPending(); }
+    function renderAll() { renderRecent(); renderArchive(); }
 
-    /* =====================================================
-       PUBLIC REGISTRATIONS  (submitted from public-register.html)
-       Public users only write to PENDING_KEY. Only an official can approve
-       a request, which is the only way it becomes a real member record.
-       ===================================================== */
-    var PENDING_KEY = 'kkPendingRegistrations';
-    var pendingRegs = [];
-    var PUB_FIELDS = FIELDS.filter(function (f) { return ['firstName', 'middleName', 'lastName', 'suffix', 'interests', 'photo'].indexOf(f[0]) === -1; });
-    function loadPending() {
-        try { var v = JSON.parse(DB.getItem(PENDING_KEY)); pendingRegs = Array.isArray(v) ? v : []; }
-        catch (e) { pendingRegs = []; }
-    }
-    function savePending() {
-        try { DB.setItem(PENDING_KEY, JSON.stringify(pendingRegs)); return true; }
-        catch (e) { notify('danger', 'Could not save. Browser storage may be full.'); return false; }
-    }
-    function pubBadge(st) {
-        var c = st === 'Approved' ? 'success' : st === 'Rejected' ? 'danger' : 'warning text-dark';
-        return '<span class="badge bg-' + c + '">' + esc(st) + '</span>';
-    }
-    function renderPending() {
-        loadPending();
-        var list = pendingRegs.slice().sort(function (a, b) {
-            return (a.status === 'Pending' ? 0 : 1) - (b.status === 'Pending' ? 0 : 1) || String(b.submittedAt || '').localeCompare(String(a.submittedAt || ''));
-        });
-        $('pubCount').textContent = list.filter(function (r) { return r.status === 'Pending'; }).length + ' pending';
-        $('pubBody').innerHTML = list.length ? list.map(function (r) {
-            return '<tr><td><div class="fw-bold">' + esc(fullName(r)) + '</div><small class="text-muted">' + esc(r.refNo || '') + '</small></td>' +
-                '<td>' + esc(r.purok || '\u2014') + '</td><td>' + fmtDate(r.submittedAt) + '</td><td>' + pubBadge(r.status) + '</td>' +
-                '<td class="text-end">' + btn('pubview', r.id, 'Review', 'btn-outline-dark') + '</td></tr>';
-        }).join('') : '<tr><td colspan="5" class="text-center text-muted py-4">No public registrations yet.</td></tr>';
-    }
-    function showPending(id) {
-        loadPending();
-        var r = pendingRegs.filter(function (x) { return x.id === id; })[0];
-        if (!r) return;
-        var rows = PUB_FIELDS.filter(function (f) { return r[f[0]]; }).map(function (f) {
-            var v = f[0] === 'birthDate' ? fmtDate(r.birthDate) + ' (age ' + calcAge(r.birthDate) + ')' : r[f[0]];
-            return '<div class="col-md-6"><div class="text-muted" style="font-size:13px;">' + esc(f[1]) + '</div><div class="small fw-bold">' + esc(v) + '</div></div>';
-        }).join('');
-        $('pubBodyDetail').innerHTML = '<h5 class="fw-bold mb-0">' + esc(fullName(r)) + '</h5><small class="text-muted">' + esc(r.refNo || '') + ' \u00b7 submitted ' + fmtDate(r.submittedAt) + '</small> ' + pubBadge(r.status) +
-            '<div class="row g-3 mt-1">' + rows + '</div>' +
-            (r.status !== 'Pending' ? '<div class="alert alert-secondary small mt-3 mb-0">' + esc(r.status) + ' on ' + fmtDate(r.reviewedAt) + (r.remarks ? ' \u2013 ' + esc(r.remarks) : '') + '</div>' : '');
-        $('pubRemarks').value = '';
-        show('pubRemarksBox', r.status === 'Pending');
-        $('pubFooter').innerHTML = (r.status === 'Pending'
-            ? btn('pubreject', r.id, '<i class="bi bi-x-circle"></i> Reject', 'btn-outline-dark') + btn('pubapprove', r.id, '<i class="bi bi-check-circle"></i> Approve & Register', 'btn-dark')
-            : '') + '<button type="button" class="btn-outline" data-bs-dismiss="modal">Close</button>';
-        modal('pubModal').show();
-    }
-    function approvePending(id) {
-        loadAll(); loadPending();
-        var r = pendingRegs.filter(function (x) { return x.id === id; })[0];
-        if (!r || r.status !== 'Pending') { notify('warning', 'This registration was already reviewed.'); renderPending(); return; }
-        var dm = dobMessage(r.birthDate);
-        if (dm) { notify('danger', dm); return; }
-        if (hasDuplicate(r, null)) { notify('danger', 'This youth is already registered (same name and date of birth). Reject this request instead.'); return; }
-        var rec = {};
-        INPUT_IDS.concat(['pwd', 'skVoter']).forEach(function (k) { rec[k] = r[k] || ''; });
-        rec.interests = Array.isArray(r.interests) ? r.interests.slice() : []; rec.photo = '';
-        rec.id = 'm' + Date.now();
-        rec.memberNo = nextMemberNo();
-        rec.barangay = BARANGAY; rec.city = CITY; rec.province = PROVINCE;
-        rec.status = 'Active';
-        rec.createdAt = nowISO();
-        rec.history = [{ at: nowISO(), action: 'Registered', by: OFFICER, note: 'Approved from public registration ' + (r.refNo || '') + '.' }];
-        members.push(rec);
-        if (!saveAll()) { members.pop(); return; }
-        r.status = 'Approved'; r.reviewedAt = nowISO(); r.reviewedBy = OFFICER; r.memberId = rec.id; r.memberNo = rec.memberNo;
-        savePending();
-        hideModal('pubModal');
-        notify('success', fullName(rec) + ' was approved and registered (' + rec.memberNo + ').');
-        renderAll(); renderPending();
-    }
-    function rejectPending(id) {
-        var remarks = $('pubRemarks').value.trim();
-        if (!remarks) { notify('warning', 'Please write a short reason (remarks) before rejecting.'); $('pubRemarks').focus(); return; }
-        loadPending();
-        var r = pendingRegs.filter(function (x) { return x.id === id; })[0];
-        if (!r || r.status !== 'Pending') { notify('warning', 'This registration was already reviewed.'); renderPending(); return; }
-        r.status = 'Rejected'; r.reviewedAt = nowISO(); r.reviewedBy = OFFICER; r.remarks = remarks;
-        savePending();
-        hideModal('pubModal');
-        notify('success', 'Registration rejected.');
-        renderPending();
-    }
-
- 
     function valueHtml(k, v) {
         if (k === 'photo') return v ? '<img src="' + esc(v) + '" alt="" class="rounded border object-fit-cover" style="width:44px;height:44px;">' : '\u2014';
         if (k === 'birthDate') return esc(fmtDate(v));
@@ -2077,27 +1857,6 @@
               btn('archive', m.id, '<i class="bi bi-archive"></i> Archive', 'btn-dark')) +
             '<button type="button" class="btn-outline" data-bs-dismiss="modal">Cancel</button>';
         modal('detailsModal').show();
-    }
- 
-    function showReview(id) {
-        var rq = findRequest(id);
-        if (!rq) return;
-        currentRequestId = id;
-        var m = findMember(rq.memberId);
-        var body = Object.keys(rq.changes).map(function (k) {
-            return '<tr><td class="fw-bold">' + esc(LABELS[k] || k) + '</td><td>' + valueHtml(k, rq.previous[k]) + '</td><td>' + valueHtml(k, rq.changes[k]) + '</td></tr>';
-        }).join('');
-        var pending = rq.status === 'Edit Request';
-        $('reviewBody').innerHTML =
-            '<div class="d-flex justify-content-between align-items-start mb-3"><div><h6 class="fw-bold mb-0">' + esc(m ? fullName(m) : rq.memberName) + '</h6>' +
-            '<small class="text-muted">' + esc(rq.memberNo || '') + ' \u2022 requested ' + fmtDate(rq.requestedAt) + ' by ' + esc(rq.requestedBy) + '</small></div>' + reqBadge(rq.status) + '</div>' +
-            '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Field</th><th>Current (official)</th><th>Requested</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
-            (pending
-                ? '<label class="form-label" for="reviewRemarks">Remarks <span class="text-muted fw-normal">(optional)</span></label><textarea id="reviewRemarks" class="form-control" rows="2" style="height:auto;"></textarea>'
-                : '<div class="small text-muted">Reviewed ' + fmtDate(rq.reviewedAt) + ' by ' + esc(rq.reviewedBy) + (rq.remarks ? ' \u2013 ' + esc(rq.remarks) : '') + '</div>');
-        show('approveBtn', pending);
-        show('rejectBtn', pending);
-        modal('reviewModal').show();
     }
  
     /* =====================================================
@@ -2182,10 +1941,7 @@
     $('cancelEditBtn').addEventListener('click', function () { exitEdit(); });
     $('toggleAllBtn').addEventListener('click', function () { showAll = !showAll; renderRecent(); });
     $('confirmArchiveBtn').addEventListener('click', confirmArchive);
-    $('approveBtn').addEventListener('click', function () { reviewRequest(true); });
-    $('rejectBtn').addEventListener('click', function () { reviewRequest(false); });
     $('archiveReason').addEventListener('change', function () { clearError(this); });
- 
     document.addEventListener('click', function (e) {
         var b = e.target.closest('[data-act]');
         if (!b) return;
@@ -2194,15 +1950,11 @@
         else if (b.dataset.act === 'edit') { hideModal('detailsModal'); startEdit(id); }
         else if (b.dataset.act === 'archive') openArchive(id);
         else if (b.dataset.act === 'restore') restoreMember(id);
-        else if (b.dataset.act === 'review') showReview(id);
-        else if (b.dataset.act === 'pubview') showPending(id);
-        else if (b.dataset.act === 'pubapprove') approvePending(id);
-        else if (b.dataset.act === 'pubreject') rejectPending(id);
     });
  
     // another tab changed the data
     window.addEventListener('storage', function (e) {
-        if (e.key === STORAGE_KEY || e.key === REQUEST_KEY || e.key === PENDING_KEY) { loadAll(); renderAll(); }
+        if (e.key === STORAGE_KEY || e.key === REQUEST_KEY) { loadAll(); renderAll(); }
     });
  
     /* =====================================================
@@ -2236,7 +1988,7 @@
         refreshCenterTypeVisibility();
     }
     renderCenterClassifications();
- 
+
     setOptions($('school'), SCHOOLS.concat(['Others']), 'Select school / institution');
     setOptions($('training'), TRAININGS, 'Select');
     setOptions($('occupation'), OCCUPATIONS, 'Select');

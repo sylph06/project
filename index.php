@@ -9,7 +9,7 @@
 require_once __DIR__ . '/config.php';
 open_to_everyone();
 
-$POSITIONS = ['SK Chairperson', 'SK Vice Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad'];
+$POSITIONS = ['SK Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad'];
 
 function lp_json($key) {
     $st = db()->prepare('SELECT data_value FROM app_data WHERE data_key = ?');
@@ -51,22 +51,46 @@ try {
 
     /* ---- SK officials: name, position, photo only ---- */
     $seen = [];
+    $seenPositions = [];
     foreach (lp_json('skRoles') as $r) {
         if (!is_array($r)) continue;
         $kid = (string)($r['kkId'] ?? '');
         if (!isset($members[$kid]) || isset($seen[$kid])) continue;
         $m = $members[$kid];
         if (($r['status'] ?? '') !== 'Active' || ($m['status'] ?? '') === 'Archived') continue;
+        if (!empty($r['termStart']) && $r['termStart'] > $today) continue;
         if (!empty($r['termEnd']) && $r['termEnd'] < $today) continue;
-        if (!in_array($r['position'] ?? '', $POSITIONS, true)) continue;
+        $position = ($r['position'] ?? '') === 'SK Chairman' ? 'SK Chairperson' : ($r['position'] ?? '');
+        if (!in_array($position, $POSITIONS, true)) continue;
         $seen[$kid] = 1;
         $name = trim(($m['firstName'] ?? '') . ' ' . ($m['lastName'] ?? '') . (!empty($m['suffix']) ? ' ' . $m['suffix'] : ''));
         $photo = (string)($m['photo'] ?? '');
         if (!preg_match('#^data:image/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$#', $photo)) $photo = '';
         $parts = preg_split('/\s+/', $name);
         $ini = mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? mb_substr(end($parts), 0, 1) : ''));
-        $officials[] = ['position' => $r['position'], 'name' => $name, 'photo' => $photo, 'initials' => $ini,
-                        'order' => array_search($r['position'], $POSITIONS, true)];
+        $officials[] = ['position' => $position, 'name' => $name, 'photo' => $photo, 'initials' => $ini,
+                        'order' => array_search($position, $POSITIONS, true)];
+        if ($position !== 'SK Kagawad') $seenPositions[$position] = true;
+    }
+    $accountOfficials = db()->query("SELECT full_name, role FROM users
+        WHERE is_active = 1 AND legacy_id IS NULL
+          AND role IN ('SK Chairman', 'SK Chairperson', 'SK Secretary')
+        ORDER BY full_name")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($accountOfficials as $account) {
+        $position = $account['role'] === 'SK Chairman' ? 'SK Chairperson' : $account['role'];
+        if (isset($seenPositions[$position])) continue;
+        $name = trim((string)$account['full_name']);
+        if ($name === '') continue;
+        $parts = preg_split('/\s+/', $name);
+        $ini = mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? mb_substr(end($parts), 0, 1) : ''));
+        $officials[] = [
+            'position' => $position,
+            'name' => $name,
+            'photo' => '',
+            'initials' => $ini,
+            'order' => array_search($position, $POSITIONS, true),
+        ];
+        $seenPositions[$position] = true;
     }
     usort($officials, function ($a, $b) { return $a['order'] <=> $b['order'] ?: strcmp($a['name'], $b['name']); });
 
@@ -101,7 +125,6 @@ $landingUser = current_user();
 $isOfficer = $landingUser !== null && ($landingUser['role'] ?? '') !== 'KK Member';
 
 /* links: ?view=public lets a first-time visitor open view-only pages without a login screen */
-$L_REGISTER = 'registration.php?view=public';
 $L_EVENTS   = 'announcements.php?view=public';
 ?>
 <!DOCTYPE html>
@@ -135,6 +158,13 @@ $L_EVENTS   = 'announcements.php?view=public';
         .lp-logo{width:42px;height:42px;border-radius:50%;object-fit:cover}
         .lp-nav .nav-link{color:var(--lp-ink);font-weight:600}
         .lp-nav .nav-link:hover{color:var(--bs-primary)}
+        .lp-nav .header-logout,
+        .lp-nav .header-logout:visited,
+        .lp-nav .header-logout:active,
+        .lp-nav .header-logout.active{background:#212529;border:1px solid #212529;border-radius:5px;color:#fff;font-weight:700;white-space:nowrap;box-shadow:none;text-decoration:none}
+        .lp-nav .header-logout:hover,
+        .lp-nav .header-logout:focus-visible,
+        .lp-nav .header-logout:focus{background:#343a40;border-color:#343a40;color:#fff;box-shadow:0 0 0 .2rem rgba(33,37,41,.2);outline:none}
 
         /* hero */
         .lp-hero{background:var(--bs-primary);color:#fff;position:relative;overflow:hidden}
@@ -226,6 +256,7 @@ $L_EVENTS   = 'announcements.php?view=public';
                 <li class="nav-item ms-md-2">
                     <?php if ($isOfficer): ?>
                         <a class="btn btn-primary btn-sm px-3" href="dashboard.php"><i class="bi bi-grid-1x2-fill me-1"></i>Open dashboard</a>
+                        <a class="btn btn-sm px-3 header-logout" href="logout.php"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
                     <?php else: ?>
                         <a class="btn btn-outline-primary btn-sm px-3" href="login.php"><i class="bi bi-box-arrow-in-right me-1"></i>Official login</a>
                     <?php endif; ?>
@@ -242,9 +273,9 @@ $L_EVENTS   = 'announcements.php?view=public';
             <div class="col-lg-7">
                 <p class="lp-place mb-3">Barangay Sikat, Alfonso, Cavite</p>
                 <h1 class="mb-3">Every young voice in Sikat, counted.</h1>
-                <p class="lead mb-4">Register as a Katipunan ng Kabataan member, find out what the Sangguniang Kabataan is organizing, and sign up for events. It is free and takes about five minutes.</p>
+                <p class="lead mb-4">Find out what the Sangguniang Kabataan is organizing, sign up for events, and learn how to register as a Katipunan ng Kabataan member.</p>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="<?= e($L_REGISTER) ?>" class="btn btn-lp-light btn-lg px-4"><i class="bi bi-person-plus-fill me-2"></i>Register as KK youth</a>
+                    <button type="button" class="btn btn-lp-light btn-lg px-4" data-registration-advice><i class="bi bi-person-plus-fill me-2"></i>Register as KK youth</button>
                     <a href="<?= e($L_EVENTS) ?>" class="btn btn-lp-ghost btn-lg px-4"><i class="bi bi-megaphone me-2"></i>See announcements</a>
                 </div>
                 <p class="small mt-3 mb-0" style="color:rgba(255,255,255,.8)"><i class="bi bi-info-circle me-1"></i>For youth aged 15 to 30 who live in the barangay.</p>
@@ -285,7 +316,7 @@ $L_EVENTS   = 'announcements.php?view=public';
                         </div>
                         <div class="lp-ticket-cut"></div>
                         <div class="lp-ticket-bottom">
-                            <a href="<?= e($L_REGISTER) ?>" class="btn btn-primary w-100 fw-semibold">Register so you hear first</a>
+                            <button type="button" class="btn btn-primary w-100 fw-semibold" data-registration-advice>Register so you hear first</button>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -446,31 +477,31 @@ $L_EVENTS   = 'announcements.php?view=public';
     <div class="container">
         <div class="row g-5 align-items-start">
             <div class="col-lg-5">
-                <h2 class="mb-3">Join the KK list in three steps</h2>
+                <h2 class="mb-3">Register with the SK in person</h2>
                 <p class="text-secondary mb-4">Being on the list lets the SK plan programs around what the youth of Sikat actually need, from scholarships to sports.</p>
-                <a href="<?= e($L_REGISTER) ?>" class="btn btn-primary btn-lg px-4 fw-semibold"><i class="bi bi-person-plus-fill me-2"></i>Start registration</a>
+                <button type="button" class="btn btn-primary btn-lg px-4 fw-semibold" data-registration-advice><i class="bi bi-person-plus-fill me-2"></i>Start registration</button>
             </div>
             <div class="col-lg-7">
                 <div class="bg-white rounded-4 border px-4 py-2">
                     <div class="lp-step">
                         <div class="lp-stepnum">1</div>
                         <div>
-                            <h3 class="h5 fw-bold mb-1">Fill out the form</h3>
-                            <p class="mb-0 text-secondary">Share your name, birth date, address in the barangay, contact details and interests. Only SK officials can see your full record.</p>
+                            <h3 class="h5 fw-bold mb-1">Visit the SK Office</h3>
+                            <p class="mb-0 text-secondary">Go to the SK Office at the Barangay Hall in Barangay Sikat, Alfonso, Cavite, to register.</p>
                         </div>
                     </div>
                     <div class="lp-step">
                         <div class="lp-stepnum">2</div>
                         <div>
-                            <h3 class="h5 fw-bold mb-1">The SK reviews it</h3>
-                            <p class="mb-0 text-secondary">Your request waits for approval. You get a reference number right after you submit, so keep it.</p>
+                            <h3 class="h5 fw-bold mb-1">Get help from an SK official</h3>
+                            <p class="mb-0 text-secondary">An SK official will assist you with the registration process and the information needed.</p>
                         </div>
                     </div>
                     <div class="lp-step">
                         <div class="lp-stepnum">3</div>
                         <div>
-                            <h3 class="h5 fw-bold mb-1">You are on the member list</h3>
-                            <p class="mb-0 text-secondary">Once approved, you are counted among the KK youth of Barangay Sikat and can take part in SK activities.</p>
+                            <h3 class="h5 fw-bold mb-1">Ask about your registration</h3>
+                            <p class="mb-0 text-secondary">The SK Office can explain what happens next and help with any questions about your registration.</p>
                         </div>
                     </div>
                 </div>
@@ -520,10 +551,10 @@ $L_EVENTS   = 'announcements.php?view=public';
         <div class="row align-items-center g-3">
             <div class="col-lg">
                 <h2 class="h3 fw-bold mb-1">Not registered yet?</h2>
-                <p class="mb-0">It takes about five minutes, and the SK will know what the youth of Sikat need.</p>
+                <p class="mb-0">Visit the SK Office at the Barangay Hall in Barangay Sikat to register in person.</p>
             </div>
             <div class="col-lg-auto d-flex flex-wrap gap-2">
-                <a href="<?= e($L_REGISTER) ?>" class="btn btn-primary btn-lg px-4 fw-semibold">Register as KK youth</a>
+                <button type="button" class="btn btn-primary btn-lg px-4 fw-semibold" data-registration-advice>Register as KK youth</button>
                 <a href="public.php" class="btn btn-outline-primary btn-lg px-4 fw-semibold">Browse as public viewer</a>
             </div>
         </div>
@@ -545,5 +576,18 @@ $L_EVENTS   = 'announcements.php?view=public';
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="app-alerts.js"></script>
+<script>
+document.querySelectorAll('[data-registration-advice]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        window.AppAlerts.show(
+            'KK youth registration is handled in person. Please visit the SK Office at the Barangay Hall in Barangay Sikat, Alfonso, Cavite. An SK official will assist you with registering.',
+            'info',
+            'Register in person'
+        );
+    });
+});
+</script>
 </body>
 </html>

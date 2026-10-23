@@ -1,4 +1,12 @@
-<?php require_once __DIR__ . '/config.php'; require_viewer(); ?>
+<?php
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/role_store.php';
+require_viewer();
+$accountRoleSeats = ['SK Chairperson' => 0, 'SK Secretary' => 0];
+if (can_manage_sk_roles()) {
+    $accountRoleSeats = sk_role_account_seat_counts(db());
+}
+?>
 <!DOCTYPE html>
 <html lang="en"<?= is_public() ? ' class="is-public"' : '' ?>>
 <head>
@@ -8,7 +16,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css" rel="stylesheet">
+    <link href="sidebar.css?v=9" rel="stylesheet">
 
 <style>
 
@@ -323,13 +331,19 @@ textarea.form-control{ min-height:0; }
 </style>
 
 <?php include __DIR__ . '/init.php'; ?>
+<script>
+window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
+    $accountRoleSeats,
+    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+) ?>;
+</script>
 </head>
 
 <body>
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=4"></script>
+<script src="sidebar.js?v=6"></script>
 
 <div class="page-content">
 
@@ -352,27 +366,25 @@ textarea.form-control{ min-height:0; }
             </div>
         </div>
 
-        <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
+        <div class="ms-auto header-account-area">
 
             <a href="announcements.php"
-               class="btn btn-outline-success btn-sm position-relative"
+               class="header-notification"
                aria-label="Notifications">
                 <i class="bi bi-bell"></i>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill"
-                      style="background:var(--bs-primary);color:var(--bs-body-color);">3</span>
+                <span class="header-notification-count">3</span>
             </a>
 
-            <span class="avatar"
-                  style="width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--bs-primary);color:var(--bs-body-color);font-weight:900;border:2px solid var(--bs-body-color);">
+            <span class="header-avatar">
                 <?= e(uinit()) ?>
             </span>
 
-            <div class="d-none d-md-block lh-sm">
-                <div class="fw-semibold small"><?= e(uname()) ?></div>
-                <div class="text-muted" style="font-size:.75rem;"><?= e(strtoupper(urole())) ?></div>
+            <div class="d-none d-md-block header-identity">
+                <div class="header-identity-name"><?= e(uname()) ?></div>
+                <div class="header-identity-role"><?= e(strtoupper(urole())) ?></div>
             </div>
 
-            <a href="logout.php" class="btn btn-success btn-sm">
+            <a href="<?= is_public() ? 'login.php' : 'logout.php' ?>" class="btn btn-sm header-logout">
                 <i class="bi bi-box-arrow-right me-1"></i>
                 <?= is_public() ? 'Official Login' : 'Logout' ?>
             </a>
@@ -637,6 +649,11 @@ textarea.form-control{ min-height:0; }
                             <select class="d-none" id="rolePosition"></select>
                             <div class="invalid-feedback"></div>
                         </div>
+                        <div class="col-12 d-none" id="kagawadCommitteeField">
+                            <label class="form-label fw-semibold" for="roleCommittee">Committee Assignment <span class="text-danger">*</span></label>
+                            <select class="form-select" id="roleCommittee"></select>
+                            <div class="invalid-feedback"></div>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold" for="roleStatus">SK Status</label>
                             <select class="form-select" id="roleStatus">
@@ -778,12 +795,13 @@ textarea.form-control{ min-height:0; }
 <div id="printArea"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="sk-data.js"></script>
+<script src="sk-data.js?v=2"></script>
 <script>
 (function () {
     'use strict';
 
     var D = window.SKData;
+    var ACCOUNT_ROLE_SEATS = window.SK_ACCOUNT_ROLE_SEATS || {};
     if (!window.SK_CAN_MANAGE_ROLES) {
         document.querySelectorAll('.role-manager-only').forEach(function (element) {
             element.classList.add('d-none');
@@ -791,12 +809,45 @@ textarea.form-control{ min-height:0; }
     }
     var MIN_AGE = 15, MAX_AGE = 30, PAGE_SIZE = 12;
     var BARANGAY = 'Sikat', CITY = 'Alfonso', PROVINCE = 'Cavite';
-    var POSITIONS = D.POSITIONS, ROLES = D.ROLES;
+    var POSITIONS = D.POSITIONS.slice();
+    if (D.roles.some(function (role) { return role.position === 'SK Vice Chairperson'; })) {
+        POSITIONS.push('SK Vice Chairperson');
+    }
+    var ROLES = D.ROLES;
+    var COMMITTEES = [
+        'Committee on Education and Culture',
+        'Committee on Environmental Protection',
+        'Committee on Youth Employment and Livelihood',
+        'Committee on Health',
+        'Committee on Gender and Development (GAD)',
+        'Committee on Sports Development',
+        'Committee on Anti-Drug Abuse and Social Protection'
+    ];
     var PUROKS = ['Purok 1', 'Purok 2', 'Purok 3', 'Purok 4', 'Purok 5'];
     var kkName = D.kkName, calcAge = D.calcAge, norm = D.norm, todayISO = D.todayISO;
 
     /* ---------- helpers ---------- */
     function $(id) { return document.getElementById(id); }
+    function memberRoleOf(kkId) {
+        var role = D.roleOf(kkId);
+        return role && POSITIONS.indexOf(role.position) !== -1 ? role : null;
+    }
+    function occupiedSeats(position, exceptRoleId) {
+        var today = todayISO();
+        var roleSeats = D.roles.filter(function (role) {
+            var rolePosition = role.position === 'SK Chairman' ? 'SK Chairperson' : role.position;
+            return role.id !== exceptRoleId && rolePosition === position && role.status === 'Active'
+                && (!role.termStart || role.termStart <= today) && (!role.termEnd || role.termEnd >= today);
+        }).length;
+        return roleSeats + (Number(ACCOUNT_ROLE_SEATS[position]) || 0);
+    }
+    function positionSeatError(position, exceptRoleId) {
+        var cap = D.SEATS[position];
+        if (!cap || occupiedSeats(position, exceptRoleId) < cap) return '';
+        return cap === 1
+            ? 'There is already an active ' + position + ' role or account. Reassign that seat first.'
+            : 'All ' + cap + ' ' + position + ' seats are already filled by active members.';
+    }
     function esc(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -846,7 +897,7 @@ textarea.form-control{ min-height:0; }
     }
     function buildRecords() {
         return D.kk.map(function (m) {
-            var r = D.roleOf(m.id), age = m.birthDate ? calcAge(m.birthDate) : '';
+            var r = memberRoleOf(m.id), age = m.birthDate ? calcAge(m.birthDate) : '';
             var kkStatus = m.status === 'Archived' ? 'Archived' : 'Active';
             return {
                 key: m.id, kk: m, role: r || null, isSK: !!r, name: kkName(m), photo: m.photo || '', age: age,
@@ -1278,7 +1329,7 @@ textarea.form-control{ min-height:0; }
     var roleKkId = null, roleEditing = false, respTouched = false, yearTouched = false;
 
     function pickable() {
-        return D.kk.filter(function (m) { return m.status !== 'Archived' && !D.roleOf(m.id); })
+        return D.kk.filter(function (m) { return m.status !== 'Archived' && !memberRoleOf(m.id); })
             .sort(function (a, b) { return norm(kkName(a)).localeCompare(norm(kkName(b))); });
     }
     function renderPick() {
@@ -1305,7 +1356,8 @@ textarea.form-control{ min-height:0; }
         var f = $('roleForm');
         f.reset(); clearErrs(f);
         fillSelect($('rolePosition'), POSITIONS, 'Select SK position');
-        var role = kkId ? D.roleOf(kkId) : null, m = kkId ? D.kkById(kkId) : null;
+        var role = kkId ? memberRoleOf(kkId) : null, m = kkId ? D.kkById(kkId) : null;
+        fillCommitteeSelect(role ? role.id : null);
         roleKkId = kkId || null; roleEditing = !!role; respTouched = false; yearTouched = false;
         $('roleModalTitle').textContent = role ? 'Edit SK Role and Term' : 'Assign SK Role';
         $('roleSaveLabel').textContent = role ? 'Update SK Role' : 'Assign SK Role';
@@ -1318,6 +1370,7 @@ textarea.form-control{ min-height:0; }
             $('rolePosition').value = role.position; $('roleStatus').value = role.status === 'Archived' ? 'Inactive' : (role.status || 'Active');
             $('roleStatus').disabled = false;
             $('roleBasis').value = role.basis || '';
+            $('roleCommittee').value = role.committee || '';
             $('roleYear').value = role.electionYear || ''; $('roleElected').value = role.dateElected || '';
             $('roleStart').value = role.termStart || ''; $('roleEnd').value = role.termEnd || '';
             $('roleDesc').value = role.description || ''; $('roleResp').value = role.responsibilities || '';
@@ -1325,21 +1378,45 @@ textarea.form-control{ min-height:0; }
         } else {
             $('roleStatus').disabled = false;
             $('roleBasis').value = '';
+            $('roleCommittee').value = '';
             $('roleYear').value = new Date().getFullYear();
         }
+        updateCommitteeField();
         renderPosChoices();
         modal('roleModal').show();
     }
 
+    function fillCommitteeSelect(exceptRoleId) {
+        var assigned = D.roles.filter(function (role) {
+            return role.id !== exceptRoleId && role.position === 'SK Kagawad'
+                && role.status === 'Active' && role.committee;
+        }).map(function (role) { return role.committee; });
+        var available = COMMITTEES.filter(function (committee) {
+            return assigned.indexOf(committee) === -1;
+        });
+        fillSelect($('roleCommittee'), available, 'Select committee');
+    }
+
+    function updateCommitteeField() {
+        var isKagawad = $('rolePosition').value === 'SK Kagawad';
+        $('kagawadCommitteeField').classList.toggle('d-none', !isKagawad);
+        $('roleCommittee').disabled = !isKagawad;
+        if (!isKagawad) {
+            $('roleCommittee').value = '';
+            $('roleCommittee').classList.remove('is-invalid');
+            var feedback = $('roleCommittee').parentElement.querySelector('.invalid-feedback');
+            if (feedback) feedback.textContent = '';
+        }
+    }
 
     /* position choices (synced with the hidden select used by the form) */
     function renderPosChoices() {
         var cur = $('rolePosition').value, exceptId = null;
-        if (roleKkId) { var ex = D.roleOf(roleKkId); if (ex) exceptId = ex.id; }
+        if (roleKkId) { var ex = memberRoleOf(roleKkId); if (ex) exceptId = ex.id; }
         $('posChoices').innerHTML = POSITIONS.map(function (p) {
             var cap = D.SEATS[p] || 1;
-            var used = D.roles.filter(function (x) { return x.id !== exceptId && x.status === 'Active' && x.position === p; }).length;
-            var left = Math.max(0, cap - used), full = left === 0 && p !== cur;
+            var used = occupiedSeats(p, exceptId);
+            var left = Math.max(0, cap - used), full = (left === 0 && p !== cur) || (p === 'SK Vice Chairperson' && p !== cur);
             return '<button type="button" class="pos-choice' + (p === cur ? ' active' : '') + '" data-pos="' + esc(p) + '" role="radio" aria-checked="' + (p === cur) + '"' + (full ? ' disabled' : '') + '>' +
                 '<b>' + esc(p.replace('SK ', '')) + '</b><small>' + (full ? 'Seat filled' : left + ' of ' + cap + ' seat' + (cap > 1 ? 's' : '') + ' open') + '</small></button>';
         }).join('');
@@ -1356,6 +1433,7 @@ textarea.form-control{ min-height:0; }
 
     $('pickSearch').addEventListener('input', renderPick);
     $('rolePosition').addEventListener('change', function () {
+        updateCommitteeField();
         if (!respTouched || !$('roleResp').value.trim()) { $('roleResp').value = ROLES[this.value] || ''; respTouched = false; }
     });
     $('roleResp').addEventListener('input', function () { respTouched = true; });
@@ -1372,13 +1450,19 @@ textarea.form-control{ min-height:0; }
         if (!kkId) bad($('pickMember'), 'Select a KK member.');
         var m = kkId ? D.kkById(kkId) : null;
         if (kkId && !m) { notify('danger', 'This KK member no longer exists.'); modal('roleModal').hide(); renderAll(); return; }
-        var existing = kkId ? D.roleOf(kkId) : null;
+        var existing = kkId ? memberRoleOf(kkId) : null;
         if (existing && !roleEditing) { notify('danger', kkName(m) + ' already has an SK position. Edit that role instead.'); modal('roleModal').hide(); renderAll(); return; }
         if (m && m.status === 'Archived' && !existing) bad($('pickMember'), 'This KK record is archived and cannot be assigned an SK role.');
 
         var pos = $('rolePosition').value, st = $('roleStatus').value, basis = $('roleBasis').value,
+            committee = pos === 'SK Kagawad' ? $('roleCommittee').value : '',
             yr = $('roleYear').value.trim(), el = $('roleElected').value, ts = $('roleStart').value, te = $('roleEnd').value;
         if (!pos) bad($('rolePosition'), 'Select an SK position.');
+        if (pos === 'SK Kagawad' && !committee) bad($('roleCommittee'), 'Select a committee for this SK Kagawad.');
+        if (pos === 'SK Kagawad' && st === 'Active' && D.roles.some(function (role) {
+            return role.id !== (existing ? existing.id : null) && role.position === 'SK Kagawad'
+                && role.status === 'Active' && role.committee === committee;
+        })) bad($('roleCommittee'), 'This committee is already assigned to an active SK Kagawad.');
         if (!existing && st !== 'Active') bad($('roleStatus'), 'A new SK role must start as Active.');
         if (!basis) bad($('roleBasis'), 'Select elected or appointed.');
         if (!yr) bad($('roleYear'), 'Election year is required.');
@@ -1388,8 +1472,11 @@ textarea.form-control{ min-height:0; }
         if (ts && te && te <= ts) bad($('roleEnd'), 'Term end must be after the term start.');
         if (yr && el && /^\d{4}$/.test(yr) && yearOf(el) !== yr) bad($('roleYear'), 'Election year should match the year of the date elected (' + yearOf(el) + ').');
         var ended = te && te < todayISO();
-        if (ok && st === 'Active' && !ended) {
-            var err = D.seatError(pos, existing ? existing.id : null);
+        var existingOccupiesSeat = existing && existing.position === pos && existing.status === 'Active'
+            && (!existing.termStart || existing.termStart <= todayISO())
+            && (!existing.termEnd || existing.termEnd >= todayISO());
+        if (ok && st === 'Active' && !ended && !existingOccupiesSeat) {
+            var err = positionSeatError(pos, existing ? existing.id : null);
             if (err) bad($('rolePosition'), err);
         }
         if (!ok) { var first = form.querySelector('.is-invalid'); if (first) first.focus(); return; }
@@ -1401,13 +1488,14 @@ textarea.form-control{ min-height:0; }
             r = existing;
             var note = [];
             if (r.position !== pos) note.push('position changed from ' + r.position + ' to ' + pos);
+            if ((r.committee || '') !== committee) note.push(committee ? 'committee assigned to ' + committee : 'committee assignment removed');
             if (r.termStart !== ts || r.termEnd !== te) note.push('term set to ' + fmtDate(ts) + ' \u2013 ' + fmtDate(te));
-            r.position = pos; r.status = st; r.basis = basis; r.electionYear = yr; r.dateElected = el; r.termStart = ts; r.termEnd = te;
+            r.position = pos; r.committee = committee || null; r.status = st; r.basis = basis; r.electionYear = yr; r.dateElected = el; r.termStart = ts; r.termEnd = te;
             r.description = desc; r.responsibilities = resp;
             D.addHist(r, 'Updated', note.join('; ') || 'SK role information updated.');
         } else {
             r = {
-                id: D.uid('r'), kkId: kkId, position: pos, status: 'Active', basis: basis, electionYear: yr, dateElected: el, termStart: ts, termEnd: te,
+                id: D.uid('r'), kkId: kkId, position: pos, committee: committee || null, status: 'Active', basis: basis, electionYear: yr, dateElected: el, termStart: ts, termEnd: te,
                 description: desc, responsibilities: resp, history: [], createdAt: D.nowISO()
             };
             D.addHist(r, 'SK role assigned', pos + ', term ' + fmtDate(ts) + ' \u2013 ' + fmtDate(te) + '.');

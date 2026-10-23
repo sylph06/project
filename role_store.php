@@ -132,13 +132,83 @@ function sk_role_valid_date($value, $field, $required = false) {
     return $value;
 }
 
-function sk_role_validate_payload($input) {
+function sk_role_committee_is_assigned($roles, $committee, $exceptRoleId = null) {
+    foreach ($roles as $role) {
+        if (!is_array($role)
+            || (string)($role['id'] ?? '') === (string)$exceptRoleId
+            || ($role['position'] ?? '') !== 'SK Kagawad'
+            || ($role['status'] ?? '') !== 'Active'
+            || ($role['committee'] ?? '') !== $committee) continue;
+        return true;
+    }
+    return false;
+}
+
+function sk_role_account_seat_counts($pdo) {
+    $counts = ['SK Chairperson' => 0, 'SK Secretary' => 0];
+    $rows = $pdo->query("SELECT role, COUNT(*) AS seat_count
+        FROM users
+        WHERE is_active = 1 AND legacy_id IS NULL
+          AND role IN ('SK Chairman', 'SK Chairperson', 'SK Secretary')
+        GROUP BY role")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as $row) {
+        $position = $row['role'] === 'SK Chairman' ? 'SK Chairperson' : $row['role'];
+        if (array_key_exists($position, $counts)) {
+            $counts[$position] += (int)$row['seat_count'];
+        }
+    }
+    return $counts;
+}
+
+function sk_role_seat_error($pdo, $roles, $position, $exceptRoleId = null) {
+    $capacities = ['SK Chairperson' => 1, 'SK Chairman' => 1, 'SK Secretary' => 1, 'SK Treasurer' => 1, 'SK Kagawad' => 7];
+    if (!isset($capacities[$position])) return '';
+
+    $today = date('Y-m-d');
+    $used = 0;
+    foreach ($roles as $role) {
+        $rolePosition = ($role['position'] ?? '') === 'SK Chairman' ? 'SK Chairperson' : ($role['position'] ?? '');
+        if ((string)($role['id'] ?? '') === (string)$exceptRoleId
+            || $rolePosition !== $position
+            || ($role['status'] ?? '') !== 'Active'
+            || (!empty($role['termStart']) && $role['termStart'] > $today)
+            || (!empty($role['termEnd']) && $role['termEnd'] < $today)) continue;
+        $used++;
+    }
+    $accountSeats = sk_role_account_seat_counts($pdo);
+    $used += $accountSeats[$position] ?? 0;
+    if ($used < $capacities[$position]) return '';
+    return $capacities[$position] === 1
+        ? 'There is already an active ' . $position . ' role or account. Reassign that seat first.'
+        : 'All ' . $capacities[$position] . ' ' . $position . ' seats are already filled by active members.';
+}
+
+function sk_role_validate_payload($input, $allowLegacyViceChairperson = false) {
     if (!is_array($input)) throw new RuntimeException('A role object is required.');
-    $positions = ['SK Chairperson', 'SK Vice Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad'];
+    $positions = ['SK Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad'];
+    if ($allowLegacyViceChairperson) $positions[] = 'SK Vice Chairperson';
+    $committees = [
+        'Committee on Education and Culture',
+        'Committee on Environmental Protection',
+        'Committee on Youth Employment and Livelihood',
+        'Committee on Health',
+        'Committee on Gender and Development (GAD)',
+        'Committee on Sports Development',
+        'Committee on Anti-Drug Abuse and Social Protection',
+    ];
     $position = $input['position'] ?? '';
+    $committee = $input['committee'] ?? '';
     $basis = $input['basis'] ?? '';
     $year = (string)($input['electionYear'] ?? '');
     if (!in_array($position, $positions, true)) throw new RuntimeException('Select a valid SK position.');
+    if ($position === 'SK Kagawad') {
+        if (!is_string($committee) || !in_array($committee, $committees, true)) {
+            throw new RuntimeException('Select a valid committee for the SK Kagawad.');
+        }
+
+    } elseif ($committee !== '' && $committee !== null) {
+        throw new RuntimeException('Only SK Kagawad roles can have a committee assignment.');
+    }
     if (!in_array($basis, ['elected', 'appointed'], true)) throw new RuntimeException('Basis must be elected or appointed.');
     if (!preg_match('/^\d{4}$/', $year) || (int)$year < 2000 || (int)$year > 2100) {
         throw new RuntimeException('Enter a valid election year.');
@@ -156,6 +226,7 @@ function sk_role_validate_payload($input) {
     }
     return [
         'position' => $position,
+        'committee' => $position === 'SK Kagawad' ? $committee : null,
         'basis' => $basis,
         'electionYear' => $year,
         'dateElected' => $elected,

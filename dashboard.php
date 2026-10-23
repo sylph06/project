@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css" rel="stylesheet">
+    <link href="sidebar.css?v=9" rel="stylesheet">
     <style>
         .dashboard-hero{
             color:#fff;
@@ -113,11 +113,11 @@
 
 <body>
 <div class="top-strip"></div>
-<script src="sidebar.js?v=4"></script>
+<script src="sidebar.js?v=6"></script>
 
 <div class="page-content">
     <header class="bg-white border-bottom sticky-top">
-        <div class="d-flex align-items-center gap-3 px-3 px-lg-4 py-3">
+        <div class="d-flex align-items-center gap-2 gap-md-3 px-3 px-lg-4 py-2 py-lg-3">
             <button class="btn btn-outline-success d-lg-none" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
                 <i class="bi bi-list fs-5"></i>
@@ -126,12 +126,17 @@
                 <h1 class="h5 fw-bold mb-0">Dashboard</h1>
                 <div class="text-muted small">KK Youth Profiling System</div>
             </div>
-            <div class="ms-auto d-flex align-items-center gap-3">
-                <div class="d-none d-sm-block text-end lh-sm">
-                    <div class="fw-semibold small"><?= e(uname()) ?></div>
-                    <div class="text-muted" style="font-size:.75rem;"><?= e(urole()) ?></div>
+            <div class="ms-auto header-account-area">
+                <a href="announcements.php" class="header-notification" aria-label="Notifications">
+                    <i class="bi bi-bell"></i>
+                    <span class="header-notification-count">3</span>
+                </a>
+                <span class="header-avatar"><?= e(uinit()) ?></span>
+                <div class="d-none d-md-block header-identity">
+                    <div class="header-identity-name"><?= e(uname()) ?></div>
+                    <div class="header-identity-role"><?= e(strtoupper(urole())) ?></div>
                 </div>
-                <a href="logout.php" class="btn btn-success btn-sm">
+                <a href="<?= is_public() ? 'login.php' : 'logout.php' ?>" class="btn btn-sm header-logout">
                     <i class="bi bi-box-arrow-right me-1"></i><?= is_public() ? 'Official Login' : 'Logout' ?>
                 </a>
             </div>

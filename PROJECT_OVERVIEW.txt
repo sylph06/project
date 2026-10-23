@@ -44,16 +44,23 @@ dashboard.php
   activities.
 
 registration.php
-  KK youth profiles, public registration and edit-request review, and member
-  archiving/restoration. Youth are eligible from age 15 through 30; members
-  older than 30 are automatically archived.
+  KK youth profiles, public registration, and member archiving/restoration.
+  Youth are eligible from age 15 through 30; members older than 30 are
+  automatically archived.
+
+request.php
+  Review and manage public registration submissions and KK profile edit
+  requests, including date filtering and approval/rejection history.
 
 members.php
   Member list and SK role administration. Each person has one KK member
-  record; SK roles reference that member. Roles can be ended or archived.
+  record; SK roles reference that member. Active standalone Chairman and
+  Secretary accounts also occupy their position seat. Roles can be ended or
+  archived.
 
 officials.php
-  Public listing of current SK officials, showing public-safe profile details.
+  Public listing of current SK officials, showing public-safe profile details
+  from active SK roles and standalone Chairman/Secretary accounts.
 
 announcements.php
   Public announcements and events, with official publishing and cancellation

@@ -9,7 +9,7 @@ require_once __DIR__ . '/config.php';
 if (USE_MEMBERS_TABLE) require_once __DIR__ . '/members_table.php';
 open_to_everyone();
 
-$POSITIONS = ['SK Chairperson', 'SK Vice Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad'];
+$POSITIONS = ['SK Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad'];
 
 function app_json($key) {
     if ($key === 'kkMembers' && USE_MEMBERS_TABLE) return kk_members_array_from_table(db());
@@ -31,22 +31,47 @@ foreach (app_json('kkMembers') as $m) { if (is_array($m) && !empty($m['id'])) $m
 $today = date('Y-m-d');
 $officials = [];
 $seen = [];
+$seenPositions = [];
 foreach (app_json('skRoles') as $r) {
     if (!is_array($r)) continue;
     $kid = (string)($r['kkId'] ?? '');
     if (!isset($members[$kid]) || isset($seen[$kid])) continue;
     $m = $members[$kid];
     if (($r['status'] ?? '') !== 'Active' || ($m['status'] ?? '') === 'Archived') continue;
+    if (!empty($r['termStart']) && $r['termStart'] > $today) continue;
     if (!empty($r['termEnd']) && $r['termEnd'] < $today) continue;           // term already ended
-    if (!in_array($r['position'] ?? '', $POSITIONS, true)) continue;
+    $position = ($r['position'] ?? '') === 'SK Chairman' ? 'SK Chairperson' : ($r['position'] ?? '');
+    if (!in_array($position, $POSITIONS, true)) continue;
     $seen[$kid] = 1;
     $name = trim(($m['firstName'] ?? '') . ' ' . (!empty($m['middleName']) ? mb_substr($m['middleName'], 0, 1) . '. ' : '') . ($m['lastName'] ?? '') . (!empty($m['suffix']) ? ' ' . $m['suffix'] : ''));
     $photo = (string)($m['photo'] ?? '');
     if (!preg_match('#^data:image/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$#', $photo)) $photo = '';
     $parts = preg_split('/\s+/', $name);
     $ini = mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? mb_substr(end($parts), 0, 1) : ''));
-    $officials[] = ['position' => $r['position'], 'name' => $name, 'photo' => $photo, 'initials' => $ini,
-                    'order' => array_search($r['position'], $POSITIONS, true)];
+    $officials[] = ['position' => $position, 'name' => $name, 'photo' => $photo, 'initials' => $ini,
+                    'order' => array_search($position, $POSITIONS, true)];
+    if ($position !== 'SK Kagawad') $seenPositions[$position] = true;
+}
+
+$accountOfficials = db()->query("SELECT full_name, role FROM users
+    WHERE is_active = 1 AND legacy_id IS NULL
+      AND role IN ('SK Chairman', 'SK Chairperson', 'SK Secretary')
+    ORDER BY full_name")->fetchAll(PDO::FETCH_ASSOC);
+foreach ($accountOfficials as $account) {
+    $position = $account['role'] === 'SK Chairman' ? 'SK Chairperson' : $account['role'];
+    if (isset($seenPositions[$position])) continue;
+    $name = trim((string)$account['full_name']);
+    if ($name === '') continue;
+    $parts = preg_split('/\s+/', $name);
+    $ini = mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? mb_substr(end($parts), 0, 1) : ''));
+    $officials[] = [
+        'position' => $position,
+        'name' => $name,
+        'photo' => '',
+        'initials' => $ini,
+        'order' => array_search($position, $POSITIONS, true),
+    ];
+    $seenPositions[$position] = true;
 }
 usort($officials, function ($a, $b) { return $a['order'] <=> $b['order'] ?: strcmp($a['name'], $b['name']); });
 
@@ -62,7 +87,7 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css" rel="stylesheet">
+    <link href="sidebar.css?v=9" rel="stylesheet">
 
     <style>
         :root { --line:var(--bs-border-color); --cream:var(--bs-tertiary-bg); }
@@ -93,7 +118,7 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 <div class="top-strip"></div>
 
 <script>window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;</script>
-<script src="sidebar.js?v=4"></script>
+<script src="sidebar.js?v=6"></script>
 
 <main class="main page-content">
 
@@ -105,10 +130,17 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
             <small>KK Youth Profiling System</small>
         </div>
     </div>
-    <div class="user-area">
+    <div class="header-account-area">
         <?php if (current_user()): ?>
-            <div><div style="font-size:15px;font-weight:bold;"><?= e(uname()) ?></div><small><?= e(strtoupper(urole())) ?></small></div>
-            <div class="avatar"><?= e(uinit()) ?></div>
+            <a href="announcements.php" class="header-notification" aria-label="Notifications">
+                <i class="bi bi-bell"></i><span class="header-notification-count">3</span>
+            </a>
+            <div class="header-avatar"><?= e(uinit()) ?></div>
+            <div class="d-none d-md-block header-identity">
+                <div class="header-identity-name"><?= e(uname()) ?></div>
+                <div class="header-identity-role"><?= e(strtoupper(urole())) ?></div>
+            </div>
+            <a href="logout.php" class="btn btn-sm header-logout"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
         <?php else: ?>
             <a href="login.php" class="btn btn-outline-primary btn-sm login-link"><i class="bi bi-box-arrow-in-right me-1"></i>Official login</a>
         <?php endif; ?>

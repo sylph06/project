@@ -25,6 +25,7 @@
         ]},
         { title: 'KK Youth', items: [
             ['registration.php',   'bi-person-plus-fill',         'KK Youth Registration'],  
+            ['request.php',       'bi-inbox-fill',                'Review Requests', 'request-count'],
             ['members.php',       'bi-people',                    'Member List'],
             ['archives.php',      'bi-archive',                   'Archives'],
             ['announcements.php', 'bi-megaphone',                 'Announcements'],
@@ -48,9 +49,6 @@
     }
 
     var current = (location.pathname.split('/').pop() || 'dashboard.php').toLowerCase();
-
-    // Pages that belong to a menu item but have a different file name.
-    // (profiling.php is the same KK Member Profiling page as registration.php)
     var ALIAS = { 'profiling.php': 'registration.php' };
     current = ALIAS[current] || current;
 
@@ -59,11 +57,26 @@
             ? '<div class="sidebar-section-title mt-4">' + group.title + '</div>'
             : '';
         var links = group.items.map(function (it) {
-            var active = it[0] === current;
+            var href = it[0];
+            var hash = href.indexOf('#') > -1 ? href.slice(href.indexOf('#')) : '';
+            var active = href.split('#')[0] === current
+                && (hash ? location.hash === hash : true);
+            var badge = '';
+            if (it[3] === 'request-count') {
+                var data = window.__DB || {};
+                var editRequests = [];
+                var publicRegistrations = [];
+                try { editRequests = JSON.parse(data.kkEditRequests || '[]'); } catch (e) {}
+                try { publicRegistrations = JSON.parse(data.kkPendingRegistrations || '[]'); } catch (e) {}
+                var editCount = Array.isArray(editRequests) ? editRequests.filter(function (item) { return item && item.status === 'Edit Request'; }).length : 0;
+                var publicCount = Array.isArray(publicRegistrations) ? publicRegistrations.filter(function (item) { return item && item.status === 'Pending'; }).length : 0;
+                var total = editCount + publicCount;
+                badge = '<span class="sidebar-request-count' + (total ? ' has-pending' : '') + '" aria-label="' + total + ' pending requests">' + total + '</span>';
+            }
             return '<li class="nav-item">' +
-                   '<a class="nav-link' + (active ? ' active' : '') + '" href="' + it[0] + '"' +
+                   '<a class="nav-link' + (active ? ' active' : '') + '" href="' + href + '"' +
                    (active ? ' aria-current="page"' : '') + '>' +
-                   '<i class="bi ' + it[1] + ' me-2"></i>' + it[2] +
+                   '<i class="bi ' + it[1] + ' me-2"></i>' + it[2] + badge +
                    '</a></li>';
         }).join('');
         return title + '<ul class="nav flex-column gap-1">' + links + '</ul>';

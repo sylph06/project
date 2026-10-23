@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css" rel="stylesheet">
+    <link href="sidebar.css?v=9" rel="stylesheet">
     <link href="vendor/summernote/summernote-bs5.min.css" rel="stylesheet">
 
     <style>
@@ -474,7 +474,7 @@ html{
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=4"></script>
+<script src="sidebar.js?v=6"></script>
 
 
 <div class="page-content">
@@ -504,39 +504,36 @@ html{
                 </div>
             </div>
 
-            <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
+            <div class="ms-auto header-account-area">
 
                 <a href="announcements.php"
-                   class="btn btn-outline-success btn-sm position-relative"
+                   class="header-notification"
                    aria-label="Notifications">
 
                     <i class="bi bi-bell"></i>
 
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill"
-                          style="background:var(--bs-primary);color:var(--bs-body-color);">
-                        3
-                    </span>
+                    <span class="header-notification-count">3</span>
 
                 </a>
 
-                <span class="avatar">
+                <span class="header-avatar">
                     <?= e(uinit()) ?>
                 </span>
 
-                <div class="d-none d-md-block lh-sm">
+                <div class="d-none d-md-block header-identity">
 
-                    <div class="fw-semibold small">
+                    <div class="header-identity-name">
                         <?= e(uname()) ?>
                     </div>
 
-                    <div class="text-muted" style="font-size:.75rem;">
+                    <div class="header-identity-role">
                         <?= e(strtoupper(urole())) ?>
                     </div>
 
                 </div>
 
-                <a href="logout.php"
-                   class="btn btn-success btn-sm">
+                <a href="<?= is_public() ? 'login.php' : 'logout.php' ?>"
+                   class="btn btn-sm header-logout">
 
                     <i class="bi bi-box-arrow-right me-1"></i>
                     <?= is_public() ? 'Official Login' : 'Logout' ?>

@@ -10,11 +10,10 @@
 
     var KK_KEY = 'kkMembers', ROLE_KEY = 'skRoles', MEET_KEY = 'skMeetings', ATT_KEY = 'skAttendance', UNLINKED_KEY = 'skUnlinked';
 
-    var POSITIONS = ['SK Chairperson', 'SK Vice Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad'];
-    var SEATS = { 'SK Chairperson': 1, 'SK Vice Chairperson': 1, 'SK Secretary': 1, 'SK Treasurer': 1, 'SK Kagawad': 7 };
+    var POSITIONS = ['SK Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad'];
+    var SEATS = { 'SK Chairperson': 1, 'SK Secretary': 1, 'SK Treasurer': 1, 'SK Kagawad': 7 };
     var ROLES = {
         'SK Chairperson': 'Leads the Sangguniang Kabataan, presides over its meetings, coordinates youth programs and represents the youth of Barangay Sikat.',
-        'SK Vice Chairperson': 'Assists the SK Chairperson, presides in the Chairperson\'s absence and helps oversee SK programs and committees.',
         'SK Secretary': 'Keeps the minutes and records of the SK, prepares resolutions and communications, and maintains the official files.',
         'SK Treasurer': 'Manages SK funds, keeps financial records and prepares budget and expense reports.',
         'SK Kagawad': 'Serves as an SK council member: takes part in sessions, committee work and in planning and carrying out youth programs.'
