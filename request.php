@@ -10,7 +10,7 @@ require_official();
     <title>Review Requests | KK Youth Profiling System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css?v=9" rel="stylesheet">
+    <link href="sidebar.css?v=10" rel="stylesheet">
     <style>
         :root { --line:var(--bs-border-color); --muted:var(--bs-secondary-color); }
         * { box-sizing:border-box; }
@@ -49,7 +49,8 @@ require_official();
 </head>
 <body>
 <div class="top-strip"></div>
-<script src="sidebar.js?v=6"></script>
+<script src="theme.js"></script>
+<script src="sidebar.js?v=7"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">

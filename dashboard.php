@@ -8,20 +8,20 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css?v=9" rel="stylesheet">
+    <link href="sidebar.css?v=10" rel="stylesheet">
     <style>
         .dashboard-hero{
-            color:#fff;
-            background:linear-gradient(135deg,var(--bs-primary),var(--bs-primary-text-emphasis));
-            border-radius:1.25rem;
+            color:var(--bs-body-color);
+            background:var(--bs-white);
+            border:1px solid var(--bs-border-color);
+            border-radius:.5rem;
             padding:clamp(1.5rem,4vw,2.5rem);
         }
         .dashboard-stat,.dashboard-panel{
             height:100%;
             background:var(--bs-white);
             border:1px solid var(--bs-border-color);
-            border-radius:1rem;
-            box-shadow:0 .25rem 1rem rgba(0,0,0,.04);
+            border-radius:.5rem;
         }
         .dashboard-stat{padding:1.25rem}
         .dashboard-stat-icon{
@@ -29,12 +29,12 @@
             place-items:center;
             width:2.75rem;
             height:2.75rem;
-            border-radius:.85rem;
+            border-radius:.5rem;
             color:var(--bs-primary-text-emphasis);
             background:var(--bs-primary-bg-subtle);
             font-size:1.25rem;
         }
-        .dashboard-panel{padding:1.35rem}
+        .dashboard-panel{padding:1.35rem;overflow:hidden}
         .budget-stat{
             height:100%;
             padding:1rem;
@@ -51,7 +51,7 @@
             color:var(--bs-body-color);
             text-decoration:none;
             border:1px solid var(--bs-border-color);
-            border-radius:.8rem;
+            border-radius:.5rem;
         }
         .quick-link:hover{color:var(--bs-primary-text-emphasis);background:var(--bs-tertiary-bg)}
     </style>
@@ -113,7 +113,8 @@
 
 <body>
 <div class="top-strip"></div>
-<script src="sidebar.js?v=6"></script>
+<script src="theme.js"></script>
+<script src="sidebar.js?v=7"></script>
 
 <div class="page-content">
     <header class="bg-white border-bottom sticky-top">

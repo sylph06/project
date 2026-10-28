@@ -42,6 +42,7 @@ foreach (app_json('skRoles') as $r) {
     if (!empty($r['termEnd']) && $r['termEnd'] < $today) continue;           // term already ended
     $position = ($r['position'] ?? '') === 'SK Chairman' ? 'SK Chairperson' : ($r['position'] ?? '');
     if (!in_array($position, $POSITIONS, true)) continue;
+    if ($position !== 'SK Kagawad' && isset($seenPositions[$position])) continue;
     $seen[$kid] = 1;
     $name = trim(($m['firstName'] ?? '') . ' ' . (!empty($m['middleName']) ? mb_substr($m['middleName'], 0, 1) . '. ' : '') . ($m['lastName'] ?? '') . (!empty($m['suffix']) ? ' ' . $m['suffix'] : ''));
     $photo = (string)($m['photo'] ?? '');
@@ -62,6 +63,10 @@ foreach ($accountOfficials as $account) {
     if (isset($seenPositions[$position])) continue;
     $name = trim((string)$account['full_name']);
     if ($name === '') continue;
+    if (strcasecmp($name, (string)$account['role']) === 0
+        || ($position === 'SK Chairperson' && strcasecmp($name, 'SK Chairperson') === 0)) {
+        $name = $position === 'SK Chairperson' ? 'Chairperson' : 'Secretary';
+    }
     $parts = preg_split('/\s+/', $name);
     $ini = mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? mb_substr(end($parts), 0, 1) : ''));
     $officials[] = [
@@ -87,7 +92,8 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css?v=9" rel="stylesheet">
+    <link href="sidebar.css?v=10" rel="stylesheet">
+    <script src="theme.js"></script>
 
     <style>
         :root { --line:var(--bs-border-color); --cream:var(--bs-tertiary-bg); }
@@ -99,18 +105,27 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
         .user-area { display:flex; align-items:center; gap:12px; text-align:right; }
         .avatar { width:40px; height:40px; border-radius:50%; background:var(--bs-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
         .content { padding:24px; max-width:1100px; margin:0 auto; }
-        .hero { background:#fff; border:1px solid var(--line); border-radius:16px; padding:28px; margin-bottom:24px; text-align:center; }
+        .hero { background:#fff; border:1px solid var(--line); border-radius:8px; padding:24px; margin-bottom:24px; text-align:center; }
         .hero h1 { font-size:28px; font-weight:900; margin:0 0 6px; }
         .hero p { margin:0; color:var(--bs-secondary-color); }
         .group-title { font-size:13px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--bs-secondary-color); margin:28px 0 14px; text-align:center; }
         .cards { display:flex; flex-wrap:wrap; justify-content:center; gap:18px; }
-        .official { width:200px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px 14px; text-align:center; }
+        .official { width:200px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:20px 14px; text-align:center; }
         .official .pic { width:112px; height:112px; border-radius:50%; margin:0 auto 14px; object-fit:cover; border:3px solid var(--bs-primary-bg-subtle); display:block; }
         .official .ph { display:flex; align-items:center; justify-content:center; background:var(--bs-primary-bg-subtle); color:var(--bs-primary-text-emphasis); font-size:34px; font-weight:800; }
         .official .nm { font-weight:800; font-size:16px; line-height:1.25; }
         .official .pos { margin-top:6px; font-size:13px; color:var(--bs-primary); font-weight:700; }
         .footer-note { text-align:center; color:var(--bs-secondary-color); font-size:13px; margin:34px 0 10px; }
         .login-link { font-size:14px; }
+        html.dark-mode body,
+        html.dark-mode .hero,
+        html.dark-mode .official { background:var(--bs-body-bg); color:var(--bs-body-color); }
+        html.dark-mode .header { background:var(--bs-body-bg); color:var(--bs-body-color); }
+        html.dark-mode .header small,
+        html.dark-mode .hero p,
+        html.dark-mode .footer-note { color:var(--bs-secondary-color); }
+        html.dark-mode .hero,
+        html.dark-mode .official { border-color:var(--bs-border-color); }
     </style>
 </head>
 <body>
@@ -118,7 +133,7 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 <div class="top-strip"></div>
 
 <script>window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;</script>
-<script src="sidebar.js?v=6"></script>
+<script src="sidebar.js?v=7"></script>
 
 <main class="main page-content">
 

@@ -62,6 +62,7 @@ try {
         if (!empty($r['termEnd']) && $r['termEnd'] < $today) continue;
         $position = ($r['position'] ?? '') === 'SK Chairman' ? 'SK Chairperson' : ($r['position'] ?? '');
         if (!in_array($position, $POSITIONS, true)) continue;
+        if ($position !== 'SK Kagawad' && isset($seenPositions[$position])) continue;
         $seen[$kid] = 1;
         $name = trim(($m['firstName'] ?? '') . ' ' . ($m['lastName'] ?? '') . (!empty($m['suffix']) ? ' ' . $m['suffix'] : ''));
         $photo = (string)($m['photo'] ?? '');
@@ -81,6 +82,10 @@ try {
         if (isset($seenPositions[$position])) continue;
         $name = trim((string)$account['full_name']);
         if ($name === '') continue;
+        if (strcasecmp($name, (string)$account['role']) === 0
+            || ($position === 'SK Chairperson' && strcasecmp($name, 'SK Chairperson') === 0)) {
+            $name = $position === 'SK Chairperson' ? 'Chairperson' : 'Secretary';
+        }
         $parts = preg_split('/\s+/', $name);
         $ini = mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? mb_substr(end($parts), 0, 1) : ''));
         $officials[] = [
@@ -140,6 +145,7 @@ $L_EVENTS   = 'announcements.php?view=public';
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="theme.js"></script>
 
     <style>
         :root{
@@ -149,12 +155,12 @@ $L_EVENTS   = 'announcements.php?view=public';
         }
         html{scroll-behavior:smooth;scroll-padding-top:5rem}
         @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-        body{background:var(--bs-white);color:var(--lp-ink);line-height:1.6}
+        body{background:var(--bs-white);color:var(--lp-ink);line-height:1.6;overflow-x:hidden}
         h1,h2,h3,.display-font{font-family:var(--lp-display);letter-spacing:-.02em}
         a:focus-visible,button:focus-visible{outline:3px solid var(--bs-primary);outline-offset:3px}
 
         /* nav */
-        .lp-nav{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--lp-line)}
+        .lp-nav{background:#fff;border-bottom:1px solid var(--lp-line)}
         .lp-logo{width:42px;height:42px;border-radius:50%;object-fit:cover}
         .lp-nav .nav-link{color:var(--lp-ink);font-weight:600}
         .lp-nav .nav-link:hover{color:var(--bs-primary)}
@@ -167,10 +173,7 @@ $L_EVENTS   = 'announcements.php?view=public';
         .lp-nav .header-logout:focus{background:#343a40;border-color:#343a40;color:#fff;box-shadow:0 0 0 .2rem rgba(33,37,41,.2);outline:none}
 
         /* hero */
-        .lp-hero{background:var(--bs-primary);color:#fff;position:relative;overflow:hidden}
-        .lp-hero::after{ /* a large, quiet SK logo mark */
-            content:"";position:absolute;right:-8rem;bottom:-9rem;width:30rem;height:30rem;border-radius:50%;
-            background:url("images/sk-logo.jpg") center/cover;opacity:.08;pointer-events:none}
+        .lp-hero{background:var(--bs-primary);color:#fff}
         .lp-hero .container{position:relative;z-index:1}
         .lp-place{color:rgba(255,255,255,.8);font-weight:600}
         .lp-hero h1{font-size:clamp(2.4rem,6vw,4.4rem);font-weight:800;line-height:1.02;max-width:13ch}
@@ -181,7 +184,7 @@ $L_EVENTS   = 'announcements.php?view=public';
         .btn-lp-ghost:hover{color:var(--bs-primary-text-emphasis);background:#fff;border-color:#fff}
 
         /* "next up" ticket: the one memorable element */
-        .lp-ticket{background:#fff;color:var(--lp-ink);border-radius:1.25rem;overflow:hidden;box-shadow:0 1.5rem 3rem rgba(0,0,0,.25)}
+        .lp-ticket{background:#fff;color:var(--lp-ink);border-radius:.5rem;overflow:hidden;border:1px solid var(--lp-line)}
         .lp-ticket-top{display:flex;gap:1.1rem;padding:1.5rem 1.5rem 1.25rem;align-items:center}
         .lp-datebox{flex:0 0 auto;width:5.2rem;text-align:center;border-radius:1rem;background:var(--bs-primary-bg-subtle);color:var(--bs-primary-text-emphasis);padding:.6rem 0}
         .lp-datebox .mo{font-weight:700;font-size:.95rem}
@@ -212,6 +215,10 @@ $L_EVENTS   = 'announcements.php?view=public';
         .lp-budget-card{height:100%;padding:1.5rem;background:#fff;border:1px solid var(--lp-line);border-radius:1rem}
         .lp-budget-value{font-family:var(--lp-display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;line-height:1.2}
         .lp-budget-table th,.lp-budget-table td{padding:.75rem .5rem;vertical-align:middle}
+        @media(max-width:767.98px){
+            .lp-hero .row,.lp-section .row,.lp-cta .row{margin-left:0;margin-right:0}
+            .lp-budget-card{overflow:hidden}
+        }
 
         /* steps (a real sequence: apply, review, listed) */
         .lp-step{display:flex;gap:1rem;padding:1.1rem 0}
@@ -230,6 +237,20 @@ $L_EVENTS   = 'announcements.php?view=public';
         .lp-cta{background:var(--bs-primary-bg-subtle);color:var(--bs-primary-text-emphasis)}
         .lp-footer{background:var(--bs-primary-text-emphasis);color:rgba(255,255,255,.8);font-size:.9rem}
         .lp-footer a{color:#fff}
+        html.dark-mode body,
+        html.dark-mode .lp-nav,
+        html.dark-mode .lp-facts,
+        html.dark-mode .lp-muted-bg{background:var(--bs-body-bg);color:var(--bs-body-color)}
+        html.dark-mode .lp-nav{border-color:var(--bs-border-color)}
+        html.dark-mode .lp-nav .nav-link,
+        html.dark-mode .lp-nav .navbar-brand,
+        html.dark-mode .lp-nav .text-secondary,
+        html.dark-mode .lp-fact .text-secondary,
+        html.dark-mode .lp-section .text-secondary{color:var(--bs-secondary-color)!important}
+        html.dark-mode .lp-ticket,
+        html.dark-mode .lp-budget-card{background:var(--bs-body-bg);border-color:var(--bs-border-color)}
+        html.dark-mode .lp-budget-table{--bs-table-bg:transparent;--bs-table-color:var(--bs-body-color);--bs-table-border-color:var(--bs-border-color)}
+        html.dark-mode .lp-cta{background:var(--bs-tertiary-bg);color:var(--bs-body-color)}
     </style>
 </head>
 <body>
@@ -254,6 +275,7 @@ $L_EVENTS   = 'announcements.php?view=public';
                 <li class="nav-item"><a class="nav-link" href="#join">How to join</a></li>
                 <li class="nav-item"><a class="nav-link" href="#officials">Officials</a></li>
                 <li class="nav-item ms-md-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3 me-1" data-theme-toggle aria-pressed="false" onclick="kkToggleTheme()"><i class="bi bi-moon-stars me-2"></i>Dark mode</button>
                     <?php if ($isOfficer): ?>
                         <a class="btn btn-primary btn-sm px-3" href="dashboard.php"><i class="bi bi-grid-1x2-fill me-1"></i>Open dashboard</a>
                         <a class="btn btn-sm px-3 header-logout" href="logout.php"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
@@ -351,7 +373,7 @@ $L_EVENTS   = 'announcements.php?view=public';
         <div class="row g-5">
             <div class="col-lg-4">
                 <h2 class="mb-3">What is coming up</h2>
-                <p class="text-secondary mb-4">Sports, clean-up drives, learning sessions and more. You do not need an account to sign up for an event.</p>
+                <p class="text-secondary mb-4">Sports, clean-up drives, learning sessions and more. You must log in before signing up for an event.</p>
                 <a href="<?= e($L_EVENTS) ?>" class="btn btn-outline-primary fw-semibold">All announcements</a>
             </div>
             <div class="col-lg-8">

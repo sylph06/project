@@ -8,7 +8,8 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css?v=9" rel="stylesheet">
+    <link href="sidebar.css?v=10" rel="stylesheet">
+    <script src="theme.js"></script>
     <script>
         window.ANN_MODE = "<?= is_limited_viewer() ? 'public' : 'official' ?>";
         window.ANN_AUTHENTICATED = <?= current_user() ? 'true' : 'false' ?>;
@@ -757,6 +758,22 @@ footer{
 }
 @media(max-width:575px){
     .up-thumb{ width:84px; min-height:84px; }
+    .header-account-area{
+        min-width:0;
+    }
+
+    .header-logout{
+        width:36px;
+        height:34px;
+        padding:.25rem;
+        font-size:0;
+    }
+
+    .header-logout i{
+        margin-right:0!important;
+        font-size:1rem;
+    }
+
     .cd-box{ min-width:62px; }
     .cd-num{ font-size:1.3rem; }
 }
@@ -895,6 +912,55 @@ footer{
 html.is-public .hero-copy p{
     margin-bottom:0!important;
 }
+
+/* Keep the public view focused on content rather than decoration. */
+.dashboard-hero,
+.toolbar-box,
+.ann-card,
+.empty-state,
+.modal-content{
+    border-radius:.5rem;
+    box-shadow:none;
+}
+
+.dashboard-hero:before,
+.dashboard-hero:after,
+.ann-banner-empty:before{
+    display:none;
+}
+
+.ann-card:hover{
+    transform:none;
+    box-shadow:none;
+}
+
+.ann-status,
+.ann-date-chip,
+.filter-pill{
+    border-radius:.35rem;
+}
+
+html.dark-mode body,
+html.dark-mode .toolbar-box,
+html.dark-mode .ann-card,
+html.dark-mode .empty-state,
+html.dark-mode .modal-content,
+html.dark-mode .toolbar-box .form-control,
+html.dark-mode .toolbar-box .input-group-text{
+    background:var(--bs-body-bg);
+    color:var(--bs-body-color);
+}
+
+html.dark-mode .ann-banner-empty,
+html.dark-mode .ann-banner{
+    background:var(--bs-primary-text-emphasis);
+}
+
+html.dark-mode .toolbar-box .form-control,
+html.dark-mode .toolbar-box .input-group-text,
+html.dark-mode .filter-pill{
+    border-color:var(--bs-border-color);
+}
 </style>
 <?php include __DIR__ . '/init.php'; ?>
 </head>
@@ -903,7 +969,7 @@ html.is-public .hero-copy p{
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=6"></script>
+<script src="sidebar.js?v=7"></script>
 
 <div class="page-content">
 
@@ -984,7 +1050,7 @@ html.is-public .hero-copy p{
                     </select>
                 </div>
 
-                <div class="col-6 col-lg-2">
+                <div class="col-6 col-lg-2<?= is_limited_viewer() ? ' d-none' : '' ?>">
                     <select id="publishFilter" class="form-select" aria-label="Filter by publishing">
                         <option value="">Any publishing</option>
                         <option>Published</option>

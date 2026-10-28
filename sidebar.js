@@ -99,6 +99,7 @@
             '</a>' +
             nav +
             '<div class="mt-auto pt-3 small text-secondary border-top">' +
+                '<button type="button" class="theme-toggle mb-3" data-theme-toggle aria-pressed="false" onclick="kkToggleTheme()"><i class="bi bi-moon-stars me-2"></i>Dark mode</button>' +
                 '<div class="fw-semibold text-dark">Barangay Sikat</div>' +
                 '<div>Alfonso, Cavite</div>' +
                 '<span class="badge bg-primary mt-2">Active FY 2026–2027</span>' +

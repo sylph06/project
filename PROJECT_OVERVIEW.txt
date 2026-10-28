@@ -60,7 +60,8 @@ members.php
 
 officials.php
   Public listing of current SK officials, showing public-safe profile details
-  from active SK roles and standalone Chairman/Secretary accounts.
+  from active SK roles and standalone Chairman/Secretary accounts. Placeholder
+  account names are displayed as the position name without duplication.
 
 announcements.php
   Public announcements and events, with official publishing and cancellation
