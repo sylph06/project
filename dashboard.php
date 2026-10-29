@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css?v=10" rel="stylesheet">
+    <link href="sidebar.css?v=12" rel="stylesheet">
     <style>
         .dashboard-hero{
             color:var(--bs-body-color);
@@ -148,7 +148,7 @@
         <section class="dashboard-hero mb-4">
             <div class="row align-items-center g-3">
                 <div class="col-lg">
-                    <div class="text-white-50 small fw-semibold text-uppercase mb-2">Barangay Sikat · Alfonso, Cavite</div>
+                    <div class="text-muted small fw-semibold text-uppercase mb-2">Barangay Sikat · Alfonso, Cavite</div>
                     <h2 class="h3 fw-bold mb-2">Welcome, <?= e(uname()) ?></h2>
                     <p class="mb-0">A quick overview of KK youth records, announcements, and upcoming SK activities.</p>
                 </div>

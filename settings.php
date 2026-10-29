@@ -1,4 +1,13 @@
-<?php require_once __DIR__ . '/config.php'; require_viewer(); ?>
+<?php
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/backup_restore.php';
+require_viewer();
+$canManageBackups = can_manage_sk_roles();
+if ($canManageBackups && empty($_SESSION['backup_restore_csrf'])) {
+    $_SESSION['backup_restore_csrf'] = bin2hex(random_bytes(32));
+}
+$latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
+?>
 <!DOCTYPE html>
 <html lang="en"<?= is_public() ? ' class="is-public"' : '' ?>>
 <head>
@@ -8,7 +17,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css?v=10" rel="stylesheet">
+    <link href="sidebar.css?v=12" rel="stylesheet">
 
     <style>
         :root {
@@ -280,6 +289,46 @@
         </div>
         <?php endif; ?>
 
+        <?php if ($canManageBackups): ?>
+        <div class="col-12">
+            <div class="card-box">
+                <div class="card-header"><i class="bi bi-shield-lock-fill me-2"></i>Backup &amp; Restore</div>
+                <div class="card-body">
+                    <p class="mb-3">Download a backup of operational KK and SK records. Passwords, user accounts, and server configuration are not included.</p>
+                    <a class="btn btn-outline-primary mb-3" href="backup.php?action=download">
+                        <i class="bi bi-download me-1"></i>Download backup
+                    </a>
+
+                    <div class="alert alert-warning small" role="note">
+                        Restoring replaces the current operational records with the contents of the selected backup.
+                        A safety backup of the current records is saved automatically before restore. User accounts and passwords are not changed.
+                    </div>
+
+                    <form id="backupRestoreForm" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf" value="<?= e($_SESSION['backup_restore_csrf']) ?>">
+                        <label class="form-label fw-bold" for="backupFile">Backup file</label>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <input class="form-control flex-grow-1" style="max-width:520px" type="file" id="backupFile" name="backup_file" accept=".json,application/json" required>
+                            <button type="submit" class="btn btn-danger" id="restoreBackupBtn">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Restore backup
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="backupRestoreMessage" class="mt-3" aria-live="polite"></div>
+                    <div id="safetyBackupLink" class="small mt-3">
+                        <?php if ($latestSafetyBackup): ?>
+                            Latest pre-restore safety backup:
+                            <a href="backup.php?action=download-safety&amp;id=<?= (int)$latestSafetyBackup['id'] ?>">
+                                Download from <?= e($latestSafetyBackup['created_at']) ?>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
     </div>
 
     <div class="footer-note">
@@ -329,6 +378,46 @@ if (btn) btn.addEventListener("click", function () {
     .catch(function () { note("danger", "Could not reach the server."); });
 });
 </script>
+
+<?php if ($canManageBackups): ?>
+<script>
+document.getElementById('backupRestoreForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var file = document.getElementById('backupFile').files[0];
+    if (!file) return;
+    if (!window.confirm('Restore this backup? Current operational records will be replaced. A safety backup will be created first.')) return;
+
+    var button = document.getElementById('restoreBackupBtn');
+    var message = document.getElementById('backupRestoreMessage');
+    button.disabled = true;
+    message.textContent = 'Restoring backup...';
+
+    fetch('backup.php?action=restore', { method: 'POST', body: new FormData(this) })
+        .then(function (response) {
+            return response.json().then(function (result) {
+                if (!response.ok || !result.ok) throw new Error(result.error || 'Could not restore the backup.');
+                return result;
+            });
+        })
+        .then(function (result) {
+            message.className = 'alert alert-success mt-3';
+            message.textContent = result.message;
+            var linkBox = document.getElementById('safetyBackupLink');
+            var link = document.createElement('a');
+            link.href = 'backup.php?action=download-safety&id=' + encodeURIComponent(result.safetyBackupId);
+            link.textContent = 'Download the pre-restore safety backup';
+            linkBox.replaceChildren(document.createTextNode('Safety backup created: '), link);
+        })
+        .catch(function (error) {
+            message.className = 'alert alert-danger mt-3';
+            message.textContent = error.message || 'Restore failed. No changes were applied.';
+        })
+        .finally(function () {
+            button.disabled = false;
+        });
+});
+</script>
+<?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -145,7 +145,7 @@ $L_EVENTS   = 'announcements.php?view=public';
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <script src="theme.js"></script>
+    <script src="theme.js?v=2"></script>
 
     <style>
         :root{
@@ -153,24 +153,95 @@ $L_EVENTS   = 'announcements.php?view=public';
             --lp-ink:var(--bs-body-color);
             --lp-line:var(--bs-border-color);
         }
+        html[data-bs-theme="dark"]{
+            color-scheme:dark;
+            --bs-body-bg:#151a24;
+            --bs-body-color:#e8edf5;
+            --bs-emphasis-color:#f7f9fc;
+            --bs-secondary-color:#aeb8c7;
+            --bs-tertiary-bg:#1c2432;
+            --bs-secondary-bg:#222d3d;
+            --bs-border-color:#384457;
+            --bs-border-color-translucent:rgba(230,239,255,.12);
+            --bs-primary:#0d6efd;
+            --bs-primary-rgb:13,110,253;
+            --bs-primary-text-emphasis:#6ea8fe;
+            --bs-primary-bg-subtle:#031633;
+            --bs-primary-border-subtle:#084298;
+            --bs-link-color:#6ea8fe;
+            --bs-link-hover-color:#9ec5fe;
+        }
         html{scroll-behavior:smooth;scroll-padding-top:5rem}
         @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
         body{background:var(--bs-white);color:var(--lp-ink);line-height:1.6;overflow-x:hidden}
         h1,h2,h3,.display-font{font-family:var(--lp-display);letter-spacing:-.02em}
         a:focus-visible,button:focus-visible{outline:3px solid var(--bs-primary);outline-offset:3px}
 
-        /* nav */
-        .lp-nav{background:#fff;border-bottom:1px solid var(--lp-line)}
+        .lp-sidebar{
+            --bs-offcanvas-width:280px;
+            width:280px;
+            background:var(--bs-white);
+            border-right:1px solid var(--lp-line);
+        }
+        .lp-sidebar-brand{color:var(--lp-ink)}
         .lp-logo{width:42px;height:42px;border-radius:50%;object-fit:cover}
-        .lp-nav .nav-link{color:var(--lp-ink);font-weight:600}
-        .lp-nav .nav-link:hover{color:var(--bs-primary)}
-        .lp-nav .header-logout,
-        .lp-nav .header-logout:visited,
-        .lp-nav .header-logout:active,
-        .lp-nav .header-logout.active{background:#212529;border:1px solid #212529;border-radius:5px;color:#fff;font-weight:700;white-space:nowrap;box-shadow:none;text-decoration:none}
-        .lp-nav .header-logout:hover,
-        .lp-nav .header-logout:focus-visible,
-        .lp-nav .header-logout:focus{background:#343a40;border-color:#343a40;color:#fff;box-shadow:0 0 0 .2rem rgba(33,37,41,.2);outline:none}
+        .lp-desktop-brand{display:none}
+        .lp-sidebar .nav-link{
+            display:flex;
+            align-items:center;
+            gap:.75rem;
+            padding:.75rem .85rem;
+            color:var(--bs-secondary-color);
+            font-weight:650;
+            border-radius:.75rem;
+        }
+        .lp-sidebar .nav-link:hover,
+        .lp-sidebar .nav-link:focus-visible{
+            background:var(--bs-primary-bg-subtle);
+            color:var(--bs-primary-text-emphasis);
+        }
+        .lp-sidebar .nav-link i{font-size:1.1rem}
+        .lp-sidebar-footer{border-top:1px solid var(--lp-line)}
+        .lp-theme-option{font-size:.875rem}
+        .lp-theme-option.is-active{background:var(--bs-primary-bg-subtle);border-color:var(--bs-primary);color:var(--bs-primary-text-emphasis)}
+        html.dark-mode .lp-theme-option.is-active{background:var(--bs-primary-bg-subtle);border-color:var(--bs-primary);color:var(--bs-primary-text-emphasis)}
+        .lp-mobilebar{
+            position:sticky;
+            top:0;
+            z-index:1020;
+            background:var(--bs-body-bg);
+            border-bottom:1px solid var(--lp-line);
+        }
+        .lp-mobilebar .navbar-toggler{
+            width:44px;
+            height:44px;
+            padding:0;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:.5rem;
+            color:var(--lp-ink);
+        }
+        .lp-mobilebar .navbar-toggler:focus{box-shadow:none}
+        .lp-mobilebar .navbar-toggler:focus-visible{outline-offset:0}
+        .lp-main{min-width:0}
+        @media(min-width:992px){
+            .lp-sidebar{
+                position:fixed;
+                inset:0 auto 0 0;
+                z-index:1030;
+                display:flex!important;
+                flex-direction:column;
+                visibility:visible!important;
+                transform:none!important;
+            }
+            .lp-sidebar .offcanvas-body{flex:1;overflow-y:auto}
+            .lp-desktop-brand{display:flex}
+            .lp-main{margin-left:280px}
+        }
+        @media(max-width:991.98px){
+            .lp-sidebar .offcanvas-body{padding:1rem!important}
+        }
 
         /* hero */
         .lp-hero{background:var(--bs-primary);color:#fff}
@@ -199,6 +270,9 @@ $L_EVENTS   = 'announcements.php?view=public';
         .lp-fact{padding:1.6rem 0}
         .lp-fact .n{font-family:var(--lp-display);font-weight:800;font-size:2.2rem;line-height:1;color:var(--bs-primary-text-emphasis)}
         @media(min-width:768px){.lp-fact+.lp-fact{border-left:1px solid var(--lp-line);padding-left:2rem}}
+        @media(max-width:767.98px){
+            .lp-fact{text-align:center}
+        }
 
         /* sections */
         .lp-section{padding:clamp(3rem,7vw,5.5rem) 0}
@@ -213,8 +287,10 @@ $L_EVENTS   = 'announcements.php?view=public';
 
         /* public budget transparency */
         .lp-budget-card{height:100%;padding:1.5rem;background:#fff;border:1px solid var(--lp-line);border-radius:1rem}
+        .lp-budget-card .list-group-item{background:transparent;color:inherit;border-color:var(--lp-line)}
         .lp-budget-value{font-family:var(--lp-display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;line-height:1.2}
         .lp-budget-table th,.lp-budget-table td{padding:.75rem .5rem;vertical-align:middle}
+        .lp-steps-card{background:#fff;border:1px solid var(--lp-line);border-radius:1rem;padding:0 1.5rem}
         @media(max-width:767.98px){
             .lp-hero .row,.lp-section .row,.lp-cta .row{margin-left:0;margin-right:0}
             .lp-budget-card{overflow:hidden}
@@ -238,58 +314,102 @@ $L_EVENTS   = 'announcements.php?view=public';
         .lp-footer{background:var(--bs-primary-text-emphasis);color:rgba(255,255,255,.8);font-size:.9rem}
         .lp-footer a{color:#fff}
         html.dark-mode body,
-        html.dark-mode .lp-nav,
         html.dark-mode .lp-facts,
         html.dark-mode .lp-muted-bg{background:var(--bs-body-bg);color:var(--bs-body-color)}
-        html.dark-mode .lp-nav{border-color:var(--bs-border-color)}
-        html.dark-mode .lp-nav .nav-link,
-        html.dark-mode .lp-nav .navbar-brand,
-        html.dark-mode .lp-nav .text-secondary,
+        html.dark-mode .lp-sidebar,
+        html.dark-mode .lp-mobilebar{background:var(--bs-tertiary-bg);border-color:var(--bs-border-color)}
+        html.dark-mode .lp-sidebar-brand,
+        html.dark-mode .lp-mobilebar .text-secondary{color:var(--bs-body-color)!important}
+        html.dark-mode .lp-sidebar .nav-link,
         html.dark-mode .lp-fact .text-secondary,
         html.dark-mode .lp-section .text-secondary{color:var(--bs-secondary-color)!important}
+        html.dark-mode .lp-sidebar .nav-link:hover,
+        html.dark-mode .lp-sidebar .nav-link:focus-visible{background:var(--bs-primary-bg-subtle);color:var(--bs-primary-text-emphasis)!important}
+        html.dark-mode .lp-sidebar-footer{border-color:var(--bs-border-color)!important}
         html.dark-mode .lp-ticket,
-        html.dark-mode .lp-budget-card{background:var(--bs-body-bg);border-color:var(--bs-border-color)}
+        html.dark-mode .lp-budget-card,
+        html.dark-mode .lp-steps-card{background:var(--bs-secondary-bg);border-color:var(--bs-border-color)}
         html.dark-mode .lp-budget-table{--bs-table-bg:transparent;--bs-table-color:var(--bs-body-color);--bs-table-border-color:var(--bs-border-color)}
-        html.dark-mode .lp-cta{background:var(--bs-tertiary-bg);color:var(--bs-body-color)}
+        html.dark-mode .lp-cta{background:var(--bs-secondary-bg);color:var(--bs-body-color)}
+        html.dark-mode .btn-lp-light{color:#084298}
+        html.dark-mode .btn-lp-light:hover{color:var(--bs-primary-text-emphasis)}
+        html.dark-mode .lp-footer{background:#084298;color:rgba(255,255,255,.9)}
     </style>
 </head>
 <body>
 
 <!-- ============ NAV ============ -->
-<nav class="lp-nav navbar navbar-expand-md sticky-top">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2 py-0" href="index.php">
+<aside class="lp-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="landingSidebar" aria-label="SK Barangay Sikat landing page navigation">
+    <div class="offcanvas-header border-bottom p-3">
+        <a class="lp-sidebar-brand d-flex align-items-center gap-2 text-decoration-none" href="#home">
             <img src="images/sk-logo.jpg" alt="" class="lp-logo">
             <span class="lh-1">
                 <span class="d-block fw-bold display-font" style="font-size:1rem">SK Barangay Sikat</span>
                 <span class="d-block text-secondary" style="font-size:.75rem">KK Youth Profiling</span>
             </span>
         </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#lpMenu" aria-controls="lpMenu" aria-expanded="false" aria-label="Open menu">
-            <i class="bi bi-list fs-2"></i>
-        </button>
-        <div class="collapse navbar-collapse" id="lpMenu">
-            <ul class="navbar-nav ms-auto align-items-md-center gap-md-2 py-3 py-md-0">
-                <li class="nav-item"><a class="nav-link" href="#activities">Activities</a></li>
-                <li class="nav-item"><a class="nav-link" href="#budget">Budget</a></li>
-                <li class="nav-item"><a class="nav-link" href="#join">How to join</a></li>
-                <li class="nav-item"><a class="nav-link" href="#officials">Officials</a></li>
-                <li class="nav-item ms-md-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary px-3 me-1" data-theme-toggle aria-pressed="false" onclick="kkToggleTheme()"><i class="bi bi-moon-stars me-2"></i>Dark mode</button>
-                    <?php if ($isOfficer): ?>
-                        <a class="btn btn-primary btn-sm px-3" href="dashboard.php"><i class="bi bi-grid-1x2-fill me-1"></i>Open dashboard</a>
-                        <a class="btn btn-sm px-3 header-logout" href="logout.php"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
-                    <?php else: ?>
-                        <a class="btn btn-outline-primary btn-sm px-3" href="login.php"><i class="bi bi-box-arrow-in-right me-1"></i>Official login</a>
-                    <?php endif; ?>
-                </li>
+        <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#landingSidebar" aria-label="Close menu"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column p-3">
+        <a class="lp-sidebar-brand lp-desktop-brand align-items-center gap-2 text-decoration-none mb-4 px-1" href="#home">
+            <img src="images/sk-logo.jpg" alt="" class="lp-logo">
+            <span class="lh-1">
+                <span class="d-block fw-bold display-font" style="font-size:1rem">SK Barangay Sikat</span>
+                <span class="d-block text-secondary" style="font-size:.75rem">KK Youth Profiling</span>
+            </span>
+        </a>
+        <div class="small text-uppercase text-secondary fw-semibold px-2 mb-2">Explore</div>
+        <nav aria-label="Landing page sections">
+            <ul class="nav flex-column gap-1">
+                <li class="nav-item"><a class="nav-link" href="#home"><i class="bi bi-house-door"></i>Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="#activities"><i class="bi bi-megaphone"></i>Announcements &amp; activities</a></li>
+                <li class="nav-item"><a class="nav-link" href="#budget"><i class="bi bi-shield-check"></i>Budget transparency</a></li>
+                <li class="nav-item"><a class="nav-link" href="#join"><i class="bi bi-person-plus"></i>How to join</a></li>
+                <li class="nav-item"><a class="nav-link" href="#officials"><i class="bi bi-people"></i>SK officials</a></li>
             </ul>
+        </nav>
+        <div class="lp-sidebar-footer mt-auto pt-3">
+            <div class="small text-uppercase text-secondary fw-semibold px-1 mb-2">Appearance</div>
+            <div class="d-flex gap-2 mb-3" role="group" aria-label="Choose appearance">
+                <button type="button" class="btn btn-outline-secondary lp-theme-option flex-fill" data-theme-set="light" aria-pressed="false"><i class="bi bi-sun me-1"></i>Light mode</button>
+                <button type="button" class="btn btn-outline-secondary lp-theme-option flex-fill" data-theme-set="dark" aria-pressed="false"><i class="bi bi-moon-stars me-1"></i>Dark mode</button>
+            </div>
+            <?php if ($isOfficer): ?>
+                <a class="btn btn-primary w-100 mb-2" href="dashboard.php"><i class="bi bi-grid-1x2-fill me-2"></i>Open dashboard</a>
+                <a class="btn btn-outline-primary w-100" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a>
+            <?php else: ?>
+                <a class="btn btn-outline-primary w-100" href="login.php"><i class="bi bi-box-arrow-in-right me-2"></i>Official login</a>
+            <?php endif; ?>
         </div>
     </div>
-</nav>
+</aside>
+
+<div class="lp-main">
+    <nav class="lp-mobilebar navbar" aria-label="Landing page header">
+        <div class="container-fluid">
+            <button class="navbar-toggler border-0 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#landingSidebar" aria-controls="landingSidebar" aria-label="Open navigation menu">
+                <i class="bi bi-list fs-2"></i>
+            </button>
+            <a class="navbar-brand d-lg-none d-flex align-items-center gap-2 me-0" href="#home">
+                <img src="images/sk-logo.jpg" alt="" class="lp-logo">
+                <span class="lh-1">
+                    <span class="d-block fw-bold display-font" style="font-size:.95rem">SK Barangay Sikat</span>
+                    <span class="d-block text-secondary" style="font-size:.7rem">KK Youth Profiling</span>
+                </span>
+            </a>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <?php if ($isOfficer): ?>
+                    <a class="btn btn-primary btn-sm px-3" href="dashboard.php"><i class="bi bi-grid-1x2-fill me-1"></i><span class="d-none d-sm-inline">Open dashboard</span><span class="d-sm-none">Dashboard</span></a>
+                    <a class="btn btn-outline-primary btn-sm px-3" href="logout.php"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
+                <?php else: ?>
+                    <a class="btn btn-outline-primary btn-sm px-3" href="login.php"><i class="bi bi-box-arrow-in-right me-1"></i>Official login</a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </nav>
 
 <!-- ============ HERO ============ -->
-<header class="lp-hero">
+<header class="lp-hero" id="home">
     <div class="container py-5">
         <div class="row align-items-center g-5 py-lg-4">
             <div class="col-lg-7">
@@ -501,10 +621,9 @@ $L_EVENTS   = 'announcements.php?view=public';
             <div class="col-lg-5">
                 <h2 class="mb-3">Register with the SK in person</h2>
                 <p class="text-secondary mb-4">Being on the list lets the SK plan programs around what the youth of Sikat actually need, from scholarships to sports.</p>
-                <button type="button" class="btn btn-primary btn-lg px-4 fw-semibold" data-registration-advice><i class="bi bi-person-plus-fill me-2"></i>Start registration</button>
             </div>
             <div class="col-lg-7">
-                <div class="bg-white rounded-4 border px-4 py-2">
+                <div class="lp-steps-card py-2">
                     <div class="lp-step">
                         <div class="lp-stepnum">1</div>
                         <div>
@@ -587,20 +706,24 @@ $L_EVENTS   = 'announcements.php?view=public';
 <footer class="lp-footer py-4">
     <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
         <div>Sangguniang Kabataan of Barangay Sikat, Alfonso, Cavite &bull; FY 2026&ndash;2027</div>
-        <div>
-            <?php if ($isOfficer): ?>
-                <a href="dashboard.php">Dashboard</a>
-            <?php else: ?>
-                <a href="login.php">SK official login</a>
-            <?php endif; ?>
-        </div>
+        <?php if ($isOfficer): ?>
+            <div><a href="dashboard.php">Dashboard</a></div>
+        <?php endif; ?>
     </div>
 </footer>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="app-alerts.js"></script>
 <script>
+document.querySelectorAll('#landingSidebar a[href^="#"]').forEach(function (link) {
+    link.addEventListener('click', function () {
+        if (window.matchMedia('(max-width: 991.98px)').matches) {
+            bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('landingSidebar')).hide();
+        }
+    });
+});
 document.querySelectorAll('[data-registration-advice]').forEach(function (button) {
     button.addEventListener('click', function () {
         window.AppAlerts.show(
