@@ -14,10 +14,19 @@ TECHNOLOGY AND DATA
 - Most application data is stored as JSON records in MySQL's app_data table.
 - init.php supplies page data. storage.js sends authorized changes to api.php,
   which checks permissions before writing.
+- KK member profiles and edit requests are saved together with stale-write
+  checks, so concurrent updates cannot partially overwrite the two records.
+- Production database settings must be supplied through KK_DB_HOST, KK_DB_NAME,
+  KK_DB_USER, and KK_DB_PASS environment variables with KK_APP_ENV=production.
+  Production rejects the MySQL root account, empty passwords, and non-HTTPS
+  requests. Local XAMPP development may use the development defaults.
 - Bootstrap provides the interface; SweetAlert2 provides alerts and
   confirmation dialogs.
 - The SK meeting editor uses local Summernote 0.9.1 (Bootstrap 5), jQuery
   3.7.1 on the meeting page only, and local DOMPurify for minutes rendering.
+- Internal officer pages include the locally vendored AdminLTE dashboard assets
+  and use AdminLTE sidebar/navigation classes. Public pages keep their simpler
+  public-facing layout.
 
 ACCESS AND ROLES
 ----------------
@@ -26,7 +35,7 @@ ACCESS AND ROLES
 - Active SK accounts can use official management pages; write permissions
   depend on SK role. The SK Chairperson/Chairman and Secretary have additional
   role-management permissions.
-- Public registration submissions remain pending until reviewed by officials.
+- Public visitors are directed to register with an SK official in person.
 - APIs enforce permissions for data changes.
 
 MAIN PAGES
@@ -44,19 +53,18 @@ dashboard.php
   activities.
 
 registration.php
-  KK youth profiles, public registration, and member archiving/restoration.
-  Youth are eligible from age 15 through 30; members older than 30 are
-  automatically archived.
+  KK youth profiles and member archiving/restoration. Public visitors are
+  directed to register with an SK official in person. Youth are eligible from
+  age 15 through 30; members older than 30 are automatically archived.
 
 request.php
   Review and manage public registration submissions and KK profile edit
   requests, including date filtering and approval/rejection history.
 
 members.php
-  Member list and SK role administration. Each person has one KK member
-  record; SK roles reference that member. Active standalone Chairman and
-  Secretary accounts also occupy their position seat. Roles can be ended or
-  archived.
+  Member list and SK role administration. Each person has one KK member record;
+  SK roles reference that member. Active standalone Chairman and Secretary
+  accounts also occupy their position seat. Roles can be ended or archived.
 
 officials.php
   Public listing of current SK officials, showing public-safe profile details
@@ -124,15 +132,13 @@ ARCHIVING
 - Cancelled announcements/events remain available to officials for restoration.
 
 BUDGET TRANSPARENCY
--------------------
-Budget and expense summaries appear on the public landing page and dashboard.
-Public summaries omit expense recipients and descriptions; officials can view
-detailed expense records in Reports.
+- Budget and expense summaries appear on the public landing page and dashboard.
+  Public summaries omit expense recipients and descriptions; officials can view
+  detailed expense records in Reports.
 
 MEETING MINUTES
----------------
-Minutes are edited with the local Summernote Bootstrap 5 editor and sanitized
-before saving and rendering. Only the SK Secretary and SK Chairman can edit
-draft minutes; only the Chairman can approve or reopen them. The server limits
-minutes to 20,000 text characters and writes audit entries for saves, approvals,
-and reopens without recording the minutes content.
+- Minutes are edited with the local Summernote Bootstrap 5 editor and sanitized
+  before saving and rendering. Only the SK Secretary and SK Chairman can edit
+  draft minutes; only the Chairman can approve or reopen them. The server limits
+  minutes to 20,000 text characters and writes audit entries for saves,
+  approvals, and reopens without recording the minutes content.
