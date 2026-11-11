@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KK Youth Profiling System | Reports</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css?v=12" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
 
     <style>
         :root {
@@ -35,7 +35,7 @@
 
         .header {
             height:70px;
-            background:white;
+            background:var(--bs-body-bg);
             border-bottom:1px solid var(--line);
             display:flex;
             justify-content:space-between;
@@ -85,7 +85,7 @@
         }
 
         .report-card {
-            background:white;
+            background:var(--bs-body-bg);
             border:1px solid var(--line);
             border-radius:14px;
             padding:22px;
@@ -131,7 +131,7 @@
         }
 
         .filter-box {
-            background:white;
+            background:var(--bs-body-bg);
             border:1px solid var(--line);
             border-radius:14px;
             padding:20px;
@@ -175,7 +175,7 @@
         }
 
         .budget-modal-header {
-            background:white;
+            background:var(--bs-body-bg);
             padding:18px 24px;
             border-bottom:1px solid var(--bs-border-color);
             display:flex;
@@ -292,6 +292,22 @@
             background:var(--bs-body-color);
         }
 
+        html[data-bs-theme="dark"] .save-budget-btn,
+        html[data-bs-theme="dark"] .add-expense-btn,
+        html[data-bs-theme="dark"] .pdf-btn {
+            background:var(--bs-primary)!important;
+            border-color:var(--bs-primary)!important;
+            color:var(--bs-white)!important;
+        }
+
+        html[data-bs-theme="dark"] .save-budget-btn:hover,
+        html[data-bs-theme="dark"] .add-expense-btn:hover,
+        html[data-bs-theme="dark"] .pdf-btn:hover {
+            background:var(--bs-primary-text-emphasis)!important;
+            border-color:var(--bs-primary-text-emphasis)!important;
+            color:#071a33!important;
+        }
+
         .summary-grid {
             display:grid;
             grid-template-columns:repeat(4,1fr);
@@ -300,7 +316,7 @@
         }
 
         .summary-card {
-            background:#fff;
+            background:var(--bs-body-bg);
             border:1px solid var(--bs-border-color);
             border-radius:11px;
             padding:16px;
@@ -353,7 +369,7 @@
         .entry-card,
         .where-card,
         .records-card {
-            background:#fff;
+            background:var(--bs-body-bg);
             border:1px solid var(--bs-border-color);
             border-radius:11px;
             padding:16px;
@@ -376,6 +392,10 @@
 
         .entry-row.three {
             grid-template-columns:1.2fr .75fr 1.2fr;
+        }
+
+        .entry-row.four {
+            grid-template-columns:1.2fr .75fr .75fr 1.2fr;
         }
 
         .budget-textarea {
@@ -486,7 +506,7 @@
 
         .pdf-section {
             margin-top:14px;
-            background:#fff;
+            background:var(--bs-body-bg);
             border:1px solid var(--bs-border-color);
             border-radius:11px;
             padding:16px;
@@ -530,7 +550,8 @@
             .budget-modal { padding:8px; }
             .budget-body { padding:10px; }
             .entry-row,
-            .entry-row.three { grid-template-columns:1fr; }
+            .entry-row.three,
+            .entry-row.four { grid-template-columns:1fr; }
             .pdf-section { flex-direction:column; align-items:stretch; }
             .pdf-btn { width:100%; }
         }
@@ -543,7 +564,7 @@
 <div class="top-strip"></div>
 
 <script src="theme.js"></script>
-<script src="sidebar.js?v=7"></script>
+<script src="sidebar.js?v=10"></script>
 
 <main class="main page-content">
 
@@ -573,7 +594,7 @@
 
 <div class="content">
 
-<section class="hero">
+<section class="hero hero-primary">
     <h1>Reports & Analytics</h1>
     <p>Generate reports for KK youth profiling, attendance, participation, and programs.</p>
 </section>
@@ -711,7 +732,7 @@
                 <div>
                     <h4>Transparency Hub - Budget & Expenses</h4>
                     <div style="font-size:13px;color:var(--bs-secondary-color);margin-top:3px;">
-                        Edit the budget and expense records before generating the final PDF report.
+                    Each fiscal year has its own budget, allocations, and expenses.
                     </div>
                 </div>
                 <div class="fy-badge" id="fyBadge">FY 2026-2027</div>
@@ -729,6 +750,11 @@
                 </div>
 
                 <div class="fund-grid">
+                    <div>
+                        <label class="field-label">View Fiscal Year</label>
+                        <select id="budgetYearSelect" class="budget-select"></select>
+                    </div>
+
                     <div>
                         <label class="field-label">Fiscal Year</label>
                         <input id="budgetFY" class="budget-input" value="2026-2027">
@@ -756,7 +782,7 @@
                 <div class="summary-card">
                     <div class="summary-label">Total Spent</div>
                     <div class="summary-value spent-value" id="summarySpent">₱0.00</div>
-                    <div class="summary-note">All recorded expenses</div>
+                    <div class="summary-note">Expenses in selected fiscal year</div>
                 </div>
 
                 <div class="summary-card">
@@ -775,10 +801,23 @@
 
             </div>
 
+            <div class="records-card mb-3">
+                <h4>Fiscal-Year COP Allocations</h4>
+                <p class="small text-muted">Allocate the total budget across Centers of Participation. Allocations may not exceed the total budget.</p>
+                <div class="table-scroll">
+                    <table class="expense-table">
+                        <thead>
+                            <tr><th>Center of Participation</th><th>Allocated (₱)</th><th>Spent (₱)</th><th>Remaining (₱)</th></tr>
+                        </thead>
+                        <tbody id="allocationTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="entry-grid">
 
                 <div class="entry-card">
-                    <h4>Record Money Spent</h4>
+                    <h4>Record Money Spent <span class="text-muted fs-6">(<span id="expenseFiscalYearLabel">FY 2026-2027</span>)</span></h4>
 
                     <div class="entry-row">
                         <div>
@@ -792,7 +831,7 @@
                         </div>
                     </div>
 
-                    <div class="entry-row three">
+                    <div class="entry-row four">
                         <div>
                             <label class="field-label">Category</label>
                             <select id="expenseCategory" class="budget-select">
@@ -807,6 +846,13 @@
                                 <option>Transportation</option>
                                 <option>Training & Seminars</option>
                                 <option>Other</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="field-label">Center of Participation</label>
+                            <select id="expenseCop" class="budget-select">
+                                <option value="">Select COP</option>
                             </select>
                         </div>
 
@@ -860,6 +906,7 @@
                                 <th>DATE</th>
                                 <th>PROGRAM / EXPENSE</th>
                                 <th>CATEGORY</th>
+                                <th>COP</th>
                                 <th>PAID TO</th>
                                 <th>AMOUNT</th>
                                 <th>DESCRIPTION</th>
@@ -868,7 +915,7 @@
                         </thead>
                         <tbody id="expenseTableBody">
                             <tr>
-                                <td colspan="7" class="empty-row">
+                                <td colspan="8" class="empty-row">
                                     No expenses recorded yet. Add an expense above to show where the money went.
                                 </td>
                             </tr>
@@ -899,12 +946,22 @@
 <script>
 const BUDGET_KEY = 'skTransparencyBudget';
 const EXPENSE_KEY = 'skTransparencyExpenses';
+const COP_CATEGORIES = ['Health', 'Education', 'Economic Empowerment', 'Social Inclusion and Equity',
+    'Peace-Building and Security', 'Governance', 'Active Citizenship', 'Environment', 'Global Mobility', 'Agriculture'];
+COP_CATEGORIES.forEach(cop => {
+    const option = document.createElement('option');
+    option.value = cop;
+    option.textContent = cop;
+    document.getElementById('expenseCop').appendChild(option);
+});
 
 let budgetData = {
     fy: '2026-2027',
-    amount: 0
+    amount: 0,
+    allocations: {}
 };
 
+let budgetsByYear = {};
 let expenseData = [];
 let editingExpenseIndex = -1;
 
@@ -925,31 +982,121 @@ function escapeReportHtml(value) {
 }
 
 function loadBudgetData() {
+    budgetData = { fy:'2026-2027', amount:0, allocations:{} };
+    budgetsByYear = {};
+    document.getElementById('allocationTableBody').innerHTML = '';
     try {
         const savedBudget = JSON.parse(DB.getItem(BUDGET_KEY) || 'null');
         const savedExpenses = JSON.parse(DB.getItem(EXPENSE_KEY) || '[]');
 
         if (savedBudget && typeof savedBudget === 'object') {
-            budgetData = {
+            const legacyBudget = {
                 fy: savedBudget.fy || '2026-2027',
-                amount: Number(savedBudget.amount || 0)
+                amount: Number(savedBudget.amount || 0),
+                allocations: savedBudget.allocations && typeof savedBudget.allocations === 'object'
+                    ? savedBudget.allocations : {}
             };
+            budgetsByYear = savedBudget.budgets && typeof savedBudget.budgets === 'object'
+                ? savedBudget.budgets : {};
+            if (!budgetsByYear[legacyBudget.fy]) budgetsByYear[legacyBudget.fy] = legacyBudget;
+            const selectedYear = savedBudget.fy && budgetsByYear[savedBudget.fy] ? savedBudget.fy : Object.keys(budgetsByYear)[0];
+            budgetData = budgetsByYear[selectedYear] || legacyBudget;
         }
 
-        expenseData = Array.isArray(savedExpenses) ? savedExpenses : [];
+        expenseData = Array.isArray(savedExpenses) ? savedExpenses.map(function (expense) {
+            if (!expense || typeof expense !== 'object') return expense;
+            if (!expense.fiscalYear) expense.fiscalYear = budgetData.fy;
+            return expense;
+        }) : [];
+        renderBudgetYearOptions();
     } catch(error) {
-        budgetData = { fy:'2026-2027', amount:0 };
+        budgetData = { fy:'2026-2027', amount:0, allocations:{} };
+        budgetsByYear = { '2026-2027': budgetData };
         expenseData = [];
+        if (window.AppAlerts) AppAlerts.error('Could not load the saved budget and expense records.');
+        else console.error('Could not load the saved budget and expense records.', error);
     }
+}
+
+function renderBudgetYearOptions() {
+    const select = document.getElementById('budgetYearSelect');
+    const years = Object.keys(budgetsByYear);
+    if (years.indexOf(budgetData.fy) < 0) years.push(budgetData.fy);
+    years.sort();
+    select.innerHTML = years.map(year => '<option value="' + escapeReportHtml(year) + '">' + escapeReportHtml(year) + '</option>').join('');
+    select.value = budgetData.fy;
+}
+
+function expensesForSelectedYear() {
+    return expenseData.filter(expense => String(expense && expense.fiscalYear || '') === String(budgetData.fy));
+}
+
+function saveBudgetStore() {
+    budgetsByYear[budgetData.fy] = {
+        fy: budgetData.fy,
+        amount: Number(budgetData.amount || 0),
+        allocations: Object.assign({}, budgetData.allocations || {})
+    };
+    DB.setItem(BUDGET_KEY, JSON.stringify({
+        fy: budgetData.fy,
+        amount: budgetData.amount,
+        allocations: budgetData.allocations,
+        budgets: budgetsByYear
+    }));
+}
+
+function currentAllocations() {
+    const inputs = Array.from(document.querySelectorAll('[data-cop-allocation]'));
+    if (!inputs.length) return Object.assign({}, budgetData.allocations || {});
+    const allocations = {};
+    inputs.forEach(input => { allocations[input.dataset.copAllocation] = Number(input.value || 0); });
+    return allocations;
+}
+
+function allocationTotal(allocations) {
+    return Object.values(allocations).reduce((sum, amount) => sum + Number(amount || 0), 0);
+}
+
+function renderAllocationTable(allocationsOverride) {
+    const allocations = allocationsOverride || currentAllocations();
+    const spent = {};
+    expensesForSelectedYear().forEach(expense => {
+        if (COP_CATEGORIES.indexOf(expense.cop) !== -1) spent[expense.cop] = (spent[expense.cop] || 0) + Number(expense.amount || 0);
+    });
+    document.getElementById('allocationTableBody').innerHTML = COP_CATEGORIES.map(cop => {
+        const allocated = Number(allocations[cop] || 0), totalSpent = Number(spent[cop] || 0);
+        const remaining = allocated - totalSpent;
+        return `<tr>
+            <td>${escapeReportHtml(cop)}</td>
+            <td><input type="number" min="0" step="0.01" class="budget-input" data-cop-allocation="${escapeReportHtml(cop)}" value="${allocated}"></td>
+            <td>${formatPeso(totalSpent)}</td>
+            <td class="${remaining < 0 ? 'text-danger' : 'text-success'}">${formatPeso(remaining)}</td>
+        </tr>`;
+    }).join('');
 }
 
 function saveBudget() {
     const fy = document.getElementById('budgetFY').value.trim() || '2026-2027';
-    const amount = Math.max(0, Number(document.getElementById('budgetAmount').value || 0));
+    const amount = Number(document.getElementById('budgetAmount').value || 0);
+    const allocations = currentAllocations();
+    if (!Number.isFinite(amount) || amount < 0
+        || Object.values(allocations).some(value => !Number.isFinite(value) || value < 0)
+        || allocationTotal(allocations) > amount + 0.005) {
+        AppAlerts.warning('Enter a valid total budget and ensure COP allocations do not exceed it.');
+        return;
+    }
 
-    budgetData = { fy, amount };
-
-    DB.setItem(BUDGET_KEY, JSON.stringify(budgetData));
+    const previous = budgetData;
+    budgetData = { fy, amount, allocations };
+    try {
+        saveBudgetStore();
+        renderBudgetYearOptions();
+    } catch (error) {
+        budgetData = previous;
+        AppAlerts.error(error.message || 'Could not save budget allocations.');
+        updateBudgetInterface();
+        return;
+    }
 
     updateBudgetInterface();
 
@@ -957,12 +1104,15 @@ function saveBudget() {
 }
 
 function updateBudgetInterface() {
+    renderBudgetYearOptions();
     document.getElementById('budgetFY').value = budgetData.fy;
     document.getElementById('budgetAmount').value = budgetData.amount;
     document.getElementById('fyBadge').textContent = 'FY ' + budgetData.fy;
+    document.getElementById('expenseFiscalYearLabel').textContent = 'FY ' + budgetData.fy;
 
     const totalBudget = Number(budgetData.amount || 0);
-    const totalSpent = expenseData.reduce((sum, expense) => {
+    const selectedExpenses = expensesForSelectedYear();
+    const totalSpent = selectedExpenses.reduce((sum, expense) => {
         return sum + Number(expense.amount || 0);
     }, 0);
 
@@ -978,39 +1128,51 @@ function updateBudgetInterface() {
 
     document.getElementById('summaryProgress').style.width = progress + '%';
 
-    renderCategoryBreakdown(totalSpent);
-    renderExpenseTable();
+    renderCategoryBreakdown(totalSpent, selectedExpenses);
+    renderAllocationTable(budgetData.allocations);
+    renderExpenseTable(selectedExpenses);
 }
 
 function addOrUpdateExpense() {
     const date = document.getElementById('expenseDate').value;
     const title = document.getElementById('expenseTitle').value.trim();
     const category = document.getElementById('expenseCategory').value;
+    const cop = document.getElementById('expenseCop').value;
     const amount = Number(document.getElementById('expenseAmount').value || 0);
     const recipient = document.getElementById('expenseRecipient').value.trim();
     const description = document.getElementById('expenseDescription').value.trim();
 
-    if (!date || !title || !category || amount <= 0 || !recipient || !description) {
+    if (!date || !title || !category || !cop || !Number.isFinite(amount) || amount <= 0 || !recipient || !description) {
         AppAlerts.warning('Please complete all expense fields.');
         return;
     }
 
     const expense = {
+        fiscalYear: budgetData.fy,
         date,
         title,
         category,
+        cop,
         amount,
         recipient,
         description
     };
 
+    const previousExpenses = expenseData.slice();
     if (editingExpenseIndex >= 0) {
         expenseData[editingExpenseIndex] = expense;
     } else {
         expenseData.push(expense);
     }
 
-    DB.setItem(EXPENSE_KEY, JSON.stringify(expenseData));
+    try {
+        DB.setItem(EXPENSE_KEY, JSON.stringify(expenseData));
+    } catch (error) {
+        expenseData = previousExpenses;
+        AppAlerts.error(error.message || 'Could not save the expense.');
+        updateBudgetInterface();
+        return;
+    }
 
     clearExpenseForm();
     editingExpenseIndex = -1;
@@ -1032,6 +1194,7 @@ function editExpense(index) {
     document.getElementById('expenseDate').value = expense.date || '';
     document.getElementById('expenseTitle').value = expense.title || '';
     document.getElementById('expenseCategory').value = expense.category || '';
+    document.getElementById('expenseCop').value = expense.cop || '';
     document.getElementById('expenseAmount').value = expense.amount || '';
     document.getElementById('expenseRecipient').value = expense.recipient || '';
     document.getElementById('expenseDescription').value = expense.description || '';
@@ -1063,8 +1226,16 @@ function deleteExpense(index) {
     AppAlerts.confirm('Delete this expense record?', 'Delete expense?', 'Delete')
         .then(function (confirmed) {
             if (!confirmed) return;
+            const previousExpenses = expenseData.slice();
             expenseData.splice(index, 1);
-            DB.setItem(EXPENSE_KEY, JSON.stringify(expenseData));
+            try {
+                DB.setItem(EXPENSE_KEY, JSON.stringify(expenseData));
+            } catch (error) {
+                expenseData = previousExpenses;
+                AppAlerts.error(error.message || 'Could not delete the expense.');
+                updateBudgetInterface();
+                return;
+            }
 
             if (editingExpenseIndex === index) {
                 cancelExpenseEdit();
@@ -1078,15 +1249,16 @@ function clearExpenseForm() {
     document.getElementById('expenseDate').value = '';
     document.getElementById('expenseTitle').value = '';
     document.getElementById('expenseCategory').value = '';
+    document.getElementById('expenseCop').value = '';
     document.getElementById('expenseAmount').value = '';
     document.getElementById('expenseRecipient').value = '';
     document.getElementById('expenseDescription').value = '';
 }
 
-function renderCategoryBreakdown(totalSpent) {
+function renderCategoryBreakdown(totalSpent, selectedExpenses) {
     const container = document.getElementById('categoryBreakdown');
 
-    if (!expenseData.length) {
+    if (!selectedExpenses.length) {
         container.className = 'where-empty';
         container.innerHTML = 'No spending recorded yet.';
         return;
@@ -1094,7 +1266,7 @@ function renderCategoryBreakdown(totalSpent) {
 
     const totals = {};
 
-    expenseData.forEach(expense => {
+    selectedExpenses.forEach(expense => {
         const category = expense.category || 'Other';
         totals[category] = (totals[category] || 0) + Number(expense.amount || 0);
     });
@@ -1119,16 +1291,16 @@ function renderCategoryBreakdown(totalSpent) {
     }).join('');
 }
 
-function renderExpenseTable() {
+function renderExpenseTable(selectedExpenses) {
     const tbody = document.getElementById('expenseTableBody');
     const count = document.getElementById('expenseCount');
 
-    count.textContent = expenseData.length + (expenseData.length === 1 ? ' Expense' : ' Expenses');
+    count.textContent = selectedExpenses.length + (selectedExpenses.length === 1 ? ' Expense' : ' Expenses');
 
-    if (!expenseData.length) {
+    if (!selectedExpenses.length) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="empty-row">
+                <td colspan="8" class="empty-row">
                     No expenses recorded yet. Add an expense above to show where the money went.
                 </td>
             </tr>
@@ -1136,9 +1308,9 @@ function renderExpenseTable() {
         return;
     }
 
-    const sorted = expenseData.map((expense,index) => ({
+    const sorted = selectedExpenses.map(expense => ({
         ...expense,
-        originalIndex:index
+        originalIndex: expenseData.indexOf(expense)
     })).sort((a,b) => String(b.date).localeCompare(String(a.date)));
 
     tbody.innerHTML = sorted.map(expense => `
@@ -1146,6 +1318,7 @@ function renderExpenseTable() {
             <td>${escapeReportHtml(expense.date)}</td>
             <td>${escapeReportHtml(expense.title)}</td>
             <td>${escapeReportHtml(expense.category)}</td>
+            <td>${escapeReportHtml(expense.cop || 'Unallocated')}</td>
             <td>${escapeReportHtml(expense.recipient)}</td>
             <td>${formatPeso(expense.amount)}</td>
             <td>${escapeReportHtml(expense.description)}</td>
@@ -1169,6 +1342,15 @@ function generateBudgetReport() {
     document.body.style.overflow = 'hidden';
 }
 
+document.getElementById('budgetYearSelect').addEventListener('change', function () {
+    const selected = this.value;
+    if (!budgetsByYear[selected]) return;
+    budgetData = budgetsByYear[selected];
+    editingExpenseIndex = -1;
+    cancelExpenseEdit();
+    updateBudgetInterface();
+});
+
 function closeBudgetReport() {
     document.getElementById('budgetModal').classList.remove('show');
     document.body.style.overflow = '';
@@ -1190,18 +1372,34 @@ document.addEventListener('keydown', function(event) {
 function generateBudgetPDF() {
     const fy = document.getElementById('budgetFY').value.trim() || '2026-2027';
     const totalBudget = Number(document.getElementById('budgetAmount').value || 0);
+    const allocations = currentAllocations();
+    if (!Number.isFinite(totalBudget) || totalBudget < 0
+        || Object.values(allocations).some(value => !Number.isFinite(value) || value < 0)
+        || allocationTotal(allocations) > totalBudget + 0.005) {
+        AppAlerts.warning('Enter a valid total budget and ensure COP allocations do not exceed it.');
+        return;
+    }
 
     /* Save the current edited budget before generating */
-    budgetData = { fy, amount: totalBudget };
-    DB.setItem(BUDGET_KEY, JSON.stringify(budgetData));
+    const previousBudget = budgetData;
+    budgetData = { fy, amount: totalBudget, allocations };
+    try {
+        saveBudgetStore();
+    } catch (error) {
+        budgetData = previousBudget;
+        AppAlerts.error(error.message || 'Could not save the budget report.');
+        updateBudgetInterface();
+        return;
+    }
 
-    const totalSpent = expenseData.reduce((sum,e) => sum + Number(e.amount || 0),0);
+    const selectedExpenses = expensesForSelectedYear();
+    const totalSpent = selectedExpenses.reduce((sum,e) => sum + Number(e.amount || 0),0);
     const remaining = totalBudget - totalSpent;
     const utilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
     const categoryTotals = {};
 
-    expenseData.forEach(expense => {
+    selectedExpenses.forEach(expense => {
         const category = expense.category || 'Other';
         categoryTotals[category] =
             (categoryTotals[category] || 0) + Number(expense.amount || 0);
@@ -1216,8 +1414,17 @@ function generateBudgetPDF() {
             </tr>
         `).join('');
 
-    const expenseRows = expenseData.length
-        ? expenseData
+    const spentByCop = {};
+    selectedExpenses.forEach(expense => {
+        if (COP_CATEGORIES.indexOf(expense.cop) !== -1) spentByCop[expense.cop] = (spentByCop[expense.cop] || 0) + Number(expense.amount || 0);
+    });
+    const allocationRows = COP_CATEGORIES.map(cop => {
+        const allocated = Number(allocations[cop] || 0), spent = Number(spentByCop[cop] || 0);
+        return `<tr><td>${escapeReportHtml(cop)}</td><td class="right">${formatPeso(allocated)}</td><td class="right">${formatPeso(spent)}</td><td class="right">${formatPeso(allocated - spent)}</td></tr>`;
+    }).join('');
+
+    const expenseRows = selectedExpenses.length
+        ? selectedExpenses
             .slice()
             .sort((a,b) => String(b.date).localeCompare(String(a.date)))
             .map(expense => `
@@ -1225,12 +1432,13 @@ function generateBudgetPDF() {
                     <td>${escapeReportHtml(expense.date)}</td>
                     <td>${escapeReportHtml(expense.title)}</td>
                     <td>${escapeReportHtml(expense.category)}</td>
+                    <td>${escapeReportHtml(expense.cop || 'Unallocated')}</td>
                     <td>${escapeReportHtml(expense.recipient)}</td>
                     <td class="right">${formatPeso(expense.amount)}</td>
                     <td>${escapeReportHtml(expense.description)}</td>
                 </tr>
             `).join('')
-        : `<tr><td colspan="6" class="center">No expenses recorded.</td></tr>`;
+        : `<tr><td colspan="7" class="center">No expenses recorded.</td></tr>`;
 
     const reportWindow = window.open('', '_blank', 'width=1200,height=800');
 
@@ -1313,7 +1521,7 @@ function generateBudgetPDF() {
                 }
 
                 .spent { color:#dc3545; }
-                .remaining { color:#198754; }
+                .remaining { color:#0d6efd; }
 
                 h2 {
                     font-size:18px;
@@ -1442,6 +1650,19 @@ function generateBudgetPDF() {
                     </tbody>
                 </table>
 
+                <h2>Fiscal-Year COP Allocations</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Center of Participation</th>
+                            <th style="text-align:right;">Allocated</th>
+                            <th style="text-align:right;">Spent</th>
+                            <th style="text-align:right;">Remaining</th>
+                        </tr>
+                    </thead>
+                    <tbody>${allocationRows}</tbody>
+                </table>
+
                 <h2>Complete Expense Records</h2>
 
                 <table>
@@ -1450,6 +1671,7 @@ function generateBudgetPDF() {
                             <th>Date</th>
                             <th>Program / Expense</th>
                             <th>Category</th>
+                            <th>COP</th>
                             <th>Paid To / Recipient</th>
                             <th style="text-align:right;">Amount</th>
                             <th>Description</th>
@@ -1610,7 +1832,7 @@ function buildAttendanceReport(startDate, endDate, includeMinutes) {
     });
     const rows = [];
     const minutesSections = [];
-    let present = 0, late = 0, excused = 0, absent = 0;
+    let present = 0, late = 0, excused = 0, absent = 0, unknown = 0;
     meetings.filter(function (meeting) {
         return meeting && reportDateInRange(meeting.startDate || meeting.date, startDate, endDate);
     }).forEach(function (meeting) {
@@ -1629,6 +1851,7 @@ function buildAttendanceReport(startDate, endDate, includeMinutes) {
             else if (status === 'Late') late++;
             else if (status === 'Excused') excused++;
             else if (status === 'Absent') absent++;
+            else unknown++;
             const member = memberById[String(memberId)];
             rows.push([
                 meeting.startDate || meeting.date || '',
@@ -1643,7 +1866,7 @@ function buildAttendanceReport(startDate, endDate, includeMinutes) {
     rows.sort(function (a, b) {
         return String(a[0]).localeCompare(String(b[0])) || String(a[1]).localeCompare(String(b[1]));
     });
-    const total = present + late + excused + absent;
+    const total = present + late + excused + absent + unknown;
     const reportNotes = ['This report uses attendance recorded for SK meetings. It is not youth program/event attendance.'];
     if (includeMinutes && !minutesSections.length) reportNotes.push('No meeting minutes are available for the selected date range.');
     openDataReport('Attendance Report', reportDateLabel(startDate, endDate),
@@ -1654,32 +1877,36 @@ function buildAttendanceReport(startDate, endDate, includeMinutes) {
             { label: 'Present', value: String(present) },
             { label: 'Late', value: String(late) },
             { label: 'Excused', value: String(excused) },
-            { label: 'Absent', value: String(absent) }
+            { label: 'Absent', value: String(absent) },
+            { label: 'Unknown status', value: String(unknown) }
         ],
         minutesSections.join(''));
 }
 
 function buildParticipationReport(startDate, endDate) {
-    const signups = reportArray('skEventRegistrations').filter(function (signup) {
-        return signup && reportDateInRange(signup.submittedAt || signup.date, startDate, endDate);
-    });
-    const walkins = reportArray('skEventAttendance').filter(function (record) {
-        return record && reportDateInRange(record.attendanceMarkedAt, startDate, endDate);
-    });
     const announcements = reportArray('skAnnouncements');
     const eventTitles = {};
+    const eventDates = {};
     announcements.forEach(function (event) {
-        if (event && event.id != null) eventTitles[String(event.id)] = event.title || 'Untitled event';
+        if (event && event.id != null) {
+            eventTitles[String(event.id)] = event.title || 'Untitled event';
+            eventDates[String(event.id)] = event.date || '';
+        }
+    });
+    const selectedEventIds = {};
+    Object.keys(eventDates).forEach(function (eventId) {
+        if (reportDateInRange(eventDates[eventId], startDate, endDate)) selectedEventIds[eventId] = true;
+    });
+    const signups = reportArray('skEventRegistrations').filter(function (signup) {
+        return signup && selectedEventIds[String(signup.eventId || '')];
+    });
+    const walkins = reportArray('skEventAttendance').filter(function (record) {
+        return record && selectedEventIds[String(record.eventId || '')];
     });
     const totals = {};
     const linkedAttendees = {};
-    const signupMemberEvents = {};
+    const attendedSignupMemberEvents = {};
     const walkinMemberEvents = {};
-    reportArray('skEventRegistrations').forEach(function (signup) {
-        if (signup && signup.memberId) {
-            signupMemberEvents[String(signup.eventId || '') + ':' + String(signup.memberId)] = true;
-        }
-    });
     signups.forEach(function (signup) {
         const eventId = String(signup.eventId || '');
         const title = signup.eventTitle || eventTitles[eventId] || 'Unknown event';
@@ -1692,6 +1919,7 @@ function buildParticipationReport(startDate, endDate) {
             if (signup.memberId) {
                 totals[key].members[String(signup.memberId)] = true;
                 linkedAttendees[String(signup.memberId)] = true;
+                attendedSignupMemberEvents[eventId + ':' + String(signup.memberId)] = true;
             }
         } else if (status === 'Did not attend') totals[key].absent++;
         else totals[key].unmarked++;
@@ -1700,7 +1928,7 @@ function buildParticipationReport(startDate, endDate) {
         const eventId = String(record.eventId || '');
         const memberId = String(record.memberId || '');
         const memberEventKey = eventId + ':' + memberId;
-        if (memberId && (signupMemberEvents[memberEventKey] || walkinMemberEvents[memberEventKey])) return;
+        if (memberId && (attendedSignupMemberEvents[memberEventKey] || walkinMemberEvents[memberEventKey])) return;
         if (memberId) walkinMemberEvents[memberEventKey] = true;
         const title = record.eventTitle || eventTitles[eventId] || 'Unknown event';
         const key = eventId || title;
@@ -1727,8 +1955,8 @@ function buildParticipationReport(startDate, endDate) {
         ['Event / program', 'Sign-ups', 'Attended', 'Did not attend', 'Not recorded', 'Linked KK members attended'], rows,
         [
             'Sign-up totals and confirmed attendance are tracked separately. Unmarked sign-ups are not counted as attendees; walk-in attendance is included.',
-            'The date filter applies to registration submission dates for sign-ups and attendance-marked dates for walk-ins.',
-            'Linked KK member totals include registrations associated with member accounts and walk-ins. Older sign-ups and sign-ups from unlinked accounts are counted in event totals but not linked member totals.'
+            'The date filter applies to the scheduled event date. All sign-ups and attendance records belonging to events in the selected range are included.',
+            'A walk-in is counted unless the same linked member already has a sign-up marked Attended for that event. A prior sign-up marked Did not attend does not suppress a recorded walk-in. Records linked to deleted or unknown events are not included because their event date cannot be verified.'
         ],
         [
             { label: 'Sign-ups in range', value: String(signups.length) },
@@ -1746,14 +1974,14 @@ function buildProgramsReport(startDate, endDate) {
     });
     const signupTotals = {};
     const attendanceTotals = {};
-    const signupMemberEvents = {};
+    const attendedSignupMemberEvents = {};
     reportArray('skEventRegistrations').forEach(function (signup) {
         if (signup && signup.eventId != null) {
             const id = String(signup.eventId);
             signupTotals[id] = (signupTotals[id] || 0) + 1;
-            if (signup.memberId) signupMemberEvents[id + ':' + String(signup.memberId)] = true;
             if (signup.attendanceStatus === 'Attended') {
                 attendanceTotals[id] = (attendanceTotals[id] || 0) + 1;
+                if (signup.memberId) attendedSignupMemberEvents[id + ':' + String(signup.memberId)] = true;
             }
         }
     });
@@ -1763,7 +1991,7 @@ function buildProgramsReport(startDate, endDate) {
         const id = String(record.eventId);
         const memberId = String(record.memberId || '');
         const memberEventKey = id + ':' + memberId;
-        if (memberId && (signupMemberEvents[memberEventKey] || walkinMemberEvents[memberEventKey])) return;
+        if (memberId && (attendedSignupMemberEvents[memberEventKey] || walkinMemberEvents[memberEventKey])) return;
         if (memberId) walkinMemberEvents[memberEventKey] = true;
         attendanceTotals[id] = (attendanceTotals[id] || 0) + 1;
     });
@@ -1785,7 +2013,7 @@ function buildProgramsReport(startDate, endDate) {
     });
     openDataReport('Programs Report', reportDateLabel(startDate, endDate),
         ['Date', 'Program / activity', 'Category', 'Venue', 'Publication', 'Status', 'Sign-ups', 'Attended'], rows,
-        ['Program data comes from SK announcements. Sign-ups are submitted registrations; attendance includes sign-ups marked Attended and walk-in KK members.'],
+        ['Program data comes from SK announcements. The date filter selects programs by their scheduled date; sign-ups and attendance totals are then limited to those programs. Attendance includes sign-ups marked Attended and walk-in KK members.'],
         [{ label: 'Programs in report', value: String(events.length) }]);
 }
 
@@ -1794,28 +2022,32 @@ function buildAnnualSummary(startDate, endDate) {
     const announcements = reportArray('skAnnouncements').filter(function (event) {
         return event && reportDateInRange(event.date, startDate, endDate);
     });
+    const eventIds = {};
+    announcements.forEach(function (event) {
+        if (event && event.id != null) eventIds[String(event.id)] = true;
+    });
     const meetings = reportArray('skMeetings').filter(function (meeting) {
         return meeting && reportDateInRange(meeting.startDate || meeting.date, startDate, endDate);
     });
     const signups = reportArray('skEventRegistrations').filter(function (signup) {
-        return signup && reportDateInRange(signup.submittedAt || signup.date, startDate, endDate);
+        return signup && eventIds[String(signup.eventId || '')];
     });
     const confirmedEventSignups = reportArray('skEventRegistrations').filter(function (signup) {
         return signup && signup.attendanceStatus === 'Attended' &&
-            reportDateInRange(signup.attendanceMarkedAt || signup.submittedAt || signup.date, startDate, endDate);
+            eventIds[String(signup.eventId || '')];
     });
-    const signupMemberEvents = {};
+    const attendedSignupMemberEvents = {};
     reportArray('skEventRegistrations').forEach(function (signup) {
-        if (signup && signup.eventId != null && signup.memberId) {
-            signupMemberEvents[String(signup.eventId) + ':' + String(signup.memberId)] = true;
+        if (signup && signup.eventId != null && signup.memberId && signup.attendanceStatus === 'Attended') {
+            attendedSignupMemberEvents[String(signup.eventId) + ':' + String(signup.memberId)] = true;
         }
     });
     const walkinMemberEvents = {};
     const walkins = reportArray('skEventAttendance').filter(function (record) {
-        if (!record || !reportDateInRange(record.attendanceMarkedAt, startDate, endDate)) return false;
+        if (!record || !eventIds[String(record.eventId || '')]) return false;
         const memberEventKey = String(record.eventId || '') + ':' + String(record.memberId || '');
         if (!record.memberId) return true;
-        if (signupMemberEvents[memberEventKey] || walkinMemberEvents[memberEventKey]) return false;
+        if (attendedSignupMemberEvents[memberEventKey] || walkinMemberEvents[memberEventKey]) return false;
         walkinMemberEvents[memberEventKey] = true;
         return true;
     });
@@ -1860,9 +2092,9 @@ function buildAnnualSummary(startDate, endDate) {
     openDataReport('Annual Summary', reportDateLabel(startDate, endDate),
         ['Measure', 'Total'], rows,
         [
-            'Member totals are current totals and are not limited by the selected date range.',
+            'Member totals are current totals and are not limited by the selected date range; they describe the membership state when this report is generated.',
             'SK meeting attendance and event attendance are reported separately. Event sign-ups are not confirmed attendance.',
-            'Event attendance counts confirmed sign-ups and walk-ins by the date attendance was recorded. Older sign-ups and unlinked accounts cannot be attributed to individual members.'
+            'The selected date range filters events by scheduled event date. Sign-ups and attendance for those events are included regardless of when registration or attendance was recorded.'
         ]);
 }
 
@@ -1917,7 +2149,7 @@ loadBudgetData();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app-alerts.js?v=2"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>

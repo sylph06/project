@@ -26,6 +26,33 @@ function sk_role_rows($pdo, $forUpdate = false) {
     return $roles;
 }
 
+function sk_default_committees() {
+    return [
+        'Committee on Education and Culture',
+        'Committee on Environmental Protection',
+        'Committee on Youth Employment and Livelihood',
+        'Committee on Health',
+        'Committee on Gender and Development (GAD)',
+        'Committee on Sports Development',
+        'Committee on Anti-Drug Abuse and Social Protection',
+    ];
+}
+
+function sk_committee_names($pdo = null, $forUpdate = false) {
+    if ($pdo === null) return sk_default_committees();
+    $sql = "SELECT data_value FROM app_data WHERE data_key = 'skCommittees'" . ($forUpdate ? ' FOR UPDATE' : '');
+    $raw = $pdo->query($sql)->fetchColumn();
+    if ($raw === false) return sk_default_committees();
+    $names = json_decode((string)$raw, true);
+    if (!is_array($names) || ($names !== [] && array_keys($names) !== range(0, count($names) - 1))) {
+        throw new RuntimeException('Committee data is invalid.');
+    }
+    foreach ($names as $name) {
+        if (!is_string($name) || trim($name) === '') throw new RuntimeException('Committee data is invalid.');
+    }
+    return array_values(array_unique($names));
+}
+
 function sk_role_write($pdo, $role, $updatedBy) {
     $payload = json_encode($role, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR);
     if (USE_SK_ROLES_TABLE) {
@@ -183,31 +210,19 @@ function sk_role_seat_error($pdo, $roles, $position, $exceptRoleId = null) {
         : 'All ' . $capacities[$position] . ' ' . $position . ' seats are already filled by active members.';
 }
 
-function sk_role_validate_payload($input, $allowLegacyViceChairperson = false) {
+function sk_role_validate_payload($input, $allowLegacyViceChairperson = false, $pdo = null) {
     if (!is_array($input)) throw new RuntimeException('A role object is required.');
     $positions = ['SK Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad'];
     if ($allowLegacyViceChairperson) $positions[] = 'SK Vice Chairperson';
-    $committees = [
-        'Committee on Education and Culture',
-        'Committee on Environmental Protection',
-        'Committee on Youth Employment and Livelihood',
-        'Committee on Health',
-        'Committee on Gender and Development (GAD)',
-        'Committee on Sports Development',
-        'Committee on Anti-Drug Abuse and Social Protection',
-    ];
+    $committees = sk_committee_names($pdo);
     $position = $input['position'] ?? '';
     $committee = $input['committee'] ?? '';
     $basis = $input['basis'] ?? '';
     $year = (string)($input['electionYear'] ?? '');
     if (!in_array($position, $positions, true)) throw new RuntimeException('Select a valid SK position.');
-    if ($position === 'SK Kagawad') {
-        if (!is_string($committee) || !in_array($committee, $committees, true)) {
-            throw new RuntimeException('Select a valid committee for the SK Kagawad.');
-        }
-
-    } elseif ($committee !== '' && $committee !== null) {
-        throw new RuntimeException('Only SK Kagawad roles can have a committee assignment.');
+    if ($committee !== '' && $committee !== null
+        && (!is_string($committee) || !in_array($committee, $committees, true))) {
+        throw new RuntimeException('Select a valid committee.');
     }
     if (!in_array($basis, ['elected', 'appointed'], true)) throw new RuntimeException('Basis must be elected or appointed.');
     if (!preg_match('/^\d{4}$/', $year) || (int)$year < 2000 || (int)$year > 2100) {
@@ -226,7 +241,7 @@ function sk_role_validate_payload($input, $allowLegacyViceChairperson = false) {
     }
     return [
         'position' => $position,
-        'committee' => $position === 'SK Kagawad' ? $committee : null,
+        'committee' => $committee === '' || $committee === null ? null : $committee,
         'basis' => $basis,
         'electionYear' => $year,
         'dateElected' => $elected,

@@ -16,8 +16,9 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KK Youth Profiling System | Official Login</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
 
     <style>
         /* Uses only Bootstrap's own colours, same as the rest of the system */
@@ -154,6 +155,17 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
         }
         .input-group .toggle-pass:hover{ color:var(--bs-primary); }
 
+        html[data-bs-theme="dark"] .login-card{
+            background:var(--bs-secondary-bg);
+            color:var(--bs-body-color);
+        }
+        html[data-bs-theme="dark"] .login-card .input-group-text,
+        html[data-bs-theme="dark"] .input-group .toggle-pass{
+            background:var(--bs-tertiary-bg);
+            color:var(--bs-body-color);
+            border-color:var(--bs-border-color);
+        }
+
         .btn-login{
             background:var(--bs-primary);
             border-color:var(--bs-primary);
@@ -284,7 +296,7 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
                     <i class="bi bi-globe2 me-2"></i>View as Public
                 </a>
                 <div class="text-center text-secondary small mt-2">
-                    No password needed. Public view is limited to SK Officials and Announcements.
+                    No password needed. Public view is limited to SK Officials, Announcements, and Youth Registration.
                 </div>
 
             </div>
@@ -312,7 +324,8 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="theme.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
 /* =========================================================
    LOGIN PAGE
@@ -325,8 +338,9 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
     "use strict";
 
     var NEXT_PAGE = <?= json_encode($nextPage, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    var MAX_TRIES = 5;          // wrong tries before a short lock (the SERVER enforces this: api.php)
-    var LOCK_SECONDS = 20;
+    var CSRF_TOKEN = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var MAX_TRIES = 3;          // first server lock threshold; later locks increase
+    var LOCK_SECONDS = 60;
 
     var $ = function (id) { return document.getElementById(id); };
     var tries = 0;
@@ -413,7 +427,7 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
     function postLogin(user, pass, done) {
         fetch("api.php?action=login", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
             body: JSON.stringify({ username: user, password: pass })
         })
         .then(function (r) { return r.json(); })

@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KK Youth Profiling System | Announcements</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css?v=12" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
     <script src="theme.js"></script>
     <script>
         window.ANN_MODE = "<?= is_limited_viewer() ? 'public' : 'official' ?>";
@@ -969,7 +969,7 @@ html.dark-mode .filter-pill{
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=7"></script>
+<script src="sidebar.js?v=10"></script>
 
 <div class="page-content">
 
@@ -1162,6 +1162,12 @@ html.dark-mode .filter-pill{
                         </div>
 
                         <div class="col-12">
+                            <label class="form-label" for="annCenters">Additional Centers of Participation</label>
+                            <select id="annCenters" class="form-select" multiple size="4"></select>
+                            <div class="form-text">The primary category above is always included. Select any additional COP areas that apply.</div>
+                        </div>
+
+                        <div class="col-12">
                             <label class="form-label" for="annDescription">Short Description *</label>
                             <textarea id="annDescription" class="form-control" rows="2" maxlength="200"
                                       placeholder="One or two sentences shown on the card"></textarea>
@@ -1305,9 +1311,9 @@ html.dark-mode .filter-pill{
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js"></script>
+<script src="app-alerts.js?v=2"></script>
 <script>
 /* =========================================================
    ANNOUNCEMENTS CORE  (used by both the official view and the public view)
@@ -1473,6 +1479,11 @@ html.dark-mode .filter-pill{
     /* ---------- load / save (MySQL through storage.js) ---------- */
     function normalize(a) {
         if (CATEGORIES.indexOf(a.category) === -1) a.category = LEGACY_CATEGORY[a.category] || "Governance";
+        var centers = Array.isArray(a.centers) ? a.centers.filter(function (center) {
+            return CATEGORIES.indexOf(center) !== -1;
+        }) : [];
+        if (centers.indexOf(a.category) === -1) centers.unshift(a.category);
+        a.centers = CATEGORIES.filter(function (center) { return centers.indexOf(center) !== -1; });
         a.startTime = a.startTime || a.time || "00:00";      // older records used "time"
         a.endTime = a.endTime || "";
         a.contact = a.contact || ""; a.regLink = a.regLink || ""; a.notes = a.notes || "";
@@ -1914,6 +1925,9 @@ html.dark-mode .filter-pill{
         const o = document.createElement("option");
         o.value = c; o.textContent = c;
         $("annCategory").appendChild(o);
+        const extra = document.createElement("option");
+        extra.value = c; extra.textContent = c;
+        $("annCenters").appendChild(extra);
     });
 
     /* ---------- pictures: upload, preview, replace, remove ---------- */
@@ -2018,6 +2032,7 @@ html.dark-mode .filter-pill{
         $("annBanner").value = "";
         imageError("banner", "");
         showImage("banner");
+        Array.prototype.forEach.call($("annCenters").options, function (option) { option.selected = false; });
         toggleOther("annVenue"); toggleOther("annOrganizer");
     }
 
@@ -2036,6 +2051,10 @@ html.dark-mode .filter-pill{
         $("annId").value = a.id;
         $("annTitle").value = a.title;
         $("annCategory").value = a.category;
+        var centers = Array.isArray(a.centers) ? a.centers : [a.category];
+        Array.prototype.forEach.call($("annCenters").options, function (option) {
+            option.selected = centers.indexOf(option.value) !== -1 && option.value !== a.category;
+        });
         $("annDescription").value = a.description;
         $("annDetails").value = a.details;
         $("annDate").value = a.date;
@@ -2086,6 +2105,7 @@ html.dark-mode .filter-pill{
         const data = {
             title: $("annTitle").value.trim(),
             category: $("annCategory").value,
+            centers: Array.from($("annCenters").selectedOptions).map(function (option) { return option.value; }),
             description: $("annDescription").value.trim(),
             details: $("annDetails").value.trim(),
             date: $("annDate").value,
@@ -2099,6 +2119,8 @@ html.dark-mode .filter-pill{
             cancelled: $("annEventStatus").value === "Cancelled",
             publishDate: $("annPublishDate").value
         };
+        data.centers.unshift(data.category);
+        data.centers = CATEGORIES.filter(function (center) { return data.centers.indexOf(center) !== -1; });
         if (target === "Published" && !data.publishDate) data.publishDate = Core.todayISO();
 
         const now = new Date().toISOString();

@@ -1,14 +1,46 @@
-<?php require_once __DIR__ . '/config.php'; require_viewer(); ?>
+<?php
+require_once __DIR__ . '/config.php';
+require_viewer();
+if (is_limited_viewer()) {
+    $registrationNotice = 'KK youth registration is handled in person. Please visit the SK Office at the Barangay Hall in Barangay Sikat, Alfonso, Cavite. An SK official will assist you with registering and creating your account.';
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>KK Youth Registration</title>
+        <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light">
+        <main class="container py-5" style="max-width: 720px">
+            <div class="card border-primary">
+                <div class="card-body p-4">
+                    <h1 class="h3">KK Youth Registration</h1>
+                    <div class="alert alert-info mb-4" role="status"><?= e($registrationNotice) ?></div>
+                    <a class="btn btn-primary" href="announcements.php">Back to public information</a>
+                    <?php if (is_public()): ?>
+                        <a class="btn btn-outline-secondary" href="login.php">Official login</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </main>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+?>
 <!DOCTYPE html>
-<html lang="en"<?= is_public() ? ' class="is-public"' : '' ?>>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KK Youth Profiling System | Youth Registration</title>
  
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css?v=12" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
  
     <style>
         :root {
@@ -347,9 +379,14 @@
             width: 100%;
         }
 
-        #centerPrograms .center-subtype {
-            height: 38px;
-            font-size: 14px;
+        #centerPrograms .center-subtype-options {
+            display: grid;
+            gap: 6px;
+        }
+
+        #centerPrograms .center-subtype-options .check-item {
+            padding: 6px 9px;
+            font-weight: normal;
         }
     </style>
 <?php include __DIR__ . '/init.php'; ?>
@@ -360,7 +397,7 @@
 <div class="top-strip"></div>
  
 <script src="theme.js"></script>
-<script src="sidebar.js?v=7"></script>
+<script src="sidebar.js?v=10"></script>
  
 <main class="main page-content">
  
@@ -381,18 +418,18 @@
                 <div class="header-identity-name"><?= e(uname()) ?></div>
                 <div class="header-identity-role"><?= e(strtoupper(urole())) ?></div>
             </div>
-            <a href="<?= is_public() ? 'login.php' : 'logout.php' ?>" class="btn btn-sm header-logout">
+            <a href="logout.php" class="btn btn-sm header-logout">
                 <i class="bi bi-box-arrow-right me-1"></i>
-                <?= is_public() ? 'Official Login' : 'Logout' ?>
+                Logout
             </a>
         </div>
     </header>
  
     <div class="content">
  
-        <section class="hero">
+        <section class="hero hero-primary">
             <h1>KK Youth Profiling</h1>
-            <p><?= is_public() ? 'Fill in the form to register as a KK youth member. An SK officer will review your registration.' : 'Register a new youth member into the Katipunan ng Kabataan database.' ?></p>
+            <p>Register a new youth member into the Katipunan ng Kabataan database.</p>
         </section>
  
         <div class="info-box">
@@ -404,7 +441,6 @@
         <div id="formMessage"></div>
  
         <form id="registrationForm" novalidate>
- 
             <div class="row">
  
                 <div class="col-lg-12">
@@ -497,6 +533,12 @@
                                         Date of Birth <span class="required">*</span>
                                     </label>
                                     <input type="date" class="form-control" id="birthDate">
+                                    <div class="form-check mt-2 d-none" id="guardianConsentWrap">
+                                        <input class="form-check-input" type="checkbox" id="guardianConsent">
+                                        <label class="form-check-label small" for="guardianConsent">
+                                            Parent/guardian consent received for the member account
+                                        </label>
+                                    </div>
                                 </div>
  
                                 <div class="col-md-2">
@@ -792,20 +834,19 @@
                                 </div>
  
                                 <div class="col-md-6 d-none" id="box_disability">
-                                    <label class="form-label" for="disabilityType">
+                                    <label class="form-label">
                                         Disability Type <span class="required">*</span>
                                     </label>
-                                    <select id="disabilityType" class="form-select" data-other="box_disabilityOther" data-other-value="Other">
-                                        <option value="">Select</option>
-                                        <option>Visual</option>
-                                        <option>Hearing</option>
-                                        <option>Physical</option>
-                                        <option>Speech</option>
-                                        <option>Intellectual</option>
-                                        <option>Psychosocial</option>
-                                        <option>Multiple Disabilities</option>
-                                        <option>Other</option>
-                                    </select>
+                                    <div class="check-area" id="disabilityTypeGroup" role="group" aria-label="Disability types">
+                                        <label class="check-item"><input type="checkbox" class="disability-type" value="Visual"> Visual</label>
+                                        <label class="check-item"><input type="checkbox" class="disability-type" value="Hearing"> Hearing</label>
+                                        <label class="check-item"><input type="checkbox" class="disability-type" value="Physical"> Physical</label>
+                                        <label class="check-item"><input type="checkbox" class="disability-type" value="Speech"> Speech</label>
+                                        <label class="check-item"><input type="checkbox" class="disability-type" value="Intellectual"> Intellectual</label>
+                                        <label class="check-item"><input type="checkbox" class="disability-type" value="Psychosocial"> Psychosocial</label>
+                                        <label class="check-item"><input type="checkbox" class="disability-type" value="Multiple Disabilities"> Multiple Disabilities</label>
+                                        <label class="check-item"><input type="checkbox" class="disability-type" value="Other"> Other</label>
+                                    </div>
                                 </div>
  
                                 <div class="col-md-6 d-none" id="box_disabilityOther">
@@ -1014,8 +1055,8 @@
 </div>
  
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app-alerts.js?v=2"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <!-- members.js is no longer needed by this page: all registration logic is below -->
 <script>
 (function () {
@@ -1029,7 +1070,6 @@
     var MIN_AGE = 15, MAX_AGE = 30;
     var BARANGAY = 'Sikat', CITY = 'Alfonso', PROVINCE = 'Cavite';
     var OFFICER = window.SK_OFFICER || 'SK Officer';
-    var PUBLIC_MODE = !!window.SK_PUBLIC;      // public viewers can only SUBMIT a registration for approval
     var AUTO_ARCHIVE_REASON = 'Automatically archived \u2013 exceeded youth age eligibility.';
  
     /* ---------- SCHOOL LIST: add / remove schools here, "Others" is added automatically ---------- */
@@ -1165,7 +1205,7 @@
         ['notes', 'Additional Notes'], ['photo', 'Profile Picture']
     ];
     var INPUT_IDS = FIELDS.map(function (f) { return f[0]; }).filter(function (k) {
-        return ['pwd', 'skVoter', 'interests', 'photo'].indexOf(k) === -1;
+        return ['pwd', 'skVoter', 'disabilityType', 'interests', 'photo'].indexOf(k) === -1;
     });
     var LABELS = {};
     FIELDS.forEach(function (f) { LABELS[f[0]] = f[1]; });
@@ -1227,6 +1267,9 @@
         if (!m.id) m.id = 'm' + Date.now() + Math.random().toString(36).slice(2, 7);
         if (!m.gender && m.sex) m.gender = m.sex;
         if (m.status !== 'Archived') m.status = 'Active';        // no "Pending Verification" anymore
+        if (typeof m.disabilityType === 'string') m.disabilityType = m.disabilityType ? [m.disabilityType] : [];
+        if (!Array.isArray(m.disabilityType)) m.disabilityType = [];
+        m.disabilityType = m.disabilityType.filter(function (type) { return typeof type === 'string'; });
         if (typeof m.interests === 'string') m.interests = m.interests ? m.interests.split(',').map(function (s) { return s.trim(); }) : [];
         if (!Array.isArray(m.interests)) m.interests = [];
         if (!Array.isArray(m.history)) m.history = [];
@@ -1243,11 +1286,17 @@
             requests = Array.isArray(r) ? r : [];
         } catch (e) { requests = []; }
     }
+    function savedListMatches(key, list) {
+        var raw = DB.getItem(key);
+        if (raw == null) return list.length === 0;
+        try { return JSON.stringify(JSON.parse(raw)) === JSON.stringify(list); }
+        catch (e) { return false; }
+    }
     function saveAll() {
         try {
-            if (window.USE_MEMBERS_TABLE) DB.saveMembers(members);
-            else DB.setItem(STORAGE_KEY, JSON.stringify(members));
-            DB.setItem(REQUEST_KEY, JSON.stringify(requests));
+            if (!savedListMatches(STORAGE_KEY, members) || !savedListMatches(REQUEST_KEY, requests)) {
+                DB.saveMemberData(members, requests);
+            }
             return true;
         } catch (e) {
             notify('danger', e.message || 'Could not save. Please try again.');
@@ -1320,7 +1369,17 @@
         show('box_disability', !!pwd && pwd.value === 'Yes');
         show('box_voter', !!vot && vot.value === 'Yes');
         show('box_interestOther', $('interestOtherChk').checked);
+        refreshDisabilityOther();
         refreshOthers();
+    }
+
+    function refreshDisabilityOther() {
+        var pwd = document.querySelector('input[name="pwd"]:checked');
+        var otherSelected = Array.prototype.some.call(
+            document.querySelectorAll('.disability-type:checked'),
+            function (choice) { return choice.value === 'Other'; }
+        );
+        show('box_disabilityOther', !!pwd && pwd.value === 'Yes' && otherSelected);
     }
  
     // every select with data-other shows its extra text box when the trigger value is chosen
@@ -1335,6 +1394,7 @@
         var v = $('birthDate').value;
         var a = v ? calcAge(v) : NaN;
         $('age').value = (isNaN(a) || a < 0) ? '' : a;
+        show('guardianConsentWrap', !isNaN(a) && a >= MIN_AGE && a < 18);
     }
  
     /* =====================================================
@@ -1385,6 +1445,9 @@
         var dob = $('birthDate');
         if (!dob.value) bad(dob, 'Date of birth is required.');
         else { var m = dobMessage(dob.value); if (m) bad(dob, m); }
+        if (!editingId && dob.value && calcAge(dob.value) < 18 && !$('guardianConsent').checked) {
+            bad($('guardianConsent'), 'Parent or guardian consent is required before creating an account for a minor.');
+        }
  
         need('gender', 'Gender');
         need('genderOther', 'Please specify your gender');
@@ -1427,25 +1490,30 @@
         var pwd = document.querySelector('input[name="pwd"]:checked');
         if (!pwd) bad($('pwdGroup'), 'Please select Yes or No.');
         else if (pwd.value === 'Yes') {
-            need('disabilityType', 'Disability type');
+            if (!document.querySelector('.disability-type:checked')) {
+                bad($('disabilityTypeGroup'), 'Please select at least one disability type.');
+            }
             need('disabilityOther', 'Please specify the disability');
         }
         if (!document.querySelector('input[name="skVoter"]:checked')) bad($('voterGroup'), 'Please select Yes or No.');
 
         document.querySelectorAll('.center-item').forEach(function (item) {
             var cb = item.querySelector('.center-interest');
-            var sel = item.querySelector('.center-subtype');
-            if (!cb || !sel) return;
-            if (cb.checked && !sel.value) {
-                setError(sel, 'Please select a classification for ' + cb.value + '.');
-                errs.push(sel);
-            } else if (cb.checked && sel.value === cb.value + ' | Other') {
+            var options = item.querySelector('.center-subtype-options');
+            if (!cb || !options) return;
+            var selected = item.querySelectorAll('.center-subtype:checked');
+            if (cb.checked && !selected.length) {
+                setError(options, 'Please select at least one classification for ' + cb.value + '.');
+                errs.push(options);
+            }
+            selected.forEach(function (choice) {
+                if (choice.value !== cb.value + ' | Other') return;
                 var other = item.querySelector('.center-other');
                 if (other && !other.value.trim()) {
                     setError(other, 'Please specify the ' + cb.value + ' classification.');
                     errs.push(other);
                 }
-            }
+            });
         });
 
         if (errs.length) {
@@ -1470,6 +1538,9 @@
         var pwd = document.querySelector('input[name="pwd"]:checked');
         var vot = document.querySelector('input[name="skVoter"]:checked');
         d.pwd = pwd ? pwd.value : '';
+        d.disabilityType = isShown($('box_disability'))
+            ? Array.prototype.map.call(document.querySelectorAll('.disability-type:checked'), function (choice) { return choice.value; })
+            : [];
         d.skVoter = vot ? vot.value : '';
         d.interests = [];
         document.querySelectorAll('.interest-box:checked').forEach(function (c) {
@@ -1478,18 +1549,21 @@
         });
         document.querySelectorAll('.center-item').forEach(function (item) {
             var cb = item.querySelector('.center-interest');
-            var sel = item.querySelector('.center-subtype');
             if (!cb || !cb.checked) return;
-            if (!sel || !sel.value) {
+            var selected = item.querySelectorAll('.center-subtype:checked');
+            if (!selected.length) {
                 d.interests.push(cb.value);
                 return;
             }
             var other = item.querySelector('.center-other');
-            d.interests.push(sel.value === cb.value + ' | Other'
-                ? sel.value + ': ' + (other ? other.value.trim() : '')
-                : sel.value);
+            selected.forEach(function (choice) {
+                d.interests.push(choice.value === cb.value + ' | Other'
+                    ? choice.value + ': ' + (other ? other.value.trim() : '')
+                    : choice.value);
+            });
         });
         d.photo = photoData;
+        d.guardianConsent = $('guardianConsent').checked;
         return d;
     }
  
@@ -1505,6 +1579,7 @@
         $('classification').value = m.classification || '';
         applyRules();
         INPUT_IDS.forEach(function (k) { if (k !== 'classification') $(k).value = m[k] || ''; });
+        $('guardianConsent').checked = m.guardianConsent === true;
         if (m.salaryIncome && SALARY_INCOME_RANGES.indexOf(m.salaryIncome) === -1) {
             var previousIncome = document.createElement('option');
             previousIncome.value = m.salaryIncome;
@@ -1521,30 +1596,43 @@
         var v = document.querySelector('input[name="skVoter"][value="' + m.skVoter + '"]');
         if (p) p.checked = true;
         if (v) v.checked = true;
+        var disabilityTypes = Array.isArray(m.disabilityType)
+            ? m.disabilityType
+            : (m.disabilityType ? [m.disabilityType] : []);
+        document.querySelectorAll('.disability-type').forEach(function (choice) {
+            choice.checked = disabilityTypes.indexOf(choice.value) !== -1;
+        });
         document.querySelectorAll('.interest-box').forEach(function (c) {
             c.checked = (m.interests || []).indexOf(c.value) !== -1;
         });
         document.querySelectorAll('.center-item').forEach(function (item) {
             var cb = item.querySelector('.center-interest');
-            var sel = item.querySelector('.center-subtype');
             var other = item.querySelector('.center-other');
-            if (!cb || !sel) return;
+            if (!cb) return;
             var center = cb.value;
-            var found = null;
+            var found = false;
             var otherText = '';
             (m.interests || []).forEach(function (value) {
                 if (typeof value === 'string' && value.indexOf(center + ' | ') === 0) {
                     var otherPrefix = center + ' | Other: ';
                     if (value.indexOf(otherPrefix) === 0) {
-                        found = center + ' | Other';
+                        found = true;
+                        var otherChoice = item.querySelector('.center-subtype[value="' + center + ' | Other"]');
+                        if (otherChoice) otherChoice.checked = true;
                         otherText = value.slice(otherPrefix.length);
                     } else {
-                        found = value;
+                        var choice = Array.prototype.find.call(
+                            item.querySelectorAll('.center-subtype'),
+                            function (option) { return option.value === value; }
+                        );
+                        if (choice) {
+                            found = true;
+                            choice.checked = true;
+                        }
                     }
                 }
             });
-            cb.checked = !!((m.interests || []).indexOf(center) !== -1 || found);
-            sel.value = found || '';
+            cb.checked = (m.interests || []).indexOf(center) !== -1 || found;
             if (other) other.value = otherText;
         });
         setPhoto(m.photo);
@@ -1556,6 +1644,7 @@
  
     function resetUI() {
         setPhoto('');
+        $('guardianConsent').checked = false;
         clearAllErrors();
         $('photo').value = '';
         $('barangay').value = BARANGAY; $('city').value = CITY; $('province').value = PROVINCE;
@@ -1596,19 +1685,19 @@
         });
     }
  
-    // Public viewer: the form is sent to the server as a PENDING registration (no profile picture).
-    function submitPublic(d) {
-        delete d.photo;
-        try {
-            var res = DB.register(d);
-            $('registrationForm').reset();
-            resetUI();
-            $('formMessage').innerHTML = '<div class="alert alert-success small"><i class="bi bi-check-circle-fill me-1"></i>' +
-                'Thank you! Your registration was submitted' + (res.refNo ? ' (reference <strong>' + esc(res.refNo) + '</strong>)' : '') +
-                ' and is waiting for SK officer approval.</div>';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch (err) {
-            notify('danger', err.message || 'Could not submit your registration.');
+    function showAccountCredentials(result, member) {
+        var message = 'Account created for ' + fullName(member) + '. Username: ' + result.username +
+            '. Temporary password: ' + result.temporaryPassword +
+            '. Share these credentials securely; the member must change the password at first login.';
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                icon: 'success',
+                title: 'KK account created',
+                text: message,
+                confirmButtonText: 'Done'
+            });
+        } else {
+            window.alert(message);
         }
     }
 
@@ -1624,8 +1713,15 @@
         rec.status = 'Active';
         rec.createdAt = nowISO();
         rec.history = [{ at: nowISO(), action: 'Registered', by: OFFICER, note: 'Profile created as Active.' }];
-        members.push(rec);
-        if (!saveAll()) { members.pop(); return; }
+        try {
+            var result = DB.registerMember(rec, null);
+            members.push(result.member);
+            rec = result.member;
+            showAccountCredentials(result, rec);
+        } catch (error) {
+            notify('danger', error.message || 'Could not register the member and create their account.');
+            return;
+        }
         notify('success', fullName(rec) + ' was registered (' + rec.memberNo + ').');
         $('registrationForm').reset();
         resetUI();
@@ -1702,22 +1798,39 @@
     function restoreMember(id) {
         var m = findMember(id);
         if (!m) return;
-        var age = m.birthDate ? calcAge(m.birthDate) : NaN;
-        if (!isNaN(age) && age > MAX_AGE) {
-            notify('danger', 'Cannot restore: this youth is now ' + age + ' years old, above the youth age limit.');
+        var birthDate = window.prompt(
+            'Confirm the verified date of birth (YYYY-MM-DD). Restoration is allowed only for ages 15–30.',
+            m.birthDate || ''
+        );
+        if (birthDate === null) return;
+        birthDate = birthDate.trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+            notify('danger', 'Enter a valid verified date of birth in YYYY-MM-DD format.');
             return;
         }
-        AppAlerts.confirm('Restore ' + fullName(m) + ' to the active youth list?', 'Restore archived member?', 'Restore')
+        var age = calcAge(birthDate);
+        if (isNaN(age) || age < MIN_AGE || age > MAX_AGE || new Date(birthDate + 'T00:00:00') > new Date()) {
+            notify('danger', 'Cannot restore: the verified birth date must show an age of 15 to 30 years.');
+            return;
+        }
+        var reason = window.prompt('Record the source/reason for confirming or correcting the birth date before restoring:');
+        if (reason === null) return;
+        reason = reason.trim();
+        if (reason.length < 10 || reason.length > 500) {
+            notify('danger', 'Enter a restoration reason of 10 to 500 characters.');
+            return;
+        }
+        AppAlerts.confirm('Restore ' + fullName(m) + ' as an eligible KK member, age ' + age + '?', 'Restore archived member?', 'Restore')
             .then(function (confirmed) {
                 if (!confirmed) return;
-                m.status = 'Active';
-                m.restoredAt = nowISO();
-                m.archiveReason = ''; m.archivedAt = null; m.archivedBy = ''; m.archiveType = '';
-                m.history.push({ at: nowISO(), action: 'Restored', by: OFFICER, note: 'Moved back to the active list.' });
-                if (saveAll()) {
+                try {
+                    var restored = DB.restoreMember(m, birthDate, reason);
+                    Object.assign(m, restored);
                     notify('success', fullName(m) + ' was restored.');
                     hideModal('detailsModal');
                     renderAll();
+                } catch (error) {
+                    notify('danger', error.message || 'Could not restore the member.');
                 }
             });
     }
@@ -1740,17 +1853,24 @@
         var sel = $('archiveReason');
         if (!m) return;
         if (!sel.value) { setError(sel, 'Please choose a reason.'); return; }
+        var oldMembers = JSON.stringify(members);
+        var oldRequests = JSON.stringify(requests);
         var reason = sel.value + ($('archiveRemarks').value.trim() ? ' \u2013 ' + $('archiveRemarks').value.trim() : '');
         archiveMember(m, reason, false);
         if (saveAll()) {
             hideModal('archiveModal');
             notify('success', fullName(m) + ' was archived.');
             renderAll();
+        } else {
+            members = JSON.parse(oldMembers);
+            requests = JSON.parse(oldRequests);
         }
     }
- 
+
     // automatic age monitoring: archive anyone above the age limit
     function runAgeCheck() {
+        var oldMembers = JSON.stringify(members);
+        var oldRequests = JSON.stringify(requests);
         var n = 0;
         members.forEach(function (m) {
             if (m.status !== 'Archived' && m.birthDate && calcAge(m.birthDate) > MAX_AGE) {
@@ -1759,7 +1879,11 @@
             }
         });
         if (n) {
-            saveAll();
+            if (!saveAll()) {
+                members = JSON.parse(oldMembers);
+                requests = JSON.parse(oldRequests);
+                return;
+            }
             renderAll();
             notify('info', n + ' profile' + (n > 1 ? 's were' : ' was') + ' automatically archived \u2013 exceeded youth age eligibility.');
         }
@@ -1893,16 +2017,16 @@
         document.querySelectorAll('.center-item').forEach(function (item) {
             var cb = item.querySelector('.center-interest');
             var wrap = item.querySelector('.center-subtype-wrap');
-            var sel = item.querySelector('.center-subtype');
             var otherWrap = item.querySelector('.center-other-wrap');
             var other = item.querySelector('.center-other');
-            if (!cb || !wrap || !sel) return;
+            var otherChoice = item.querySelector('.center-subtype[value="' + (cb ? cb.value : '') + ' | Other"]');
+            if (!cb || !wrap) return;
             wrap.classList.toggle('d-none', !cb.checked);
             if (!cb.checked) {
-                sel.value = '';
+                item.querySelectorAll('.center-subtype').forEach(function (choice) { choice.checked = false; });
                 if (other) other.value = '';
             }
-            if (otherWrap) otherWrap.classList.toggle('d-none', !cb.checked || sel.value !== cb.value + ' | Other');
+            if (otherWrap) otherWrap.classList.toggle('d-none', !cb.checked || !otherChoice || !otherChoice.checked);
         });
     }
 
@@ -1918,6 +2042,7 @@
         if (t.id === 'classification') applyRules();
         if (t.id === 'occupation' || t.id === 'occupationOther') applyRules();
         if (t.name === 'pwd' || t.name === 'skVoter' || t.id === 'interestOtherChk') refreshBoxes();
+        if (t.matches && t.matches('.disability-type')) refreshDisabilityOther();
         if (t.matches && t.matches('select[data-other]')) refreshOthers();
         if (t.matches && (t.matches('.center-interest') || t.matches('.center-subtype'))) refreshCenterTypeVisibility();
     }
@@ -1934,8 +2059,7 @@
         clearAllErrors();
         if (!validate()) return;
         var d = getFormData();
-        if (PUBLIC_MODE) submitPublic(d);
-        else if (editingId) submitEdit(d); else registerYouth(d);
+        if (editingId) submitEdit(d); else registerYouth(d);
     });
  
     form.addEventListener('reset', function () { setTimeout(function () { if (!editingId) resetUI(); }, 0); });
@@ -1969,16 +2093,18 @@
     function renderCenterClassifications() {
         var box = $('centerPrograms');
         box.innerHTML = CENTERS.map(function (center) {
-            var options = (CENTER_CLASSIFICATIONS[center] || []).map(function (type) {
-                return '<option value="' + esc(center + ' | ' + type) + '">' + esc(type) + '</option>';
+            var options = (CENTER_CLASSIFICATIONS[center] || []).map(function (type, index) {
+                var id = 'centerClass' + CENTERS.indexOf(center) + '-' + index;
+                return '<label class="check-item" for="' + id + '">' +
+                    '<input type="checkbox" class="center-subtype" id="' + id + '" value="' + esc(center + ' | ' + type) + '"> ' +
+                    esc(type) + '</label>';
             }).join('');
             var otherId = 'centerOther' + CENTERS.indexOf(center);
             return '<div class="center-item">' +
                 '<label class="check-item"><input type="checkbox" class="interest-box center-interest" value="' + esc(center) + '"> ' + esc(center) + '</label>' +
                 '<div class="center-subtype-wrap mt-2 d-none">' +
-                '<select class="form-select center-subtype" data-center="' + esc(center) + '">' +
-                '<option value="">Select ' + esc(center) + ' classification</option>' + options +
-                '</select>' +
+                '<div class="small text-muted mb-2">Select all that apply:</div>' +
+                '<div class="center-subtype-options check-area" role="group" aria-label="' + esc(center) + ' classifications">' + options + '</div>' +
                 '<div class="center-other-wrap mt-2 d-none">' +
                 '<label class="form-label" for="' + otherId + '">Please specify the ' + esc(center) + ' classification</label>' +
                 '<input type="text" id="' + otherId + '" class="form-control center-other" maxlength="80" placeholder="Type your classification">' +
@@ -1999,19 +2125,17 @@
  
     applyRules();
     refreshBoxes();
-    if (!PUBLIC_MODE) {
-        loadAll();
-        saveAll();                 // keeps older saved records in the new format
-        renderAll();
-        runAgeCheck();
-        // opened from Member List > Edit (registration.php?edit=ID)
-        (function () {
-            var editId = new URLSearchParams(location.search).get('edit');
-            if (editId) startEdit(editId);
-        })();
-        setInterval(runAgeCheck, 60 * 60 * 1000);
-        document.addEventListener('visibilitychange', function () { if (!document.hidden) { loadAll(); runAgeCheck(); renderAll(); } });
-    }
+    loadAll();
+    saveAll();                 // keeps older saved records in the new format
+    renderAll();
+    runAgeCheck();
+    // opened from Member List > Edit (registration.php?edit=ID)
+    (function () {
+        var editId = new URLSearchParams(location.search).get('edit');
+        if (editId) startEdit(editId);
+    })();
+    setInterval(runAgeCheck, 60 * 60 * 1000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { loadAll(); runAgeCheck(); renderAll(); } });
  
 })();
 </script>

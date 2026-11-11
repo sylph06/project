@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KK Youth Profiling System | Participation</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css?v=12" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
 
     <style>
         :root {
@@ -179,6 +179,20 @@
 <?php
 $participationMembers = json_decode($__data['kkMembers'] ?? '[]', true);
 $participationMembers = is_array($participationMembers) ? $participationMembers : [];
+$participationCopCategories = ['Health', 'Education', 'Economic Empowerment', 'Social Inclusion and Equity', 'Peace-Building and Security', 'Governance', 'Active Citizenship', 'Environment', 'Global Mobility', 'Agriculture'];
+function participation_event_centers($event, $categories) {
+    $centers = is_array($event['centers'] ?? null) ? $event['centers'] : [];
+    $legacy = [
+        'General' => 'Governance', 'Community' => 'Active Citizenship', 'Youth' => 'Active Citizenship',
+        'Program' => 'Education', 'Meeting' => 'Governance', 'Event' => 'Active Citizenship',
+        'Emergency' => 'Peace-Building and Security', 'Other' => 'Governance',
+    ];
+    $category = (string)($event['category'] ?? '');
+    if (!$centers) $centers[] = $legacy[$category] ?? $category;
+    return array_values(array_unique(array_filter($centers, function ($center) use ($categories) {
+        return is_string($center) && in_array($center, $categories, true);
+    })));
+}
 $participationRegistrations = json_decode($__data['skEventRegistrations'] ?? '[]', true);
 $participationRegistrations = is_array($participationRegistrations) ? $participationRegistrations : [];
 $participationAnnouncements = json_decode($__data['skAnnouncements'] ?? '[]', true);
@@ -198,6 +212,7 @@ foreach ($participationAnnouncements as $event) {
     }
 }
 $participationRows = [];
+$participationHeatmapRows = [];
 $participationEventOptions = [];
 $participationLinkedMembers = [];
 $participationSignupMemberEvents = [];
@@ -243,6 +258,13 @@ foreach ($participationRegistrations as $signup) {
         'submittedAt' => substr((string)($signup['submittedAt'] ?? ''), 0, 10),
         'attendanceStatus' => $status,
     ];
+    $participationHeatmapRows[] = [
+        'memberKey' => $member ? $memberId : 'signup:' . (string)($signup['id'] ?? $signup['name'] ?? 'unlinked'),
+        'eventId' => $eventId,
+        'eventDate' => $eventDate,
+        'centers' => participation_event_centers($event, $participationCopCategories),
+        'attendanceStatus' => $status,
+    ];
     if ($eventId !== '') $participationEventOptions[$eventId] = $eventTitle;
 }
 foreach ($participationWalkins as $walkin) {
@@ -274,6 +296,13 @@ foreach ($participationWalkins as $walkin) {
         'submittedAt' => 'Walk-in',
         'attendanceStatus' => 'Attended',
     ];
+    $participationHeatmapRows[] = [
+        'memberKey' => $member ? $memberId : 'walkin:' . (string)($walkin['id'] ?? $walkin['name'] ?? 'unlinked'),
+        'eventId' => $eventId,
+        'eventDate' => (string)($event['date'] ?? ''),
+        'centers' => participation_event_centers($event, $participationCopCategories),
+        'attendanceStatus' => 'Attended',
+    ];
     if ($eventId !== '') $participationEventOptions[$eventId] = $eventTitle;
 }
 usort($participationRows, function ($a, $b) {
@@ -290,7 +319,7 @@ asort($participationEventOptions, SORT_NATURAL | SORT_FLAG_CASE);
 <div class="top-strip"></div>
 
 <script src="theme.js"></script>
-<script src="sidebar.js?v=7"></script>
+<script src="sidebar.js?v=10"></script>
 
 <main class="main page-content">
 
@@ -327,7 +356,7 @@ asort($participationEventOptions, SORT_NATURAL | SORT_FLAG_CASE);
 
 <div class="content">
 
-    <section class="hero">
+    <section class="hero hero-primary">
 
         <h1>Youth Participation</h1>
 
@@ -372,6 +401,39 @@ asort($participationEventOptions, SORT_NATURAL | SORT_FLAG_CASE);
         </div>
 
     </div>
+
+    <div class="card-box">
+        <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>COP Participation Heatmap</div>
+        <div class="card-body">
+            <p class="small text-muted">Counts confirmed attendee-event participations by Center of Participation and month.</p>
+            <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label" for="copEventFilter">Activity</label>
+                    <select class="form-select" id="copEventFilter">
+                        <option value="">All activities</option>
+                        <?php foreach ($participationEventOptions as $eventId => $eventTitle): ?>
+                            <option value="<?= e($eventId) ?>"><?= e($eventTitle) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="copDateFrom">From</label>
+                    <input type="date" class="form-control" id="copDateFrom">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="copDateTo">To</label>
+                    <input type="date" class="form-control" id="copDateTo">
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle text-center mb-0">
+                    <thead id="copHeatmapHead"></thead>
+                    <tbody id="copHeatmapBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script type="application/json" id="participationHeatmapData"><?= json_encode($participationHeatmapRows, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
 
     <div class="card-box">
 
@@ -464,6 +526,59 @@ asort($participationEventOptions, SORT_NATURAL | SORT_FLAG_CASE);
 
 <script>
 
+const copCategories = <?= json_encode($participationCopCategories, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+const copRows = JSON.parse(document.getElementById('participationHeatmapData').textContent || '[]');
+function renderCopHeatmap() {
+    const from = document.getElementById('copDateFrom').value;
+    const to = document.getElementById('copDateTo').value;
+    const eventId = document.getElementById('copEventFilter').value;
+    const cells = {}, months = {};
+    copRows.forEach(function (row) {
+        if (row.attendanceStatus !== 'Attended' || (eventId && row.eventId !== eventId)) return;
+        const date = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(row.eventDate || '')
+            ? row.eventDate : '';
+        if ((from || to) && (!date || (from && date < from) || (to && date > to))) return;
+        const month = date ? date.slice(0, 7) : 'Undated';
+        months[month] = true;
+        (Array.isArray(row.centers) ? row.centers : []).forEach(function (center) {
+            if (copCategories.indexOf(center) === -1) return;
+            cells[center] = cells[center] || {};
+            cells[center][month] = cells[center][month] || {};
+            cells[center][month][String(row.memberKey) + ':' + String(row.eventId)] = true;
+        });
+    });
+    const monthList = Object.keys(months).sort();
+    const head = document.getElementById('copHeatmapHead');
+    const body = document.getElementById('copHeatmapBody');
+    if (!monthList.length) {
+        head.innerHTML = '';
+        body.innerHTML = '<tr><td class="text-muted py-4">No confirmed attendance matches these filters.</td></tr>';
+        return;
+    }
+    let max = 0;
+    copCategories.forEach(function (center) {
+        monthList.forEach(function (month) {
+            const count = Object.keys((cells[center] || {})[month] || {}).length;
+            max = Math.max(max, count);
+        });
+    });
+    head.innerHTML = '<tr><th>Center of Participation</th>' + monthList.map(function (month) {
+        return '<th>' + month.replace('-', ' / ') + '</th>';
+    }).join('') + '</tr>';
+    body.innerHTML = copCategories.map(function (center) {
+        return '<tr><th class="text-start">' + escapeCopHtml(center) + '</th>' + monthList.map(function (month) {
+            const count = Object.keys((cells[center] || {})[month] || {}).length;
+            const alpha = count && max ? Math.min(0.8, 0.12 + 0.68 * count / max) : 0;
+            return '<td style="' + (count ? 'background-color:rgba(13,110,253,' + alpha + ');color:' + (alpha > 0.55 ? '#fff' : 'inherit') : '') +
+                '" aria-label="' + escapeCopHtml(center + ', ' + month + ': ' + count + ' attendances') + '">' + (count || '—') + '</td>';
+        }).join('') + '</tr>';
+    }).join('');
+}
+function escapeCopHtml(value) {
+    return String(value).replace(/[&<>"']/g, function (character) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character];
+    });
+}
 document.getElementById("search").addEventListener("input", function() {
     const value = this.value.toLowerCase();
     filterRows(value, document.getElementById("activityFilter").value);
@@ -472,6 +587,10 @@ document.getElementById("search").addEventListener("input", function() {
 document.getElementById("activityFilter").addEventListener("change", function() {
     filterRows(document.getElementById("search").value.toLowerCase(), this.value);
 });
+["copEventFilter", "copDateFrom", "copDateTo"].forEach(function (id) {
+    document.getElementById(id).addEventListener("change", renderCopHeatmap);
+});
+renderCopHeatmap();
 
 function filterRows(search, eventId) {
     document.querySelectorAll("#participationTable tr[data-event-id]").forEach(function(row) {
@@ -483,6 +602,6 @@ function filterRows(search, eventId) {
 
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>

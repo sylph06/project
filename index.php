@@ -28,6 +28,7 @@ $hasBudget = false;
 $budgetExpenses = [];
 $budgetSpent = 0.0;
 $budgetCategories = [];
+$landingDataWarning = false;
 
 try {
     /* ---- youth count (a number only, no personal details) ---- */
@@ -106,22 +107,27 @@ try {
         $budget['amount'] = max(0, (float)$savedBudget['amount']);
         $budget['fy'] = trim((string)($savedBudget['fy'] ?? ''));
     }
+    $budgetFiscalYear = $budget['fy'];
     foreach (lp_json('skTransparencyExpenses') as $expense) {
         if (!is_array($expense) || !isset($expense['amount']) || !is_numeric($expense['amount'])) continue;
+        if ($budgetFiscalYear !== '' && !empty($expense['fiscalYear'])
+            && (string)$expense['fiscalYear'] !== $budgetFiscalYear) continue;
         $amount = max(0, (float)$expense['amount']);
         $budgetSpent += $amount;
         $category = trim((string)($expense['category'] ?? '')) ?: 'Other';
         $budgetCategories[$category] = ($budgetCategories[$category] ?? 0) + $amount;
         $budgetExpenses[] = [
             'date' => (string)($expense['date'] ?? ''),
-            'title' => trim((string)($expense['title'] ?? '')) ?: 'Expense',
             'category' => $category,
             'amount' => $amount,
         ];
     }
     usort($budgetExpenses, function ($a, $b) { return strcmp($b['date'], $a['date']); });
     arsort($budgetCategories, SORT_NUMERIC);
-} catch (Throwable $ex) { /* the landing page must still open if the database is busy */ }
+} catch (Throwable $ex) {
+    error_log('Public landing page data could not be loaded: ' . $ex->getMessage());
+    $landingDataWarning = true;
+}
 
 $officialCount = count($officials);
 $officials = array_slice($officials, 0, 5);
@@ -140,18 +146,20 @@ $L_EVENTS   = 'announcements.php?view=public';
     <title>Sangguniang Kabataan of Barangay Sikat | KK Youth Profiling System</title>
     <meta name="description" content="Register as a KK youth, see upcoming SK activities and meet your youth officials in Barangay Sikat, Alfonso, Cavite.">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
     <script src="theme.js?v=2"></script>
 
     <style>
         :root{
-            --lp-display:"Bricolage Grotesque",Arial,sans-serif;
+            --lp-display:Arial,sans-serif;
             --lp-ink:var(--bs-body-color);
             --lp-line:var(--bs-border-color);
+            --bs-success:#0d6efd;
+            --bs-success-rgb:13,110,253;
+            --bs-success-text-emphasis:#084298;
+            --bs-success-bg-subtle:#cfe2ff;
+            --bs-success-border-subtle:#9ec5fe;
         }
         html[data-bs-theme="dark"]{
             color-scheme:dark;
@@ -165,22 +173,27 @@ $L_EVENTS   = 'announcements.php?view=public';
             --bs-border-color-translucent:rgba(230,239,255,.12);
             --bs-primary:#0d6efd;
             --bs-primary-rgb:13,110,253;
-            --bs-primary-text-emphasis:#6ea8fe;
-            --bs-primary-bg-subtle:#031633;
-            --bs-primary-border-subtle:#084298;
-            --bs-link-color:#6ea8fe;
-            --bs-link-hover-color:#9ec5fe;
+            --bs-primary-text-emphasis:#9ec5fe;
+            --bs-primary-bg-subtle:#1b3558;
+            --bs-primary-border-subtle:#264f84;
+            --bs-link-color:#9ec5fe;
+            --bs-link-hover-color:#cfe2ff;
+            --bs-success:#0d6efd;
+            --bs-success-rgb:13,110,253;
+            --bs-success-text-emphasis:#9ec5fe;
+            --bs-success-bg-subtle:#1b3558;
+            --bs-success-border-subtle:#264f84;
         }
         html{scroll-behavior:smooth;scroll-padding-top:5rem}
         @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-        body{background:var(--bs-white);color:var(--lp-ink);line-height:1.6;overflow-x:hidden}
+        body{background:#f5f2ea;color:var(--lp-ink);line-height:1.6;overflow-x:hidden}
         h1,h2,h3,.display-font{font-family:var(--lp-display);letter-spacing:-.02em}
         a:focus-visible,button:focus-visible{outline:3px solid var(--bs-primary);outline-offset:3px}
 
         .lp-sidebar{
             --bs-offcanvas-width:280px;
             width:280px;
-            background:var(--bs-white);
+            background:#fff;
             border-right:1px solid var(--lp-line);
         }
         .lp-sidebar-brand{color:var(--lp-ink)}
@@ -238,6 +251,7 @@ $L_EVENTS   = 'announcements.php?view=public';
             .lp-sidebar .offcanvas-body{flex:1;overflow-y:auto}
             .lp-desktop-brand{display:flex}
             .lp-main{margin-left:280px}
+            .lp-main .container{padding-left:1.5rem;padding-right:1.5rem}
         }
         @media(max-width:991.98px){
             .lp-sidebar .offcanvas-body{padding:1rem!important}
@@ -255,7 +269,7 @@ $L_EVENTS   = 'announcements.php?view=public';
         .btn-lp-ghost:hover{color:var(--bs-primary-text-emphasis);background:#fff;border-color:#fff}
 
         /* "next up" ticket: the one memorable element */
-        .lp-ticket{background:#fff;color:var(--lp-ink);border-radius:.5rem;overflow:hidden;border:1px solid var(--lp-line)}
+        .lp-ticket{background:#fff;color:var(--lp-ink);border-radius:16px;overflow:hidden;border:1px solid var(--lp-line);box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
         .lp-ticket-top{display:flex;gap:1.1rem;padding:1.5rem 1.5rem 1.25rem;align-items:center}
         .lp-datebox{flex:0 0 auto;width:5.2rem;text-align:center;border-radius:1rem;background:var(--bs-primary-bg-subtle);color:var(--bs-primary-text-emphasis);padding:.6rem 0}
         .lp-datebox .mo{font-weight:700;font-size:.95rem}
@@ -286,11 +300,11 @@ $L_EVENTS   = 'announcements.php?view=public';
         .lp-event .lp-datebox .dy{font-size:1.9rem}
 
         /* public budget transparency */
-        .lp-budget-card{height:100%;padding:1.5rem;background:#fff;border:1px solid var(--lp-line);border-radius:1rem}
+        .lp-budget-card{height:100%;padding:1.5rem;background:#fff;border:1px solid var(--lp-line);border-radius:16px;box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
         .lp-budget-card .list-group-item{background:transparent;color:inherit;border-color:var(--lp-line)}
         .lp-budget-value{font-family:var(--lp-display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;line-height:1.2}
         .lp-budget-table th,.lp-budget-table td{padding:.75rem .5rem;vertical-align:middle}
-        .lp-steps-card{background:#fff;border:1px solid var(--lp-line);border-radius:1rem;padding:0 1.5rem}
+        .lp-steps-card{background:#fff;border:1px solid var(--lp-line);border-radius:16px;padding:0 1.5rem;box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
         @media(max-width:767.98px){
             .lp-hero .row,.lp-section .row,.lp-cta .row{margin-left:0;margin-right:0}
             .lp-budget-card{overflow:hidden}
@@ -339,6 +353,7 @@ $L_EVENTS   = 'announcements.php?view=public';
 <body>
 
 <!-- ============ NAV ============ -->
+<a class="visually-hidden-focusable" href="#main">Skip to main content</a>
 <aside class="lp-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="landingSidebar" aria-label="SK Barangay Sikat landing page navigation">
     <div class="offcanvas-header border-bottom p-3">
         <a class="lp-sidebar-brand d-flex align-items-center gap-2 text-decoration-none" href="#home">
@@ -407,6 +422,15 @@ $L_EVENTS   = 'announcements.php?view=public';
             </div>
         </div>
     </nav>
+
+<main id="main">
+<?php if ($landingDataWarning): ?>
+    <div class="container pt-3">
+        <div class="alert alert-warning mb-0" role="status">
+            Some public information could not be loaded. Please refresh the page later.
+        </div>
+    </div>
+<?php endif; ?>
 
 <!-- ============ HERO ============ -->
 <header class="lp-hero" id="home">
@@ -549,7 +573,7 @@ $L_EVENTS   = 'announcements.php?view=public';
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 <div class="lp-budget-card">
-                    <div class="small text-secondary mb-2">Available budget</div>
+                    <div class="small text-secondary mb-2">Total published budget</div>
                     <div class="lp-budget-value"><?= $hasBudget ? '₱' . e(number_format($budget['amount'], 2)) : 'Not published' ?></div>
                 </div>
             </div>
@@ -587,18 +611,17 @@ $L_EVENTS   = 'announcements.php?view=public';
             </div>
             <div class="col-lg-7">
                 <div class="lp-budget-card">
-                    <h3 class="h5 fw-bold mb-3">Recorded expense details</h3>
+                    <h3 class="h5 fw-bold mb-3">Recorded expense totals</h3>
                     <?php if (!$budgetExpenses): ?>
                         <p class="text-secondary mb-0">No expenses have been recorded yet.</p>
                     <?php else: ?>
                         <div class="table-responsive">
                             <table class="table table-sm lp-budget-table mb-0">
-                                <thead><tr><th scope="col">Date</th><th scope="col">Program / expense</th><th scope="col">Category</th><th scope="col" class="text-end">Amount</th></tr></thead>
+                                <thead><tr><th scope="col">Date</th><th scope="col">Category</th><th scope="col" class="text-end">Amount</th></tr></thead>
                                 <tbody>
                                     <?php foreach ($budgetExpenses as $expense): ?>
                                         <tr>
                                             <td class="text-nowrap"><?= e($expense['date']) ?></td>
-                                            <td><?= e($expense['title']) ?></td>
                                             <td><?= e($expense['category']) ?></td>
                                             <td class="text-end text-nowrap">₱<?= e(number_format($expense['amount'], 2)) ?></td>
                                         </tr>
@@ -607,7 +630,7 @@ $L_EVENTS   = 'announcements.php?view=public';
                             </table>
                         </div>
                     <?php endif; ?>
-                    <p class="small text-secondary mt-3 mb-0">This summary reflects records entered by the SK and is provided for public information.</p>
+                    <p class="small text-secondary mt-3 mb-0">This summary reflects records entered by the SK. Recipient names and private expense descriptions are not displayed.</p>
                 </div>
             </div>
         </div>
@@ -701,6 +724,7 @@ $L_EVENTS   = 'announcements.php?view=public';
         </div>
     </div>
 </section>
+</main>
 
 <!-- ============ FOOTER ============ -->
 <footer class="lp-footer py-4">
@@ -713,9 +737,9 @@ $L_EVENTS   = 'announcements.php?view=public';
 </footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js"></script>
+<script src="app-alerts.js?v=2"></script>
 <script>
 document.querySelectorAll('#landingSidebar a[href^="#"]').forEach(function (link) {
     link.addEventListener('click', function () {

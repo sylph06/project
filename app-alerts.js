@@ -8,7 +8,7 @@
                 text: String(message),
                 icon: icon || 'info',
                 confirmButtonText: 'OK',
-                confirmButtonColor: '#198754'
+                confirmButtonColor: '#0d6efd'
             });
         },
         success: function (message) {
@@ -28,7 +28,7 @@
                 showCancelButton: true,
                 confirmButtonText: confirmButtonText || 'Continue',
                 cancelButtonText: 'Cancel',
-                confirmButtonColor: '#198754',
+                confirmButtonColor: '#0d6efd',
                 cancelButtonColor: '#6c757d',
                 reverseButtons: true
             }).then(function (result) {

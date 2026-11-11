@@ -135,6 +135,7 @@
             var xhr = new XMLHttpRequest();
             xhr.open('POST', 'api.php?action=event_register', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('X-CSRF-Token', window.SK_CSRF_TOKEN || '');
             xhr.onload = function () {
                 var res = {};
                 try { res = JSON.parse(xhr.responseText); } catch (e) {}
@@ -258,6 +259,7 @@
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', 'api.php?action=event_walkin', true);
                 xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('X-CSRF-Token', window.SK_CSRF_TOKEN || '');
                 xhr.onload = function () {
                     var res = {};
                     try { res = JSON.parse(xhr.responseText); } catch (ex) {}
@@ -285,6 +287,7 @@
                     var xhr = new XMLHttpRequest();
                     xhr.open('POST', 'api.php?action=event_attendance', true);
                     xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.setRequestHeader('X-CSRF-Token', window.SK_CSRF_TOKEN || '');
                     xhr.onload = function () {
                         var res = {};
                         try { res = JSON.parse(xhr.responseText); } catch (ex) {}

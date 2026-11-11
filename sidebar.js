@@ -24,7 +24,6 @@
             ['officials.php',     'bi-person-badge',              'SK Officials']
         ]},
         { title: 'KK Youth', items: [
-            ['registration.php',   'bi-person-plus-fill',         'KK Youth Registration'],  
             ['request.php',       'bi-inbox-fill',                'Review Requests', 'request-count'],
             ['members.php',       'bi-people',                    'Member List'],
             ['archives.php',      'bi-archive',                   'Archives'],
@@ -79,22 +78,21 @@
                    '<i class="bi ' + it[1] + ' me-2"></i>' + it[2] + badge +
                    '</a></li>';
         }).join('');
-        return title + '<ul class="nav flex-column gap-1">' + links + '</ul>';
+        return title + '<ul class="nav nav-pills nav-sidebar flex-column gap-1" data-lte-toggle="treeview" role="menu">' + links + '</ul>';
     }).join('');
 
     var html =
-    '<aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarTitle">' +
-        '<div class="offcanvas-header border-bottom">' +
-            '<h5 class="offcanvas-title text-dark fw-bold" id="sidebarTitle">SK KK Profiling</h5>' +
+    '<aside class="sidebar app-sidebar bg-body-secondary shadow offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarTitle">' +
+        '<div class="offcanvas-header border-bottom d-lg-none">' +
+            '<h5 class="offcanvas-title text-dark fw-bold" id="sidebarTitle">SK Barangay Sikat</h5>' +
             '<button type="button" class="btn-close " data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>' +
         '</div>' +
-        '<div class="offcanvas-body d-flex flex-column p-3">' +
-            '<a href="dashboard.php" class="d-flex align-items-center gap-2 text-decoration-none mb-4 px-1 pt-1">' +
-                '<span class="brand-badge"><img src="images/sk-logo.jpg" alt="SK Barangay Sikat logo"></span>' +
+        '<div class="offcanvas-body sidebar-wrapper d-flex flex-column p-3">' +
+            '<a href="dashboard.php" class="sidebar-brand brand-link d-flex align-items-center gap-2 text-decoration-none mb-4 px-1 pt-1">' +
+                '<span class="brand-badge">SK</span>' +
                 '<span class="lh-1">' +
-                    '<span class="d-block fw-bold text-dark" style="font-size:15px;">SANGGUNIANG</span>' +
-                    '<span class="d-block fw-bold text-dark mt-1" style="font-size:15px;">KABATAAN</span>' +
-                    '<span class="d-block text-secondary mt-1" style="font-size:11px;letter-spacing:1px;">KK YOUTH PROFILING</span>' +
+                    '<span class="d-block fw-bold text-dark" style="font-size:15px;">SK BARANGAY SIKAT</span>' +
+                    '<span class="d-block text-secondary mt-1" style="font-size:11px;">KK YOUTH PROFILING</span>' +
                 '</span>' +
             '</a>' +
             nav +

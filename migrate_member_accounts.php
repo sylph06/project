@@ -37,6 +37,17 @@ function member_account_ensure_schema($pdo) {
                           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND INDEX_NAME = 'uq_users_legacy_id'")->fetchColumn();
     if (!(int)$index) $pdo->exec('ALTER TABLE users ADD UNIQUE KEY uq_users_legacy_id (legacy_id)');
 
+    $usernameIndex = $pdo->query("SELECT COUNT(*) FROM information_schema.STATISTICS
+                                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
+                                    AND COLUMN_NAME = 'username' AND NON_UNIQUE = 0")->fetchColumn();
+    if (!(int)$usernameIndex) {
+        $duplicate = $pdo->query('SELECT username FROM users GROUP BY username HAVING COUNT(*) > 1 LIMIT 1')->fetchColumn();
+        if ($duplicate !== false) {
+            throw new RuntimeException('Resolve duplicate usernames before enabling unique usernames.');
+        }
+        $pdo->exec('ALTER TABLE users ADD UNIQUE KEY uq_users_username (username)');
+    }
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS audit_log (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
         actor_user_id INT UNSIGNED NULL,

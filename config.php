@@ -1,13 +1,19 @@
 <?php
 /* =========================================================
    SHARED SETTINGS  (every .php page loads this first)
-   - change the 4 database values below if your MySQL differs
-     (XAMPP default: user "root", empty password)
+   - set KK_DB_HOST, KK_DB_NAME, KK_DB_USER, and KK_DB_PASS in the
+     web-server/PHP environment; development defaults support local XAMPP
    ========================================================= */
-const DB_HOST = 'localhost';
-const DB_NAME = 'kk';
-const DB_USER = 'root';
-const DB_PASS = '';
+function config_env($name, $default = null) {
+    $value = getenv($name);
+    return $value === false ? $default : $value;
+}
+
+define('APP_ENV', strtolower((string)config_env('KK_APP_ENV', 'development')));
+define('DB_HOST', (string)config_env('KK_DB_HOST', 'localhost'));
+define('DB_NAME', (string)config_env('KK_DB_NAME', 'kk'));
+define('DB_USER', (string)config_env('KK_DB_USER', APP_ENV === 'development' ? 'root' : ''));
+define('DB_PASS', (string)config_env('KK_DB_PASS', ''));
 const USE_MEMBERS_TABLE = false;
 const USE_SK_ROLES_TABLE = false;
 const APP_WRITE_ROLES = ['SK Chairman', 'SK Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad', 'SK Vice Chairperson'];
@@ -15,8 +21,35 @@ const MEMBER_DATA_ADMIN_ROLES = ['SK Chairman', 'SK Secretary'];
 const BACKGROUND_HISTORY_ROLES = ['SK Chairman', 'SK Secretary'];
 
 date_default_timezone_set('Asia/Manila');   // so dates match the barangay
-session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
+ini_set('display_errors', '0');
+if (APP_ENV === 'production') {
+    if (DB_USER === '' || DB_PASS === '' || strtolower(DB_USER) === 'root') {
+        http_response_code(500);
+        exit('The application database credentials are not configured securely.');
+    }
+    $https = !empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off';
+    if (!$https) {
+        http_response_code(400);
+        exit('HTTPS is required.');
+    }
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
+header('Content-Security-Policy: default-src \'self\'; script-src \'self\' \'unsafe-inline\' https://cdn.jsdelivr.net; style-src \'self\' \'unsafe-inline\' https://cdn.jsdelivr.net; font-src \'self\' https://cdn.jsdelivr.net data:; img-src \'self\' data: blob: https:; connect-src \'self\'; object-src \'none\'; base-uri \'self\'; form-action \'self\'; frame-ancestors \'none\'');
+header('X-Frame-Options: DENY');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+session_set_cookie_params([
+    'httponly' => true,
+    'secure' => APP_ENV === 'production' || (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off'),
+    'samesite' => 'Lax',
+]);
 session_start();
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+function csrf_token() {
+    return (string)$_SESSION['csrf_token'];
+}
 
 function db() {
     static $pdo = null;
@@ -153,10 +186,10 @@ function is_limited_viewer() {
 }
 
 function limited_viewer_can_open_page($page) {
-    return in_array(basename((string)$page), ['index.php', 'announcements.php', 'officials.php'], true);
+    return in_array(basename((string)$page), ['index.php', 'announcements.php', 'officials.php', 'registration.php'], true);
 }
 
-/* Limited viewers can open the public landing page, announcements, and officials only. */
+/* Limited viewers can open public information pages and the registration notice. */
 function require_viewer() {
     $user = current_user();
     if ($user && !empty($user['must_change_password'])) {

@@ -8,9 +8,9 @@ require_official();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Review Requests | KK Youth Profiling System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css?v=12" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
     <style>
         :root { --line:var(--bs-border-color); --muted:var(--bs-secondary-color); }
         * { box-sizing:border-box; }
@@ -50,7 +50,7 @@ require_official();
 <body>
 <div class="top-strip"></div>
 <script src="theme.js"></script>
-<script src="sidebar.js?v=7"></script>
+<script src="sidebar.js?v=10"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">
@@ -88,7 +88,7 @@ require_official();
                     <button type="button" class="review-summary-card active" style="--review-accent:#d6a62b" data-request-status="pending"><span class="review-summary-number" id="pendingRequestTotal">0</span><span class="review-summary-label">Pending Requests</span></button>
                     <button type="button" class="review-summary-card" style="--review-accent:#3675b9" data-request-status="approved"><span class="review-summary-number" id="approvedRequestTotal">0</span><span class="review-summary-label">Approved</span></button>
                     <button type="button" class="review-summary-card" style="--review-accent:#d94848" data-request-status="rejected"><span class="review-summary-number" id="rejectedRequestTotal">0</span><span class="review-summary-label">Rejected</span></button>
-                    <button type="button" class="review-summary-card" style="--review-accent:#219653" data-request-status="done"><span class="review-summary-number" id="doneRequestTotal">0</span><span class="review-summary-label">Done Requests</span></button>
+                    <button type="button" class="review-summary-card" style="--review-accent:#0d6efd" data-request-status="done"><span class="review-summary-number" id="doneRequestTotal">0</span><span class="review-summary-label">Done Requests</span></button>
                     <button type="button" class="review-summary-card" style="--review-accent:var(--bs-primary)" data-request-status="all"><span class="review-summary-number" id="allRequestTotal">0</span><span class="review-summary-label">All Requests</span></button>
                 </div>
             </div>
@@ -131,7 +131,7 @@ require_official();
         <div class="modal-footer"><button type="button" class="btn-outline" data-bs-dismiss="modal">Close</button><button type="button" class="btn-black" id="rejectBtn"><i class="bi bi-x-circle"></i> Reject Changes</button><button type="button" class="btn btn-primary" id="approveBtn"><i class="bi bi-check-circle"></i> Approve Changes</button></div>
     </div></div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="request.js?v=1"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="request.js?v=<?= filemtime(__DIR__ . '/request.js') ?>"></script>
 </body>
 </html>

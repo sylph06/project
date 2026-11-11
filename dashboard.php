@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KK Youth Profiling System | Dashboard</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css?v=12" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
     <style>
         .dashboard-hero{
             color:var(--bs-body-color);
@@ -35,6 +35,44 @@
             font-size:1.25rem;
         }
         .dashboard-panel{padding:1.35rem;overflow:hidden}
+        .dashboard-greeting{max-width:1080px}
+        .dashboard-attention{
+            background:var(--ui-surface);
+            border:1px solid var(--ui-line);
+            border-radius:var(--ui-radius);
+            box-shadow:var(--ui-shadow);
+            overflow:hidden;
+        }
+        .attention-pill{
+            display:inline-flex;
+            align-items:center;
+            padding:.35rem .8rem;
+            border-radius:999px;
+            background:#f7e0d9;
+            color:#c24a33;
+            font-size:.8rem;
+            font-weight:800;
+        }
+        .dashboard-queue-row{
+            display:flex;
+            align-items:center;
+            gap:1rem;
+            padding:1rem 1.25rem;
+            border-top:1px solid var(--ui-line);
+        }
+        .dashboard-stat{
+            min-height:118px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            padding:1.25rem;
+        }
+        .dashboard-stat .fs-2{
+            letter-spacing:-.04em;
+        }
+        .dashboard-stat-row .dashboard-stat{
+            border-radius:var(--ui-radius);
+        }
         .budget-stat{
             height:100%;
             padding:1rem;
@@ -80,6 +118,14 @@
     $upcomingAnnouncements = array_slice($upcomingAnnouncements, 0, 5);
     $dashboardBudget = json_decode($__data['skTransparencyBudget'] ?? 'null', true);
     $dashboardBudget = is_array($dashboardBudget) ? $dashboardBudget : [];
+    if (isset($dashboardBudget['budgets']) && is_array($dashboardBudget['budgets'])) {
+        $dashboardBudgetYear = trim((string)($dashboardBudget['fy'] ?? ''));
+        if ($dashboardBudgetYear !== '' && isset($dashboardBudget['budgets'][$dashboardBudgetYear])
+            && is_array($dashboardBudget['budgets'][$dashboardBudgetYear])) {
+            $dashboardBudget = $dashboardBudget['budgets'][$dashboardBudgetYear];
+        }
+    }
+    $dashboardBudgetYear = trim((string)($dashboardBudget['fy'] ?? ''));
     $dashboardBudgetPublished = isset($dashboardBudget['amount']) && is_numeric($dashboardBudget['amount']);
     $dashboardBudgetAmount = $dashboardBudgetPublished ? max(0, (float)$dashboardBudget['amount']) : 0;
     $dashboardExpenses = json_decode($__data['skTransparencyExpenses'] ?? '[]', true);
@@ -89,6 +135,8 @@
     $dashboardTotalSpent = 0;
     foreach ($dashboardExpenses as $expense) {
         if (!is_array($expense) || !isset($expense['amount']) || !is_numeric($expense['amount'])) continue;
+        if ($dashboardBudgetYear !== '' && !empty($expense['fiscalYear'])
+            && (string)$expense['fiscalYear'] !== $dashboardBudgetYear) continue;
         $amount = max(0, (float)$expense['amount']);
         $category = trim((string)($expense['category'] ?? '')) ?: 'Other';
         $dashboardTotalSpent += $amount;
@@ -105,16 +153,82 @@
     });
     $dashboardExpenseRows = array_slice($dashboardExpenseRows, 0, 5);
     arsort($dashboardCategoryTotals, SORT_NUMERIC);
+    $dashboardEditRequests = json_decode($__data['kkEditRequests'] ?? '[]', true);
+    $dashboardEditRequests = is_array($dashboardEditRequests) ? array_values(array_filter($dashboardEditRequests, function ($item) {
+        return is_array($item) && ($item['status'] ?? '') === 'Edit Request';
+    })) : [];
+    $dashboardPendingRegistrations = json_decode($__data['kkPendingRegistrations'] ?? '[]', true);
+    $dashboardPendingRegistrations = is_array($dashboardPendingRegistrations) ? array_values(array_filter($dashboardPendingRegistrations, function ($item) {
+        return is_array($item) && ($item['status'] ?? '') === 'Pending';
+    })) : [];
+    $dashboardAttentionCount = count($dashboardEditRequests) + count($dashboardPendingRegistrations);
     $dashboardCurrency = function ($amount) {
         return '₱' . number_format((float)$amount, 2);
     };
+
+    /* Rank completed programs by confirmed attendance for planning. */
+    $dashboardPrograms = json_decode($__data['skAnnouncements'] ?? '[]', true);
+    $dashboardPrograms = is_array($dashboardPrograms) ? $dashboardPrograms : [];
+    $dashboardProgramById = [];
+    $dashboardProgramInsights = [];
+    $dashboardInsightCutoff = (new DateTimeImmutable('today'))->modify('-12 months')->format('Y-m-d');
+    foreach ($dashboardPrograms as $program) {
+        if (!is_array($program) || empty($program['id']) || empty($program['date'])
+            || $program['date'] < $dashboardInsightCutoff || $program['date'] > $today
+            || !empty($program['cancelled'])) continue;
+        $dashboardProgramById[(string)$program['id']] = [
+            'title' => trim((string)($program['title'] ?? 'Untitled program')) ?: 'Untitled program',
+            'category' => trim((string)($program['category'] ?? 'Other')) ?: 'Other',
+            'date' => (string)$program['date'],
+            'attendance' => 0,
+            'members' => [],
+        ];
+    }
+    $dashboardAttendedSignupMembers = [];
+    $dashboardRegistrations = json_decode($__data['skEventRegistrations'] ?? '[]', true);
+    $dashboardRegistrations = is_array($dashboardRegistrations) ? $dashboardRegistrations : [];
+    foreach ($dashboardRegistrations as $registration) {
+        if (!is_array($registration)) continue;
+        $eventId = (string)($registration['eventId'] ?? '');
+        if (!isset($dashboardProgramById[$eventId]) || ($registration['attendanceStatus'] ?? '') !== 'Attended') continue;
+        $dashboardProgramById[$eventId]['attendance']++;
+        if (!empty($registration['memberId'])) {
+            $memberId = (string)$registration['memberId'];
+            $dashboardProgramById[$eventId]['members'][$memberId] = true;
+            $dashboardAttendedSignupMembers[$eventId . ':' . $memberId] = true;
+        }
+    }
+    $dashboardWalkins = json_decode($__data['skEventAttendance'] ?? '[]', true);
+    $dashboardWalkins = is_array($dashboardWalkins) ? $dashboardWalkins : [];
+    $dashboardWalkinSeen = [];
+    foreach ($dashboardWalkins as $walkin) {
+        if (!is_array($walkin)) continue;
+        $eventId = (string)($walkin['eventId'] ?? '');
+        if (!isset($dashboardProgramById[$eventId])) continue;
+        $memberId = trim((string)($walkin['memberId'] ?? ''));
+        if ($memberId !== '' && isset($dashboardAttendedSignupMembers[$eventId . ':' . $memberId])) continue;
+        $walkinKey = $eventId . ':' . ($memberId !== '' ? $memberId : (string)($walkin['id'] ?? ''));
+        if ($walkinKey !== $eventId . ':' && isset($dashboardWalkinSeen[$walkinKey])) continue;
+        $dashboardWalkinSeen[$walkinKey] = true;
+        $dashboardProgramById[$eventId]['attendance']++;
+        if ($memberId !== '') $dashboardProgramById[$eventId]['members'][$memberId] = true;
+    }
+    foreach ($dashboardProgramById as $program) {
+        if ($program['attendance'] > 0) $dashboardProgramInsights[] = $program;
+    }
+    usort($dashboardProgramInsights, function ($a, $b) {
+        return $b['attendance'] <=> $a['attendance']
+            ?: strcmp($b['date'], $a['date'])
+            ?: strcmp($a['title'], $b['title']);
+    });
+    $dashboardProgramInsights = array_slice($dashboardProgramInsights, 0, 5);
     ?>
 </head>
 
-<body>
+<body class="dashboard-page">
 <div class="top-strip"></div>
 <script src="theme.js"></script>
-<script src="sidebar.js?v=7"></script>
+<script src="sidebar.js?v=10"></script>
 
 <div class="page-content">
     <header class="bg-white border-bottom sticky-top">
@@ -128,10 +242,6 @@
                 <div class="text-muted small">KK Youth Profiling System</div>
             </div>
             <div class="ms-auto header-account-area">
-                <a href="announcements.php" class="header-notification" aria-label="Notifications">
-                    <i class="bi bi-bell"></i>
-                    <span class="header-notification-count">3</span>
-                </a>
                 <span class="header-avatar"><?= e(uinit()) ?></span>
                 <div class="d-none d-md-block header-identity">
                     <div class="header-identity-name"><?= e(uname()) ?></div>
@@ -145,50 +255,109 @@
     </header>
 
     <main class="container-fluid p-3 p-lg-4">
-        <section class="dashboard-hero mb-4">
-            <div class="row align-items-center g-3">
-                <div class="col-lg">
-                    <div class="text-muted small fw-semibold text-uppercase mb-2">Barangay Sikat · Alfonso, Cavite</div>
-                    <h2 class="h3 fw-bold mb-2">Welcome, <?= e(uname()) ?></h2>
-                    <p class="mb-0">A quick overview of KK youth records, announcements, and upcoming SK activities.</p>
+        <section class="dashboard-greeting d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+            <div>
+                <h2 class="h3 fw-bold mb-1">Good morning, <?= e(uname()) ?></h2>
+                <p class="text-muted mb-0"><?= e(date('l, F j, Y')) ?></p>
+            </div>
+            <a href="announcements.php" class="btn btn-primary px-4">
+                <i class="bi bi-plus-lg me-1"></i>New announcement
+            </a>
+        </section>
+
+        <section class="dashboard-attention mb-4" aria-labelledby="attentionTitle">
+            <div class="d-flex align-items-center gap-2 px-3 pt-3 pb-2">
+                <span class="attention-pill">Needs attention</span>
+                <span class="text-muted small"><?= (int)$dashboardAttentionCount ?> items waiting</span>
+            </div>
+            <?php if ($dashboardPendingRegistrations): ?>
+                <div class="dashboard-queue-row">
+                    <i class="bi bi-person-plus text-primary fs-5"></i>
+                    <div class="flex-grow-1"><strong><?= count($dashboardPendingRegistrations) ?> new youth registration<?= count($dashboardPendingRegistrations) === 1 ? '' : 's' ?></strong><div class="text-muted small">Waiting for review</div></div>
+                    <a href="request.php" class="btn btn-outline-secondary btn-sm px-3">Review</a>
                 </div>
-                <div class="col-lg-auto">
-                    <a href="registration.php" class="btn btn-light fw-semibold">
-                        <i class="bi bi-person-plus me-1"></i>KK Youth Registration
-                    </a>
+            <?php endif; ?>
+            <?php if ($dashboardEditRequests): ?>
+                <div class="dashboard-queue-row">
+                    <i class="bi bi-pencil-square text-warning fs-5"></i>
+                    <div class="flex-grow-1"><strong><?= count($dashboardEditRequests) ?> profile edit request<?= count($dashboardEditRequests) === 1 ? '' : 's' ?></strong><div class="text-muted small">Member information needs review</div></div>
+                    <a href="request.php" class="btn btn-outline-secondary btn-sm px-3">Review</a>
+                </div>
+            <?php endif; ?>
+            <?php if (!$dashboardAttentionCount): ?>
+                <div class="dashboard-queue-row text-muted">Nothing needs your attention right now.</div>
+            <?php endif; ?>
+        </section>
+
+        <section class="row g-3 mb-4 dashboard-stat-row" aria-label="System summary">
+            <div class="col-6 col-xl-3">
+                <div class="dashboard-stat">
+                    <div class="fs-2 fw-bold"><?= $dashboardActiveMembers ?></div>
+                    <div class="text-muted">Active KK members</div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="dashboard-stat">
+                    <div class="fs-2 fw-bold"><?= $upcomingAnnouncementCount ?></div>
+                    <div class="text-muted">Upcoming events</div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="dashboard-stat">
+                    <div class="fs-2 fw-bold"><?= count($dashboardExpenseRows) ?></div>
+                    <div class="text-muted">Recent expense records</div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="dashboard-stat">
+                    <div class="fs-2 fw-bold"><?= $dashboardBudgetPublished ? e($dashboardCurrency($dashboardBudgetAmount - $dashboardTotalSpent)) : '—' ?></div>
+                    <div class="text-muted">Budget remaining</div>
                 </div>
             </div>
         </section>
 
-        <section class="row g-3 mb-4" aria-label="System summary">
-            <div class="col-6 col-xl-3">
-                <div class="dashboard-stat">
-                    <div class="dashboard-stat-icon mb-3"><i class="bi bi-people"></i></div>
-                    <div class="text-muted small">Registered KK youth</div>
-                    <div class="fs-3 fw-bold"><?= count($dashboardMembers) ?></div>
+        <section class="dashboard-panel mb-4" aria-labelledby="programInsightsTitle">
+            <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                <div>
+                    <h2 class="h5 fw-bold mb-1" id="programInsightsTitle">
+                        <i class="bi bi-fire text-primary me-2"></i>Program insights
+                    </h2>
+                    <p class="small text-muted mb-0">
+                        Most attended completed programs from the last 12 months. Use this as a planning signal, not a guarantee of future turnout.
+                    </p>
                 </div>
+                <a href="reports.php" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-bar-chart me-1"></i>View reports
+                </a>
             </div>
-            <div class="col-6 col-xl-3">
-                <div class="dashboard-stat">
-                    <div class="dashboard-stat-icon mb-3"><i class="bi bi-person-check"></i></div>
-                    <div class="text-muted small">Active members</div>
-                    <div class="fs-3 fw-bold"><?= $dashboardActiveMembers ?></div>
+            <?php if (!$dashboardProgramInsights): ?>
+                <div class="text-muted small">No confirmed attendance records are available for completed programs in the last 12 months.</div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Program / event</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th class="text-end">Confirmed attendance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($dashboardProgramInsights as $index => $program): ?>
+                                <tr>
+                                    <td class="fw-bold"><?= $index + 1 ?></td>
+                                    <td class="fw-semibold"><?= e($program['title']) ?></td>
+                                    <td><?= e($program['category']) ?></td>
+                                    <td><?= e($program['date']) ?></td>
+                                    <td class="text-end fw-bold"><?= (int)$program['attendance'] ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-            <div class="col-6 col-xl-3">
-                <div class="dashboard-stat">
-                    <div class="dashboard-stat-icon mb-3"><i class="bi bi-megaphone"></i></div>
-                    <div class="text-muted small">Published announcements</div>
-                    <div class="fs-3 fw-bold"><?= count($publishedAnnouncements) ?></div>
-                </div>
-            </div>
-            <div class="col-6 col-xl-3">
-                <div class="dashboard-stat">
-                    <div class="dashboard-stat-icon mb-3"><i class="bi bi-calendar-event"></i></div>
-                    <div class="text-muted small">Upcoming activities</div>
-                    <div class="fs-3 fw-bold"><?= $upcomingAnnouncementCount ?></div>
-                </div>
-            </div>
+            <?php endif; ?>
         </section>
 
         <section class="dashboard-panel mb-4" aria-labelledby="budgetTransparencyTitle">
@@ -231,7 +400,9 @@
                 </div>
             </div>
 
-            <div class="row g-4">
+            <details class="mt-3">
+                <summary class="fw-semibold">View spending breakdown and recent expenses</summary>
+                <div class="row g-4 mt-1">
                 <div class="col-lg-4">
                     <h3 class="h6 fw-bold">Spending by category</h3>
                     <?php if (!$dashboardCategoryTotals): ?>
@@ -270,11 +441,12 @@
                         <p class="small text-muted mt-2 mb-0">Showing the five most recent expenses. Recipient and description fields are not displayed here.</p>
                     <?php endif; ?>
                 </div>
-            </div>
+                </div>
+            </details>
         </section>
 
         <div class="row g-3">
-            <section class="col-lg-7" aria-labelledby="upcomingTitle">
+            <section class="col-12" aria-labelledby="upcomingTitle">
                 <div class="dashboard-panel">
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                         <h2 class="h5 fw-bold mb-0" id="upcomingTitle">Upcoming activities</h2>
@@ -302,32 +474,12 @@
                     <?php endif; ?>
                 </div>
             </section>
-
-            <section class="col-lg-5" aria-labelledby="quickLinksTitle">
-                <div class="dashboard-panel">
-                    <h2 class="h5 fw-bold mb-3" id="quickLinksTitle">Quick links</h2>
-                    <div class="d-grid gap-2">
-                        <a class="quick-link" href="registration.php">
-                            <i class="bi bi-person-plus fs-5 text-primary"></i><span>KK Youth Registration</span>
-                        </a>
-                        <a class="quick-link" href="members.php">
-                            <i class="bi bi-people fs-5 text-primary"></i><span>Member List</span>
-                        </a>
-                        <a class="quick-link" href="announcements.php">
-                            <i class="bi bi-megaphone fs-5 text-primary"></i><span>Announcements &amp; Events</span>
-                        </a>
-                        <a class="quick-link" href="reports.php">
-                            <i class="bi bi-file-earmark-bar-graph fs-5 text-primary"></i><span>Reports &amp; Analytics</span>
-                        </a>
-                    </div>
-                </div>
-            </section>
         </div>
     </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app-alerts.js?v=2"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>

@@ -15,9 +15,9 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KK Youth Profiling System | Settings</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="sidebar.css?v=12" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
 
     <style>
         :root {
@@ -192,7 +192,7 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
 <div class="top-strip"></div>
 
 <script src="theme.js"></script>
-<script src="sidebar.js?v=7"></script>
+<script src="sidebar.js?v=10"></script>
 
 <main class="main page-content">
 
@@ -226,7 +226,7 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
 
 <div class="content">
 
-    <section class="hero">
+    <section class="hero hero-primary">
         <h1>Settings</h1>
         <p><?= is_public() ? 'Choose how the system looks for you. You are viewing as a public viewer.' : 'Your account and display settings.' ?></p>
     </section>
@@ -244,7 +244,7 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
                         <div class="mb-1"><span class="label">Position</span><div class="fw-bold"><?= e($u['role']) ?></div></div>
                         <div class="mb-3"><span class="label">Username</span><div class="fw-bold"><?= e($u['username']) ?></div></div>
                     <?php else: ?>
-                        <p class="mb-2">You are using the system as a <b>Public Viewer</b> (view only). You can read the pages and send a KK registration, but you cannot change any records.</p>
+                        <p class="mb-2">You are using the system as a <b>Public Viewer</b> (view only). To register as KK youth and create an account, visit the SK Office at the Barangay Hall in Barangay Sikat, Alfonso, Cavite.</p>
                         <a href="registration.php" class="btn btn-primary btn-sm me-1"><i class="bi bi-person-plus-fill me-1"></i>KK Youth Registration</a>
                     <?php endif; ?>
                 </div>
@@ -365,7 +365,7 @@ if (btn) btn.addEventListener("click", function () {
     if (n1 !== n2) { note("danger", "The new passwords do not match."); return; }
     fetch("api.php?action=password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?> },
         body: JSON.stringify({ current: cur, "new": n1 })
     })
     .then(function (r) { return r.json(); })
@@ -419,6 +419,6 @@ document.getElementById('backupRestoreForm').addEventListener('submit', function
 </script>
 <?php endif; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>

@@ -72,6 +72,26 @@ function kk_members_is_list($value) {
     return true;
 }
 
+function kk_member_normalize_disability_types($value) {
+    $allowed = ['Visual', 'Hearing', 'Physical', 'Speech', 'Intellectual', 'Psychosocial', 'Multiple Disabilities', 'Other'];
+    if ($value === null || $value === '') return [];
+    if (is_string($value)) {
+        if (trim($value) === '') return [];
+        $value = array_map('trim', explode(',', $value));
+    }
+    if (!kk_members_is_list($value) || count($value) > count($allowed)) {
+        throw new RuntimeException('disabilityType must be a list of valid disability types.');
+    }
+    $types = [];
+    foreach ($value as $type) {
+        if (!is_string($type) || !in_array($type, $allowed, true)) {
+            throw new RuntimeException('disabilityType contains an invalid value.');
+        }
+        if (!in_array($type, $types, true)) $types[] = $type;
+    }
+    return $types;
+}
+
 function kk_member_datetime_to_sql($value, $field) {
     if ($value === null || $value === '') return [null, $value === '' ? '' : null];
     if (!is_string($value)) throw new RuntimeException($field . ' must be a timestamp string.');
@@ -119,6 +139,8 @@ function kk_member_to_columns($member) {
         } elseif ($jsonField === 'createdAt' || $jsonField === 'archivedAt') {
             list($values[$column], $preserved) = kk_member_datetime_to_sql($value, $jsonField);
             if ($preserved !== null) $special[$jsonField] = $preserved;
+        } elseif ($jsonField === 'disabilityType') {
+            $values[$column] = implode(',', kk_member_normalize_disability_types($value));
         } elseif ($jsonField === 'interests' || $jsonField === 'history') {
             if ($value === null) {
                 $values[$column] = 'null';
@@ -185,6 +207,8 @@ function kk_member_row_to_object($row) {
                 if (!$date) throw new RuntimeException($jsonField . ' could not be reconstructed.');
                 $object->$jsonField = $date->format('Y-m-d\TH:i:s.v\Z');
             }
+        } elseif ($jsonField === 'disabilityType') {
+            $object->$jsonField = kk_member_normalize_disability_types($row[$column] === null ? [] : (string)$row[$column]);
         } elseif ($jsonField === 'interests' || $jsonField === 'history') {
             $object->$jsonField = $row[$column] === null ? null : json_decode($row[$column]);
             if ($row[$column] !== null && json_last_error() !== JSON_ERROR_NONE) {

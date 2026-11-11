@@ -106,6 +106,11 @@
     function dateText(value) {
         return value ? fmtDate(value) : '—';
     }
+    function showAccountCredentials(result, member) {
+        window.alert('Account created for ' + fullName(member) + '. Username: ' + result.username +
+            '. Temporary password: ' + result.temporaryPassword +
+            '. Share these credentials securely; the member must change the password at first login.');
+    }
     function statusBadge(status) {
         var css = status === 'Approved' ? 'success' : status === 'Rejected' ? 'danger' : 'warning text-dark';
         return '<span class="badge bg-' + css + '">' + esc(status || 'Pending') + '</span>';
@@ -263,11 +268,12 @@
         request.remarks = remarks;
         var archivedCount = approve ? archiveMembersOverAgeLimit() : 0;
         try {
-            if (approve) {
-                if (window.USE_MEMBERS_TABLE) DB.saveMembers(members);
-                else setList('kkMembers', members);
+            if (window.USE_MEMBERS_TABLE) {
+                if (approve) DB.saveMembers(members);
+                setList('kkEditRequests', editRequests);
+            } else {
+                DB.saveMemberData(members, editRequests);
             }
-            setList('kkEditRequests', editRequests);
         } catch (error) {
             members = JSON.parse(oldMembers);
             editRequests = JSON.parse(oldRequests);
@@ -293,6 +299,11 @@
                 : request[field[0]];
             return '<div class="col-md-6"><div class="text-muted small">' + esc(field[1]) + '</div><div class="small fw-bold">' + valueHtml(field[0], value) + '</div></div>';
         }).join('');
+        var applicantAge = calcAge(request.birthDate);
+        if (applicantAge < 18) {
+            rows += '<div class="col-md-6"><div class="text-muted small">Parent/guardian consent</div><div class="small fw-bold">' +
+                (request.guardianConsent === true ? 'Confirmed' : 'Not confirmed') + '</div></div>';
+        }
         $('pubBodyDetail').innerHTML =
             '<h5 class="fw-bold mb-0">' + esc(fullName(request)) + '</h5><small class="text-muted">' + esc(request.refNo || '') + ' · submitted ' + dateText(request.submittedAt) + '</small> ' + statusBadge(request.status) +
             '<div class="row g-3 mt-1">' + rows + '</div>' +
@@ -355,28 +366,27 @@
         record.status = 'Active';
         record.createdAt = nowISO();
         record.history = [{ at: record.createdAt, action: 'Registered', by: OFFICER, note: 'Approved from public registration ' + (request.refNo || '') + '.' }];
-        members.push(record);
-        request.status = 'Approved';
-        request.reviewedAt = nowISO();
-        request.reviewedBy = OFFICER;
-        request.memberId = record.id;
-        request.memberNo = record.memberNo;
+        record.guardianConsent = request.guardianConsent === true;
+        record.guardianConsentAt = request.guardianConsentAt || null;
+        record.guardianConsentVersion = request.guardianConsentVersion || null;
         try {
-            if (window.USE_MEMBERS_TABLE) DB.saveMembers(members);
-            else setList('kkMembers', members);
-            setList('kkPendingRegistrations', pendingRegistrations);
+            var result = DB.registerMember(record, request);
+            record = result.member;
+            members.push(record);
+            Object.assign(request, result.registration || {
+                status: 'Approved',
+                reviewedAt: nowISO(),
+                reviewedBy: OFFICER,
+                memberId: record.id,
+                memberNo: record.memberNo
+            });
         } catch (error) {
-            members.pop();
-            request.status = 'Pending';
-            delete request.reviewedAt;
-            delete request.reviewedBy;
-            delete request.memberId;
-            delete request.memberNo;
             notify('danger', error.message || 'Could not save the registration review.');
             return;
         }
         publicModal.hide();
         notify('success', fullName(record) + ' was approved and registered (' + record.memberNo + ').');
+        showAccountCredentials(result, record);
         render();
     }
     function rejectPublicRequest(id) {

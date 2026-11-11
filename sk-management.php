@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KK Youth Profiling System | SK Meetings</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css?v=12" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
     <link href="vendor/summernote/summernote-bs5.min.css" rel="stylesheet">
 
     <style>
@@ -475,7 +475,7 @@ html{
 <div class="top-strip"></div>
 
 <script src="theme.js"></script>
-<script src="sidebar.js?v=7"></script>
+<script src="sidebar.js?v=10"></script>
 
 
 <div class="page-content">
@@ -644,7 +644,7 @@ html{
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h2 class="h6 fw-bold mb-1"><i class="bi bi-clipboard2-check me-2"></i>SK Meeting Attendance</h2>
-                            <small class="text-muted">Record attendance of the meeting's attendees (SK members taken from the KK Member List).</small>
+                            <small class="text-muted">Record attendance for all active SK officials and the meeting's invited attendees.</small>
                         </div>
                         <a href="#sk-meetings" class="btn btn-outline-success btn-sm"><i class="bi bi-calendar-event me-1"></i>View Meetings</a>
                     </div>
@@ -827,9 +827,9 @@ html{
 <div id="printArea"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js"></script>
+<script src="app-alerts.js?v=2"></script>
 <script src="vendor/jquery/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="vendor/summernote/summernote-bs5.min.js"></script>
 <script src="vendor/dompurify/purify.min.js"></script>
 <script src="minutes-render.js"></script>
@@ -933,9 +933,13 @@ html{
         var cls = s === 'Scheduled' || s === 'Ongoing' ? 'bg-dark' : 'bg-secondary';
         return '<span class="badge ' + cls + '">' + esc(s) + '</span>';
     }
-    // people whose attendance is tracked for a meeting: invited attendees, or all active SK if none were picked
+    // Include all active officials, in addition to any invited KK members.
     function attendeeIds(m) {
-        return m.attendees.length ? m.attendees.filter(function (id) { return D.kkById(id); }) : D.officers().map(function (o) { return o.id; });
+        var ids = D.officers().map(function (o) { return o.id; });
+        m.attendees.forEach(function (id) {
+            if (D.kkById(id) && ids.indexOf(id) === -1) ids.push(id);
+        });
+        return ids;
     }
 
     /* ---------- meeting list ---------- */
@@ -1244,8 +1248,12 @@ html{
                     renderAll();
                     return;
                 }
-                delete attendance[id];
-                D.write(ATT_KEY, attendance);
+                try {
+                    DB.deleteMeetingAttendance(id, attendance[id] || {});
+                    delete attendance[id];
+                } catch (error) {
+                    note('attendanceMessage', 'warning', error.message || 'The meeting was deleted, but its attendance record could not be removed.');
+                }
                 renderAll();
             });
     }
@@ -1257,7 +1265,10 @@ html{
         var rows = ids.length ? '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>SK Member</th><th>Position</th><th>Attendance</th><th>Remarks</th></tr></thead><tbody>' +
             ids.map(function (id) {
                 var a = rec[id] || {};
-                return '<tr><td>' + esc(nameOf(id)) + '</td><td>' + esc(posOf(id)) + '</td><td>' + esc(a.status || 'Not recorded') + '</td><td>' + esc(a.remarks || '') + '</td></tr>';
+                var correctionCount = Array.isArray(a.history) ? Math.max(0, a.history.length - 1) : 0;
+                return '<tr><td>' + esc(nameOf(id)) + '</td><td>' + esc(posOf(id)) + '</td><td>' +
+                    esc(a.status || 'Not recorded') + (correctionCount ? '<div class="small text-muted">' + correctionCount + ' correction' + (correctionCount === 1 ? '' : 's') + '</div>' : '') +
+                    '</td><td>' + esc(a.remarks || '') + '</td></tr>';
             }).join('') + '</tbody></table></div>' : '<div class="small text-muted">No attendees.</div>';
         return '<div class="d-flex flex-wrap gap-2 align-items-center mb-2"><h4 class="fw-bold mb-0">' + esc(m.title) + '</h4>' + statusBadge(m.status) + '</div>' +
             '<div class="row g-3">' + kv('Meeting type', typeText(m)) + kv('Status', m.status) + kv('Start', fmtDate(m.startDate) + (m.startTime ? ', ' + fmtTime(m.startTime) : '')) +
@@ -1347,8 +1358,12 @@ html{
             if (st) { rec[tr.dataset.id] = { status: st, remarks: tr.querySelector('.att-remarks').value.trim() }; n++; }
         });
         if (!n) { note('attendanceMessage', 'warning', 'Select an attendance status for at least one member.'); return; }
-        attendance[mid] = rec;
-        if (!D.write(ATT_KEY, attendance)) { note('attendanceMessage', 'danger', 'Could not save attendance (browser storage problem).'); return; }
+        try {
+            attendance[mid] = DB.saveMeetingAttendance(mid, attendance[mid] || {}, rec);
+        } catch (error) {
+            note('attendanceMessage', 'danger', error.message || 'Could not save attendance.');
+            return;
+        }
         note('attendanceMessage', 'success', 'Attendance saved for ' + n + ' member' + (n > 1 ? 's' : '') + '.');
         renderSummary(); renderMeetings();
     };
@@ -1397,6 +1412,10 @@ html{
     document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
     window.addEventListener('pageshow', function (e) { if (e.persisted) refresh(); });
 
+    if (!window.SK_CAN_MANAGE_ROLES) {
+        $('saveAttendanceBtn').classList.add('d-none');
+        $('attendanceMessage').innerHTML = '<div class="alert alert-info small">Only the SK Chairman or SK Secretary can record or correct attendance.</div>';
+    }
     load();
     if (meetings.length) saveMeetings();     // store upgraded meeting fields once
     renderAll();

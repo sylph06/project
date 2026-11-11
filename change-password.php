@@ -16,7 +16,9 @@ if (empty($user['must_change_password'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Change Password | KK Youth Profiling System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
+    <script src="theme.js"></script>
 </head>
 <body class="bg-light">
 <main class="container py-5" style="max-width:520px">
@@ -52,7 +54,7 @@ if (empty($user['must_change_password'])) {
         }
         fetch('api.php?action=password', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?> },
             body: JSON.stringify({ current: current, new: next })
         }).then(function (response) { return response.json(); }).then(function (result) {
             if (!result.ok) throw new Error(result.error || 'Could not update your password.');

@@ -8,23 +8,6 @@ $__publicKeys = ['skAnnouncements'];
 
 if (USE_MEMBERS_TABLE) require_once __DIR__ . '/members_table.php';
 
-function __public_member($m) {
-    $keep = ['id', 'memberNo', 'firstName', 'middleName', 'lastName', 'suffix', 'gender', 'genderOther',
-             'purok', 'status', 'archiveReason', 'createdAt', 'classification', 'classificationOther',
-             'educationLevel', 'educationStatus', 'occupation', 'interests'];
-    $out = [];
-    foreach ($keep as $k) { if (is_array($m) && array_key_exists($k, $m)) $out[$k] = $m[$k]; }
-    // keep the age correct without revealing the real birth date
-    if (!empty($m['birthDate'])) {
-        try {
-            $today = new DateTime('today');
-            $age = (new DateTime($m['birthDate']))->diff($today)->y;
-            $out['birthDate'] = $today->sub(new DateInterval('P' . $age . 'Y'))->format('Y-m-d');
-        } catch (Exception $ex) {}
-    }
-    return $out;
-}
-
 /* AUTOMATIC ARCHIVE: a KK member who is 31 or older is archived by the server.
    Runs on every page load (officers and public viewers), so nobody has to click anything. */
 (function () {
@@ -90,16 +73,20 @@ function __public_member($m) {
         return;
     }
 
+    $pdo = null;
     try {
         $pdo = db();
-        $raw = $pdo->query("SELECT data_value FROM app_data WHERE data_key = 'kkMembers'")->fetchColumn();
-        if ($raw === false) return;
-        $members = json_decode($raw, true);
-        if (!is_array($members)) return;
+        $pdo->beginTransaction();
+        $memberRow = $pdo->query("SELECT data_value FROM app_data WHERE data_key = 'kkMembers' FOR UPDATE")->fetchColumn();
+        if ($memberRow === false) {
+            $pdo->commit();
+            return;
+        }
+        $members = json_decode((string)$memberRow, true);
+        if (!is_array($members)) throw new RuntimeException('KK member data is invalid.');
         $today = new DateTime('today');
         $now = gmdate('Y-m-d\TH:i:s.000\Z');
-        $reason = 'Automatically archived \u2013 exceeded youth age eligibility.';
-        $reason = json_decode('"' . $reason . '"');
+        $reason = 'Automatically archived – exceeded youth age eligibility.';
         $changed = [];
         foreach ($members as $i => $m) {
             if (!is_array($m) || ($m['status'] ?? '') === 'Archived' || empty($m['birthDate'])) continue;
@@ -113,26 +100,47 @@ function __public_member($m) {
             if (!isset($m['history']) || !is_array($m['history'])) $m['history'] = [];
             $m['history'][] = ['at' => $now, 'action' => 'Auto-archived', 'by' => 'System', 'note' => $reason];
             $members[$i] = $m;
-            if (!empty($m['id'])) $changed[$m['id']] = true;
+            if (!empty($m['id'])) $changed[(string)$m['id']] = true;
         }
-        if (!$changed) return;
+        if (!$changed) {
+            $pdo->commit();
+            return;
+        }
+
         $save = $pdo->prepare('UPDATE app_data SET data_value = ?, updated_by = ? WHERE data_key = ?');
-        $save->execute([json_encode($members, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE), 'system', 'kkMembers']);
-        // a pending edit request can no longer be approved
-        $rq = $pdo->query("SELECT data_value FROM app_data WHERE data_key = 'kkEditRequests'")->fetchColumn();
-        $reqs = $rq === false ? null : json_decode($rq, true);
-        if (is_array($reqs)) {
+        $save->execute([
+            json_encode($members, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR),
+            'system',
+            'kkMembers',
+        ]);
+        $requestRow = $pdo->query("SELECT data_value FROM app_data WHERE data_key = 'kkEditRequests' FOR UPDATE")->fetchColumn();
+        if ($requestRow !== false) {
+            $requests = json_decode((string)$requestRow, true);
+            if (!is_array($requests)) throw new RuntimeException('KK edit request data is invalid.');
             $dirty = false;
-            foreach ($reqs as $j => $r) {
-                if (is_array($r) && ($r['status'] ?? '') === 'Edit Request' && isset($changed[$r['memberId'] ?? ''])) {
-                    $reqs[$j]['status'] = 'Rejected'; $reqs[$j]['reviewedAt'] = $now;
-                    $reqs[$j]['reviewedBy'] = 'System'; $reqs[$j]['remarks'] = 'Profile was archived.';
+            foreach ($requests as $index => $request) {
+                if (is_array($request) && ($request['status'] ?? '') === 'Edit Request'
+                    && isset($changed[(string)($request['memberId'] ?? '')])) {
+                    $requests[$index]['status'] = 'Rejected';
+                    $requests[$index]['reviewedAt'] = $now;
+                    $requests[$index]['reviewedBy'] = 'System';
+                    $requests[$index]['remarks'] = 'Profile was archived.';
                     $dirty = true;
                 }
             }
-            if ($dirty) $save->execute([json_encode($reqs, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE), 'system', 'kkEditRequests']);
+            if ($dirty) {
+                $save->execute([
+                    json_encode($requests, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR),
+                    'system',
+                    'kkEditRequests',
+                ]);
+            }
         }
-    } catch (Throwable $ex) { /* never stop the page because of this */ }
+        $pdo->commit();
+    } catch (Throwable $ex) {
+        if ($pdo && $pdo->inTransaction()) $pdo->rollBack();
+        error_log('Automatic KK member archival failed: ' . $ex->getMessage());
+    }
 })();
 
 $__data = [];
@@ -144,13 +152,13 @@ if ($__official || $__public) {
             $__data[$__row['data_key']] = $__row['data_value'];
         }
     }
-    if (USE_MEMBERS_TABLE) {
+    if (USE_MEMBERS_TABLE && !$__public) {
         $__data['kkMembers'] = json_encode(
             kk_members_array_from_table(db()),
             JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
         );
     }
-    if (USE_SK_ROLES_TABLE) {
+    if (USE_SK_ROLES_TABLE && !$__public) {
         $__roles = db()->query('SELECT role_data FROM sk_roles ORDER BY role_code')->fetchAll(PDO::FETCH_COLUMN);
         $__data['skRoles'] = json_encode(
             array_map(function ($role) { return json_decode($role, true); }, $__roles),
@@ -172,9 +180,6 @@ if ($__public) {
         }
         $__data['skAnnouncements'] = json_encode($__keep);
     }
-    if (isset($__data['kkMembers'])) {
-        $__data['kkMembers'] = json_encode(array_map('__public_member', $__decode('kkMembers')));
-    }
 }
 if (isset($__data['skRoles']) && !can_view_background_history()) {
     $__roles = json_decode($__data['skRoles'], true);
@@ -187,12 +192,18 @@ if (isset($__data['skRoles']) && !can_view_background_history()) {
 }
 $__flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
 ?>
+<?php if (!$__public): ?>
+<link rel="stylesheet" href="vendor/adminlte/css/adminlte.min.css">
+<script src="vendor/adminlte/js/adminlte.min.js" defer></script>
+<?php endif; ?>
 <script>
+document.documentElement.classList.add('sidebar-expand-lg');
 window.__DB = <?= json_encode((object)$__data, $__flags) ?>;
+window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), $__flags) ?>;
 window.SK_PUBLIC = <?= $__public ? 'true' : 'false' ?>;
 window.SK_OFFICER = <?= json_encode($__official ? uname() . ' (' . urole() . ')' : '', $__flags) ?>;
 window.SK_CAN_MANAGE_ROLES = <?= can_manage_sk_roles() ? 'true' : 'false' ?>;
 window.USE_MEMBERS_TABLE = <?= USE_MEMBERS_TABLE ? 'true' : 'false' ?>;
 window.USE_SK_ROLES_TABLE = <?= USE_SK_ROLES_TABLE ? 'true' : 'false' ?>;
 </script>
-<script src="storage.js"></script>
+<script src="storage.js?v=<?= filemtime(__DIR__ . '/storage.js') ?>"></script>

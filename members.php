@@ -14,11 +14,188 @@ if (can_manage_sk_roles()) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Member List | SK KK Profiling System</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="sidebar.css?v=12" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <link href="sidebar.css?v=20" rel="stylesheet">
 
 <style>
+
+/* Reference-style directory: keep the page focused on search and the member list. */
+.members-add-btn{
+    border-radius:999px;
+    font-weight:800;
+}
+
+.member-hero,
+main > section.row.row-cols-1{
+    display:none!important;
+}
+
+body > main{
+    padding-top:1.75rem!important;
+}
+
+.page-content > main.container-fluid{
+    width:100%!important;
+    max-width:none!important;
+    padding-inline:clamp(1rem,2.5vw,3rem)!important;
+}
+
+.member-card .table-responsive{
+    overflow-x:auto;
+}
+
+.member-card .table{
+    width:100%;
+    min-width:0;
+    table-layout:auto;
+}
+
+.member-card{
+    border-radius:16px!important;
+    overflow:hidden;
+}
+
+.member-card .card-header{
+    padding:1.25rem 1.5rem!important;
+    background:var(--ui-surface)!important;
+}
+
+#filterPanel{
+    display:block!important;
+}
+
+.member-card .card-header > .d-flex:first-child{
+    display:none!important;
+}
+
+.member-card .card-header > .row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 180px 180px;
+    gap:12px;
+    align-items:center;
+}
+
+.member-card .card-header > .row > .col-md-4{
+    display:none;
+}
+
+.member-card .card-header > .row > .col-md-8{
+    width:auto;
+    grid-column:1;
+}
+
+#filterPanel{
+    display:contents!important;
+}
+
+#filterPanel > .row{
+    display:contents;
+}
+
+#filterPanel > .row > div{
+    width:auto;
+    padding:0;
+}
+
+#filterPanel > .row > div:nth-child(1),
+#filterPanel > .row > div:nth-child(4){
+    display:none;
+}
+
+#filterPanel > .row > div:nth-child(2){
+    grid-column:2;
+    grid-row:1;
+}
+
+#filterPanel > .row > div:nth-child(3){
+    grid-column:3;
+    grid-row:1;
+}
+
+#filterPanel .form-label{
+    display:none;
+}
+
+.member-card .card-header > .row .form-control,
+.member-card .card-header > .row .form-select,
+#filterPanel .form-control,
+#filterPanel .form-select{
+    min-height:58px;
+    border-radius:12px;
+    font-size:1rem;
+}
+
+.member-card > .card-body{
+    padding:0 1.5rem 1.5rem!important;
+}
+
+.member-card .table{
+    margin-bottom:0;
+}
+
+.member-card .table thead th{
+    background:transparent;
+    border-bottom:1px solid var(--ui-line);
+    padding:1rem;
+}
+
+.member-card .table tbody td{
+    padding:1rem;
+    border-bottom:1px solid var(--ui-line);
+}
+
+@media(max-width:767.98px){
+    .members-add-btn{
+        padding:.5rem .75rem;
+        font-size:.85rem;
+    }
+
+    .members-add-btn + .header-notification{
+        display:none;
+    }
+
+    #filterPanel .col-xl-3:not(:first-child){
+        flex:1 1 150px;
+        width:auto;
+    }
+
+    .member-card .card-header > .row{
+        display:flex;
+        flex-wrap:wrap;
+    }
+
+    .member-card .card-header > .row > .col-md-8{
+        flex:1 1 100%;
+    }
+
+    #filterPanel{
+        display:block!important;
+    }
+
+    #filterPanel > .row{
+        display:flex;
+    }
+
+    #filterPanel > .row > div:nth-child(1),
+    #filterPanel > .row > div:nth-child(4){
+        display:none;
+    }
+
+    #filterPanel > .row > div:nth-child(2),
+    #filterPanel > .row > div:nth-child(3){
+        flex:1 1 45%;
+    }
+
+    .member-card .card-header,
+    .member-card > .card-body{
+        padding-inline:1rem!important;
+    }
+
+    .page-content > main.container-fluid{
+        padding-inline:.75rem!important;
+    }
+}
 
 :root{
     --kk-primary:var(--bs-primary);
@@ -292,6 +469,10 @@ textarea.form-control{ min-height:0; }
 /* ---- compact member card (same style as the announcement cards, smaller) ---- */
 .mini-card{ border:1px solid var(--line); border-radius:16px; background:#fff; overflow:hidden; transition:.2s ease; }
 .mini-card:hover{ box-shadow:0 10px 22px rgba(20,20,20,.09); transform:translateY(-2px); }
+.mini-card[data-act="view"],
+.member-row[data-act="view"]{ cursor:pointer; }
+.mini-card[data-act="view"]:focus-visible,
+.member-row[data-act="view"]:focus-visible{ outline:3px solid var(--bs-primary); outline-offset:2px; }
 .mini-card.is-archived{ opacity:.75; }
 .mini-banner{ position:relative; height:84px; background:rgba(var(--bs-primary-rgb),.14); }
 .mini-banner:before{ content:""; position:absolute; width:110px; height:110px; border-radius:50%; right:-30px; top:-55px; background:rgba(var(--bs-primary-rgb),.2); }
@@ -344,7 +525,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
 <div class="top-strip"></div>
 
 <script src="theme.js"></script>
-<script src="sidebar.js?v=7"></script>
+<script src="sidebar.js?v=10"></script>
 
 <div class="page-content">
 
@@ -368,6 +549,9 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
         </div>
 
         <div class="ms-auto header-account-area">
+            <a href="registration.php" class="btn btn-primary px-4 members-add-btn">
+                <i class="bi bi-plus-lg me-1"></i>Add member
+            </a>
 
             <a href="announcements.php"
                class="header-notification"
@@ -422,6 +606,9 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                 </button>
                 <button type="button" class="btn btn-dark rounded-pill px-4 admin-only role-manager-only" id="heroAssign">
                     <i class="bi bi-person-badge me-2"></i>Assign SK Member
+                </button>
+                <button type="button" class="btn btn-outline-dark rounded-pill px-4 admin-only role-manager-only" id="manageCommitteesBtn">
+                    <i class="bi bi-diagram-3 me-2"></i>Manage Committees
                 </button>
                 <a href="registration.php" class="btn btn-dark rounded-pill px-4">
                     <i class="bi bi-person-plus-fill me-2"></i>Register KK Youth
@@ -651,7 +838,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12 d-none" id="kagawadCommitteeField">
-                            <label class="form-label fw-semibold" for="roleCommittee">Committee Assignment <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold" for="roleCommittee">Committee Assignment <span class="text-muted">(optional; one per official)</span></label>
                             <select class="form-select" id="roleCommittee"></select>
                             <div class="invalid-feedback"></div>
                         </div>
@@ -720,6 +907,32 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- ================= COMMITTEE MANAGEMENT ================= -->
+<div class="modal fade" id="committeeModal" tabindex="-1" aria-labelledby="committeeModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="committeeModalTitle">Manage Committees</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">Add or rename committees. Renaming updates assigned SK officials and preserves their history.</p>
+                <div id="committeeList" class="list-group mb-3"></div>
+                <form id="committeeForm">
+                    <input type="hidden" id="committeeOriginal">
+                    <label class="form-label fw-semibold" for="committeeName">Committee name</label>
+                    <input type="text" class="form-control" id="committeeName" maxlength="100" required>
+                    <div class="invalid-feedback"></div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-success" id="committeeSaveBtn">Add Committee</button>
+                        <button type="button" class="btn btn-outline-secondary d-none" id="committeeCancelEditBtn">Cancel edit</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -795,7 +1008,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
 <div id="toastBox" aria-live="assertive"></div>
 <div id="printArea"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="sk-data.js?v=2"></script>
 <script>
 (function () {
@@ -815,7 +1028,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
         POSITIONS.push('SK Vice Chairperson');
     }
     var ROLES = D.ROLES;
-    var COMMITTEES = [
+    var DEFAULT_COMMITTEES = [
         'Committee on Education and Culture',
         'Committee on Environmental Protection',
         'Committee on Youth Employment and Livelihood',
@@ -824,6 +1037,19 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
         'Committee on Sports Development',
         'Committee on Anti-Drug Abuse and Social Protection'
     ];
+    var COMMITTEES = DEFAULT_COMMITTEES.slice();
+    function loadCommittees() {
+        try {
+            var stored = JSON.parse(DB.getItem('skCommittees') || 'null');
+            if (Array.isArray(stored) && stored.every(function (name) { return typeof name === 'string'; })) {
+                COMMITTEES = stored;
+                return;
+            }
+        } catch (error) {
+            notify('danger', 'Could not read the committee list.');
+        }
+        COMMITTEES = DEFAULT_COMMITTEES.slice();
+    }
     var PUROKS = ['Purok 1', 'Purok 2', 'Purok 3', 'Purok 4', 'Purok 5'];
     var kkName = D.kkName, calcAge = D.calcAge, norm = D.norm, todayISO = D.todayISO;
 
@@ -924,7 +1150,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     }
 
     /* ---------- filters + list ---------- */
-    var view = 'cards', page = 1, loading = true;
+    var view = 'table', page = 1, loading = true;
 
     function filtered() {
         var q = norm($('searchInput').value), t = $('typeFilter').value, pos = $('positionFilter').value,
@@ -985,22 +1211,13 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     function actBtn(key, act, icon, title, cls) {
         return '<button type="button" class="btn btn-sm action-btn ' + cls + '" data-act="' + act + '" data-key="' + esc(key) + '" title="' + esc(title) + '" aria-label="' + esc(title) + '"><i class="bi ' + icon + '"></i></button>';
     }
-    function rowActions(r) {
-        var h = actBtn(r.key, 'view', 'bi-eye', 'View profile', 'btn-outline-success');
-        if (r.kkStatus !== 'Archived' || r.isSK) h += r.isSK
-            ? actBtn(r.key, 'role', 'bi-person-gear', 'Edit SK role and term', 'btn-outline-success')
-            : actBtn(r.key, 'role', 'bi-person-badge', 'Assign SK role', 'btn-outline-success');
-        if (r.isSK) h += actBtn(r.key, 'remove', 'bi-person-x', 'Remove SK role', 'btn-outline-danger');
-        if (r.kkStatus !== 'Archived') h += actBtn(r.key, 'kkedit', 'bi-pencil', 'Edit KK information (Registration)', 'btn-outline-secondary');
-        return h;
-    }
     function pills(r) {
         return '<span class="type-pill">KK MEMBER</span>' + (r.isSK ? '<span class="type-pill">SK MEMBER</span>' : '');
     }
 
     function cardHtml(r) {
         var term = r.isSK ? termLine(r) : (r.kk.classification || 'Registered ' + fmtDate(r.created));
-        return '<div class="col-12 col-sm-6 col-lg-4 col-xxl-3"><div class="card mini-card h-100' + (r.kkStatus === 'Archived' ? ' is-archived' : '') + '">' +
+        return '<div class="col-12 col-sm-6 col-lg-4 col-xxl-3"><div class="card mini-card h-100' + (r.kkStatus === 'Archived' ? ' is-archived' : '') + '" data-act="view" data-key="' + esc(r.key) + '" role="button" tabindex="0" aria-label="Open profile for ' + esc(r.name) + '">' +
             '<div class="mini-banner">' +
                 '<span class="mini-pill mini-pill-main">' + esc(r.isSK ? r.position : 'KK Member') + '</span>' +
                 (r.age !== '' ? '<span class="mini-age"><small>AGE</small><b>' + esc(r.age) + '</b></span>' : '') +
@@ -1015,19 +1232,16 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                 '<div class="mini-row"><i class="bi bi-geo-alt"></i><span class="text-truncate">' + esc(r.purok || '\u2014') + '</span></div>' +
                 '<div class="mini-row"><i class="bi bi-calendar3"></i><span class="text-truncate">' + esc(term) + '</span></div>' +
                 '<div class="mini-actions">' +
-                    '<button type="button" class="btn mini-view" data-act="view" data-key="' + esc(r.key) + '"><i class="bi bi-eye me-1"></i>View</button>' +
-                    (r.kkStatus !== 'Archived' || r.isSK ? '<button type="button" class="btn mini-ico" data-act="role" data-key="' + esc(r.key) + '" title="' + (r.isSK ? 'Edit SK role and term' : 'Assign SK role') + '"><i class="bi ' + (r.isSK ? 'bi-person-gear' : 'bi-person-badge') + '"></i></button>' : '') +
-                    (r.kkStatus !== 'Archived' ? '<button type="button" class="btn mini-ico" data-act="kkedit" data-key="' + esc(r.key) + '" title="Edit KK information"><i class="bi bi-pencil"></i></button>' : '') +
-                    (r.isSK ? '<button type="button" class="btn mini-ico mini-del" data-act="remove" data-key="' + esc(r.key) + '" title="Remove SK role"><i class="bi bi-person-x"></i></button>' : '') +
+                    '<span class="btn mini-view"><i class="bi bi-person-vcard me-1"></i>Open profile</span>' +
                 '</div>' +
             '</div></div></div>';
     }
 
     function tableHtml(list) {
         return '<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr>' +
-            '<th>Member</th><th>Age</th><th>Contact</th><th>Address / Purok</th><th>KK Status</th><th>SK Position</th><th>SK Status</th><th>Election / Term</th><th class="text-end">Actions</th></tr></thead><tbody>' +
+            '<th>Member</th><th>Age</th><th>Contact</th><th>Address / Purok</th><th>KK Status</th><th>SK Position</th><th>SK Status</th><th>Election / Term</th></tr></thead><tbody>' +
             list.map(function (r) {
-                return '<tr><td style="min-width:210px;"><div class="d-flex align-items-center gap-2">' + avatarHtml(r, 39) +
+                return '<tr class="member-row" data-act="view" data-key="' + esc(r.key) + '" tabindex="0" role="button" aria-label="Open profile for ' + esc(r.name) + '"><td style="min-width:210px;"><div class="d-flex align-items-center gap-2">' + avatarHtml(r, 39) +
                     '<div><div class="member-name">' + esc(r.name) + '</div><div class="member-id">' + esc(r.code) + ' ' + (r.isSK ? 'KK + SK' : 'KK') + '</div>' +
                     (shortDesc(r) ? '<div class="member-id text-truncate" style="max-width:220px;">' + esc(shortDesc(r)) + '</div>' : '') + '</div></div></td>' +
                     '<td>' + esc(r.age) + '</td>' +
@@ -1036,8 +1250,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                     '<td>' + statusBadge(r.kkStatus) + '</td>' +
                     '<td>' + esc(r.position || '\u2014') + '</td>' +
                     '<td>' + (r.isSK ? statusBadge(r.skStatus) : '\u2014') + '</td>' +
-                    '<td class="text-nowrap">' + esc(termLine(r)) + '</td>' +
-                    '<td class="text-end text-nowrap">' + rowActions(r) + '</td></tr>';
+                    '<td class="text-nowrap">' + esc(termLine(r)) + '</td></tr>';
             }).join('') + '</tbody></table></div>';
     }
 
@@ -1177,7 +1390,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
         }
         if (window.SK_CAN_MANAGE_ROLES) f += '<button type="button" class="btn btn-outline-primary btn-sm" data-act="link-account" data-key="' + esc(key) + '"><i class="bi bi-link-45deg me-1"></i>Link Existing Account</button>';
         if (window.SK_CAN_MANAGE_ROLES) f += '<button type="button" class="btn btn-outline-primary btn-sm" data-act="create-account" data-key="' + esc(key) + '"><i class="bi bi-person-plus me-1"></i>Create Member Login</button>';
-        if (r.kkStatus !== 'Archived') f += '<button type="button" class="btn btn-outline-secondary btn-sm" data-act="kkedit" data-key="' + esc(key) + '"><i class="bi bi-pencil me-1"></i>Edit in Registration</button>';
+        if (window.SK_CAN_MANAGE_ROLES && r.kkStatus !== 'Archived') f += '<button type="button" class="btn btn-outline-secondary btn-sm" data-act="kkedit" data-key="' + esc(key) + '"><i class="bi bi-pencil me-1"></i>Edit in Registration</button>';
         f += '<button type="button" class="btn btn-dark btn-sm ms-auto" data-bs-dismiss="modal">Close</button>';
         $('profileFooter').innerHTML = f;
         modal('profileModal').show();
@@ -1356,6 +1569,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     function openRoleForm(kkId) {
         var f = $('roleForm');
         f.reset(); clearErrs(f);
+        loadCommittees();
         fillSelect($('rolePosition'), POSITIONS, 'Select SK position');
         var role = kkId ? memberRoleOf(kkId) : null, m = kkId ? D.kkById(kkId) : null;
         fillCommitteeSelect(role ? role.id : null);
@@ -1388,21 +1602,14 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     }
 
     function fillCommitteeSelect(exceptRoleId) {
-        var assigned = D.roles.filter(function (role) {
-            return role.id !== exceptRoleId && role.position === 'SK Kagawad'
-                && role.status === 'Active' && role.committee;
-        }).map(function (role) { return role.committee; });
-        var available = COMMITTEES.filter(function (committee) {
-            return assigned.indexOf(committee) === -1;
-        });
-        fillSelect($('roleCommittee'), available, 'Select committee');
+        fillSelect($('roleCommittee'), COMMITTEES, 'No committee (optional)');
     }
 
     function updateCommitteeField() {
-        var isKagawad = $('rolePosition').value === 'SK Kagawad';
-        $('kagawadCommitteeField').classList.toggle('d-none', !isKagawad);
-        $('roleCommittee').disabled = !isKagawad;
-        if (!isKagawad) {
+        var hasPosition = !!$('rolePosition').value;
+        $('kagawadCommitteeField').classList.toggle('d-none', !hasPosition);
+        $('roleCommittee').disabled = !hasPosition;
+        if (!hasPosition) {
             $('roleCommittee').value = '';
             $('roleCommittee').classList.remove('is-invalid');
             var feedback = $('roleCommittee').parentElement.querySelector('.invalid-feedback');
@@ -1459,11 +1666,6 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
             committee = pos === 'SK Kagawad' ? $('roleCommittee').value : '',
             yr = $('roleYear').value.trim(), el = $('roleElected').value, ts = $('roleStart').value, te = $('roleEnd').value;
         if (!pos) bad($('rolePosition'), 'Select an SK position.');
-        if (pos === 'SK Kagawad' && !committee) bad($('roleCommittee'), 'Select a committee for this SK Kagawad.');
-        if (pos === 'SK Kagawad' && st === 'Active' && D.roles.some(function (role) {
-            return role.id !== (existing ? existing.id : null) && role.position === 'SK Kagawad'
-                && role.status === 'Active' && role.committee === committee;
-        })) bad($('roleCommittee'), 'This committee is already assigned to an active SK Kagawad.');
         if (!existing && st !== 'Active') bad($('roleStatus'), 'A new SK role must start as Active.');
         if (!basis) bad($('roleBasis'), 'Select elected or appointed.');
         if (!yr) bad($('roleYear'), 'Election year is required.');
@@ -1570,6 +1772,12 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
         var pg = e.target.closest('[data-page]');
         if (pg) { page = +pg.dataset.page; renderList(); $('results').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     });
+    document.addEventListener('keydown', function (e) {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('[data-act="view"]')) {
+            e.preventDefault();
+            openProfile(e.target.closest('[data-act="view"]').dataset.key);
+        }
+    });
 
     function resetPage() { page = 1; renderList(); }
     $('searchInput').addEventListener('input', resetPage);
@@ -1600,6 +1808,58 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
             renderAll();
         } catch (err) {
             notify('danger', err.message || 'Could not archive expired SK roles.');
+        }
+    });
+
+    function renderCommitteeList() {
+        $('committeeList').innerHTML = COMMITTEES.length
+            ? COMMITTEES.map(function (name) {
+                return '<div class="list-group-item d-flex justify-content-between align-items-center gap-2">' +
+                    '<span>' + esc(name) + '</span><button type="button" class="btn btn-sm btn-outline-primary" data-committee-edit="' + esc(name) + '">Edit</button></div>';
+            }).join('')
+            : '<div class="text-muted small">No committees are configured.</div>';
+    }
+    function resetCommitteeForm() {
+        $('committeeForm').reset();
+        $('committeeOriginal').value = '';
+        $('committeeSaveBtn').textContent = 'Add Committee';
+        $('committeeCancelEditBtn').classList.add('d-none');
+        clearErrs($('committeeForm'));
+    }
+    $('manageCommitteesBtn').addEventListener('click', function () {
+        loadCommittees();
+        renderCommitteeList();
+        resetCommitteeForm();
+        modal('committeeModal').show();
+    });
+    $('committeeList').addEventListener('click', function (event) {
+        var button = event.target.closest('[data-committee-edit]');
+        if (!button) return;
+        $('committeeOriginal').value = button.dataset.committeeEdit;
+        $('committeeName').value = button.dataset.committeeEdit;
+        $('committeeSaveBtn').textContent = 'Save Changes';
+        $('committeeCancelEditBtn').classList.remove('d-none');
+        $('committeeName').focus();
+    });
+    $('committeeCancelEditBtn').addEventListener('click', resetCommitteeForm);
+    $('committeeForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        var name = $('committeeName').value.trim(), original = $('committeeOriginal').value || null;
+        clearErrs(this);
+        if (name.length < 2) {
+            setErr($('committeeName'), 'Enter a committee name of at least 2 characters.');
+            return;
+        }
+        try {
+            var result = DB.saveCommittee(name, original, COMMITTEES);
+            COMMITTEES = result.committees;
+            D.load();
+            renderCommitteeList();
+            renderAll();
+            resetCommitteeForm();
+            notify('success', original ? 'Committee updated.' : 'Committee added.');
+        } catch (error) {
+            notify('danger', error.message || 'Could not save the committee.');
         }
     });
 
