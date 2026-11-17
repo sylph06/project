@@ -8,7 +8,13 @@ if (($_GET['next'] ?? '') === 'announcements.php') {
         $nextPage .= '&eventId=' . rawurlencode($eventId);
     }
 }
-if (current_user()) { header('Location: ' . $nextPage); exit; }
+$existingUser = current_user();
+if ($existingUser) {
+    $destination = $existingUser['role'] === 'KK Member' && $nextPage === 'dashboard.php'
+        ? 'member-portal.php' : $nextPage;
+    header('Location: ' . $destination);
+    exit;
+}
 ?>
 <html lang="en">
 <head>
@@ -18,7 +24,7 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="sidebar.css?v=20" rel="stylesheet">
+    <link href="sidebar.css?v=31" rel="stylesheet">
 
     <style>
         /* Uses only Bootstrap's own colours, same as the rest of the system */
@@ -223,6 +229,7 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
                 <div class="feature"><i class="bi bi-people-fill"></i> Manage KK youth records and registration</div>
                 <div class="feature"><i class="bi bi-megaphone-fill"></i> Post announcements and upcoming events</div>
                 <div class="feature"><i class="bi bi-graph-up-arrow"></i> Track participation and print reports</div>
+                <div class="feature"><i class="bi bi-person-vcard-fill"></i> Members can view their profile and digital KK ID</div>
             </div>
         </div>
 
@@ -232,8 +239,8 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
 
                 <div class="text-center mb-4">
                     <img src="images/sk-logo.jpg" alt="SK Barangay Sikat logo" class="logo-small mb-3">
-                    <h1 class="h4 fw-bold mb-1">Official Login</h1>
-                    <div class="text-muted small">Sign in to the SK Barangay Sikat dashboard</div>
+                    <h1 class="h4 fw-bold mb-1">Member &amp; Official Login</h1>
+                    <div class="text-muted small">Sign in to your SK account or KK member portal</div>
                 </div>
 
                 <div class="alert alert-danger d-none py-2 small" id="loginError" role="alert">
@@ -279,7 +286,7 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
                             <input class="form-check-input" type="checkbox" id="rememberMe">
                             <label class="form-check-label small" for="rememberMe">Remember me</label>
                         </div>
-                        <a href="#" class="link-soft small" data-bs-toggle="modal" data-bs-target="#forgotModal">Forgot password?</a>
+                        <a href="#" class="link-soft small" data-bs-toggle="modal" data-bs-target="#forgotModal">Forgot username or password?</a>
                     </div>
 
                     <button type="submit" class="btn btn-login w-100" id="loginBtn">
@@ -298,6 +305,9 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
                 <div class="text-center text-secondary small mt-2">
                     No password needed. Public view is limited to SK Officials, Announcements, and Youth Registration.
                 </div>
+                <div class="text-center text-secondary small mt-2">
+                    KK members use the account credentials provided by the SK office to access their profile and digital ID.
+                </div>
 
             </div>
         </div>
@@ -305,17 +315,17 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
     </div>
 </div>
 
-<!-- ================= FORGOT PASSWORD ================= -->
+<!-- ================= ACCOUNT RECOVERY ================= -->
 <div class="modal fade" id="forgotModal" tabindex="-1" aria-labelledby="forgotTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius:20px;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" id="forgotTitle"><i class="bi bi-key-fill me-2"></i>Forgot password?</h5>
+                <h5 class="modal-title fw-bold" id="forgotTitle"><i class="bi bi-key-fill me-2"></i>Forgot username or password?</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Please contact the <b>SK Chairman</b> or the <b>SK Secretary</b> at the Barangay Hall to reset your password.</p>
-                <p class="text-muted small mb-0">For security, passwords can only be reset by an SK officer.</p>
+                <p class="mb-2">Please contact the <b>SK Chairperson</b> or the <b>SK Secretary</b> at the Barangay Hall. After verifying your identity, they can look up your username or reset your password from your member profile.</p>
+                <p class="text-muted small mb-0">A password reset gives you a temporary password that you must change when you sign in. Usernames are not looked up publicly.</p>
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-login" data-bs-dismiss="modal">Okay</button>
@@ -478,7 +488,8 @@ if (current_user()) { header('Location: ' . $nextPage); exit; }
             $("loginOk").classList.remove("d-none");
             $("loginBtnText").innerHTML = '<i class="bi bi-check-lg me-2"></i>Success';
             setTimeout(function () {
-                location.href = found.must_change_password ? "change-password.php" : NEXT_PAGE;
+                location.href = found.must_change_password ? "change-password.php" :
+                    (found.role === "KK Member" && NEXT_PAGE === "dashboard.php" ? "member-portal.php" : NEXT_PAGE);
             }, 900);
         });
     });

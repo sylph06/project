@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/role_store.php';
 require_viewer();
+$memberProfileUser = current_user();
 $accountRoleSeats = ['SK Chairperson' => 0, 'SK Secretary' => 0];
 if (can_manage_sk_roles()) {
     $accountRoleSeats = sk_role_account_seat_counts(db());
@@ -16,7 +17,8 @@ if (can_manage_sk_roles()) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="sidebar.css?v=20" rel="stylesheet">
+    <link href="sidebar.css?v=31" rel="stylesheet">
+    <link href="kk-id.css?v=1" rel="stylesheet">
 
 <style>
 
@@ -65,7 +67,7 @@ body > main{
     display:block!important;
 }
 
-.member-card .card-header > .d-flex:first-child{
+.member-card .card-header > .d-flex:first-child > div:first-child{
     display:none!important;
 }
 
@@ -151,7 +153,15 @@ body > main{
         font-size:.85rem;
     }
 
-    .members-add-btn + .header-notification{
+    .members-own-profile{
+        padding:.5rem .75rem;
+    }
+
+    .members-own-profile-label{
+        display:none;
+    }
+
+    .members-add-btn ~ .header-notification{
         display:none;
     }
 
@@ -441,6 +451,35 @@ textarea.form-control{ min-height:0; }
     border-bottom:2px solid var(--bs-primary);
 }
 .modal-content{ border-radius:22px; }
+#profileFooter.kk-footer{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    flex-wrap:wrap;
+    gap:.75rem;
+}
+#profileFooter .kk-group{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:.5rem;
+}
+#profileFooter .btn{
+    border-radius:.65rem;
+    font-weight:650;
+    padding:.55rem .85rem;
+}
+#profileFooter .dropdown-menu{
+    min-width:13rem;
+    padding:.4rem;
+    border-radius:.75rem;
+    box-shadow:0 .5rem 1.25rem rgba(0,0,0,.14);
+}
+#profileFooter .dropdown-item{
+    border-radius:.45rem;
+    padding:.5rem .65rem;
+}
+#profileFooter .kk-close-btn{ margin-left:auto; }
 .btn-close-white-fix{ filter:invert(1); }
 #toastBox{ position:fixed; top:16px; right:16px; z-index:2000; width:min(380px,calc(100vw - 32px)); }
 
@@ -517,6 +556,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     $accountRoleSeats,
     JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
 ) ?>;
+window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
 </script>
 </head>
 
@@ -525,7 +565,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
 <div class="top-strip"></div>
 
 <script src="theme.js"></script>
-<script src="sidebar.js?v=10"></script>
+<script src="sidebar.js?v=15"></script>
 
 <div class="page-content">
 
@@ -552,6 +592,12 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
             <a href="registration.php" class="btn btn-primary px-4 members-add-btn">
                 <i class="bi bi-plus-lg me-1"></i>Add member
             </a>
+
+            <?php if (!empty($memberProfileUser['legacy_id'])): ?>
+                <a href="member-portal.php" class="btn btn-outline-primary members-own-profile" aria-label="View my member profile" title="View my member profile">
+                    <i class="bi bi-person-vcard me-md-1"></i><span class="members-own-profile-label">My profile</span>
+                </a>
+            <?php endif; ?>
 
             <a href="announcements.php"
                class="header-notification"
@@ -606,9 +652,6 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                 </button>
                 <button type="button" class="btn btn-dark rounded-pill px-4 admin-only role-manager-only" id="heroAssign">
                     <i class="bi bi-person-badge me-2"></i>Assign SK Member
-                </button>
-                <button type="button" class="btn btn-outline-dark rounded-pill px-4 admin-only role-manager-only" id="manageCommitteesBtn">
-                    <i class="bi bi-diagram-3 me-2"></i>Manage Committees
                 </button>
                 <a href="registration.php" class="btn btn-dark rounded-pill px-4">
                     <i class="bi bi-person-plus-fill me-2"></i>Register KK Youth
@@ -702,6 +745,8 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="assignBtn"><i class="bi bi-person-badge me-2"></i>Assign SK member</button></li>
+                            <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="manageCommitteesBtn"><i class="bi bi-diagram-3 me-2"></i>Manage committees</button></li>
+                            <li class="admin-only"><button class="dropdown-item" type="button" id="scanKkIdBtn"><i class="bi bi-qr-code-scan me-2"></i>Scan KK ID</button></li>
                             <li class="admin-only"><button class="dropdown-item" type="button" id="exportBtn"><i class="bi bi-filetype-csv me-2"></i>Export list (CSV)</button></li>
                             <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="termCheckBtn"><i class="bi bi-calendar-check me-2"></i>Check ended SK terms</button></li>
                             <li class="admin-only"><hr class="dropdown-divider"></li>
@@ -838,7 +883,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12 d-none" id="kagawadCommitteeField">
-                            <label class="form-label fw-semibold" for="roleCommittee">Committee Assignment <span class="text-muted">(optional; one per official)</span></label>
+                            <label class="form-label fw-semibold" for="roleCommittee">Committee Membership <span class="text-muted">(optional)</span></label>
                             <select class="form-select" id="roleCommittee"></select>
                             <div class="invalid-feedback"></div>
                         </div>
@@ -920,8 +965,11 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="small text-muted">Add or rename committees. Renaming updates assigned SK officials and preserves their history.</p>
+                <p class="small text-muted">Assign an SK official as chairperson of each committee. One official may chair more than one committee.</p>
                 <div id="committeeList" class="list-group mb-3"></div>
+                <button type="button" class="btn btn-primary mb-3" id="saveCommitteeChairsBtn">Save Chairpersons</button>
+                <hr>
+                <p class="small text-muted">Add or rename committees. Renaming updates committee memberships and chairperson assignments.</p>
                 <form id="committeeForm">
                     <input type="hidden" id="committeeOriginal">
                     <label class="form-label fw-semibold" for="committeeName">Committee name</label>
@@ -988,6 +1036,38 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     </div>
 </div>
 
+<!-- ================= KK ID SCANNER ================= -->
+<div class="modal fade" id="kkIdScannerModal" tabindex="-1" aria-labelledby="kkIdScannerTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="kkIdScannerTitle">Scan KK ID</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">Only authorized SK staff can verify an ID. The QR contains an opaque verification code, not member details.</p>
+                <div class="row g-3 align-items-start">
+                    <div class="col-md-6">
+                        <video id="kkIdCamera" class="w-100 rounded border bg-dark" autoplay muted playsinline aria-label="Camera view for scanning a KK ID QR"></video>
+                        <div class="small text-muted mt-2" id="kkIdCameraStatus">Camera scanning is optional. You can enter the QR value manually.</div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="startKkIdCamera">
+                            <i class="bi bi-camera me-1"></i>Start camera scanner
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <form id="kkIdScanForm">
+                            <label class="form-label fw-semibold" for="kkIdScanValue">QR value</label>
+                            <input type="text" class="form-control" id="kkIdScanValue" maxlength="69" autocomplete="off" placeholder="KKID: followed by the QR value" required>
+                            <button type="submit" class="btn btn-primary mt-2" id="verifyKkIdButton">Verify ID</button>
+                        </form>
+                        <div class="mt-3" id="kkIdScanResult" aria-live="polite"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ================= CONFIRMATION MODAL ================= -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="cfTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -1009,6 +1089,8 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
 <div id="printArea"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" integrity="sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz" crossorigin="anonymous"></script>
+<script src="kk-id.js?v=1"></script>
 <script src="sk-data.js?v=2"></script>
 <script>
 (function () {
@@ -1029,20 +1111,20 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     }
     var ROLES = D.ROLES;
     var DEFAULT_COMMITTEES = [
+        'Committee on Good Governance and Active Citizenship',
+        'Committee on Environment & Disaster Risk Resiliency',
+        'Committee on Anti-Drug Abuse and Social Protection',
         'Committee on Education and Culture',
-        'Committee on Environmental Protection',
-        'Committee on Youth Employment and Livelihood',
-        'Committee on Health',
-        'Committee on Gender and Development (GAD)',
-        'Committee on Sports Development',
-        'Committee on Anti-Drug Abuse and Social Protection'
+        'Committee on Health and Sanitation',
+        'Committee on Youth and Sports Development',
+        'Committee on Budget and Appropriation'
     ];
     var COMMITTEES = DEFAULT_COMMITTEES.slice();
     function loadCommittees() {
         try {
             var stored = JSON.parse(DB.getItem('skCommittees') || 'null');
             if (Array.isArray(stored) && stored.every(function (name) { return typeof name === 'string'; })) {
-                COMMITTEES = stored;
+                COMMITTEES = Array.from(new Set(DEFAULT_COMMITTEES.concat(stored)));
                 return;
             }
         } catch (error) {
@@ -1185,16 +1267,30 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     }
 
     function renderStats() {
-        var sk = D.roles.length, total = D.kk.length;
-        var activeSk = D.roles.filter(function (r) { return r.status === 'Active'; }).length;
+        var total = D.kk.length;
         var archivedKk = D.kk.filter(function (m) { return m.status === 'Archived'; }).length;
+        var skMemberIds = Object.create(null), activeSkMemberIds = Object.create(null);
+        var today = todayISO();
+        D.roles.forEach(function (role) {
+            var memberId = String(role.kkId || '');
+            var member = D.kkById(memberId);
+            if (!member) return;
+            skMemberIds[memberId] = true;
+            if (role.status === 'Active'
+                && (member.status || 'Active') === 'Active'
+                && (!role.termStart || role.termStart <= today)
+                && (!role.termEnd || role.termEnd >= today)) {
+                activeSkMemberIds[memberId] = true;
+            }
+        });
+        var sk = Object.keys(skMemberIds).length;
         $('statTotal').textContent = total;
         $('statTotalSub').textContent = (total - archivedKk) + ' active \u2022 ' + archivedKk + ' archived';
         $('statSk').textContent = sk;
         $('statSkSub').textContent = D.roles.filter(function (r) { return r.status === 'Archived'; }).length + ' term ended \u2022 ' + D.roles.filter(function (r) { return r.status === 'Inactive'; }).length + ' inactive';
         $('statKk').textContent = total - sk;
         $('statKkSub').textContent = 'No SK position';
-        $('statActiveSk').textContent = activeSk;
+        $('statActiveSk').textContent = Object.keys(activeSkMemberIds).length;
     }
 
     function avatarHtml(r, size) {
@@ -1376,23 +1472,80 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
             (r.isSK ? '<div class="group-title">SK Role History</div>' + histList(ro.history) : '');
     }
 
+    function loadIdPrintHistory(memberId) {
+        var target = $('idPrintHistory');
+        if (!target) return;
+        KKId.api('kk_id_prints', { memberId: String(memberId) }).then(function (result) {
+            target.replaceChildren();
+            if (!result.prints.length) {
+                target.textContent = 'No ID prints recorded.';
+                return;
+            }
+            var table = document.createElement('table');
+            table.className = 'table table-sm mb-0';
+            var body = document.createElement('tbody');
+            result.prints.forEach(function (record) {
+                var row = document.createElement('tr');
+                [record.printed_at, record.print_method === 'manual' ? 'Manual' : 'Automatic', record.printed_by].forEach(function (value) {
+                    var cell = document.createElement('td');
+                    cell.textContent = String(value || '\u2014');
+                    row.appendChild(cell);
+                });
+                body.appendChild(row);
+            });
+            table.appendChild(body);
+            target.appendChild(table);
+        }).catch(function (error) {
+            target.textContent = error.message || 'Could not load ID print history.';
+        });
+    }
+
     function openProfile(key) {
         var r = getRec(key);
         if (!r) return;
         $('profileTitle').textContent = r.isSK ? 'SK Member Profile' : 'KK Member Profile';
         $('profileBody').innerHTML = profileHtml(r);
-        var f = '<button type="button" class="btn btn-outline-success btn-sm" data-act="print" data-key="' + esc(key) + '"><i class="bi bi-printer me-1"></i>Print Profile</button>';
-        if (window.SK_CAN_MANAGE_ROLES && (r.kkStatus !== 'Archived' || r.isSK))
-            f += '<button type="button" class="btn btn-outline-success btn-sm" data-act="role" data-key="' + esc(key) + '"><i class="bi ' + (r.isSK ? 'bi-person-gear' : 'bi-person-badge') + ' me-1"></i>' + (r.isSK ? 'Edit SK Role' : 'Assign SK Role') + '</button>';
-        if (window.SK_CAN_MANAGE_ROLES && r.isSK) {
-            f += '<button type="button" class="btn btn-outline-danger btn-sm" data-act="remove" data-key="' + esc(key) + '"><i class="bi bi-person-x me-1"></i>End SK Role</button>';
-            f += '<button type="button" class="btn btn-outline-secondary btn-sm" data-act="archive-role" data-key="' + esc(key) + '"><i class="bi bi-archive me-1"></i>Archive SK Role</button>';
+        if (!window.SK_PUBLIC && window.SK_CAN_SCAN_KK_ID) {
+            $('profileBody').insertAdjacentHTML('beforeend',
+                '<div class="group-title">KK ID Print History</div><div class="small text-muted" id="idPrintHistory">Loading print history...</div>');
+            loadIdPrintHistory(r.key);
         }
-        if (window.SK_CAN_MANAGE_ROLES) f += '<button type="button" class="btn btn-outline-primary btn-sm" data-act="link-account" data-key="' + esc(key) + '"><i class="bi bi-link-45deg me-1"></i>Link Existing Account</button>';
-        if (window.SK_CAN_MANAGE_ROLES) f += '<button type="button" class="btn btn-outline-primary btn-sm" data-act="create-account" data-key="' + esc(key) + '"><i class="bi bi-person-plus me-1"></i>Create Member Login</button>';
-        if (window.SK_CAN_MANAGE_ROLES && r.kkStatus !== 'Archived') f += '<button type="button" class="btn btn-outline-secondary btn-sm" data-act="kkedit" data-key="' + esc(key) + '"><i class="bi bi-pencil me-1"></i>Edit in Registration</button>';
-        f += '<button type="button" class="btn btn-dark btn-sm ms-auto" data-bs-dismiss="modal">Close</button>';
+        var canPrintId = !window.SK_PUBLIC && window.SK_CAN_SCAN_KK_ID && r.kkStatus === 'Active';
+        var f = '<div class="kk-group kk-print-group">';
+        if (canPrintId) {
+            f += '<button type="button" class="btn btn-primary" id="btnPrintId" data-act="print-id" data-key="' + esc(key) + '"><i class="bi bi-person-vcard me-1"></i>Print KK ID</button>';
+        }
+        f += '<button type="button" class="btn btn-outline-secondary" id="btnPrintProfile" data-act="print" data-key="' + esc(key) + '"><i class="bi bi-printer me-1"></i>Print Profile</button>';
+        if (canPrintId) {
+            f += '<button type="button" class="btn btn-outline-secondary" id="btnLogPrint" data-act="log-manual-id" data-key="' + esc(key) + '"><i class="bi bi-journal-check me-1"></i>Log Manual Print</button>';
+        }
+        f += '</div><div class="kk-group kk-manage-group">';
+        if (window.SK_CAN_MANAGE_ROLES && r.kkStatus !== 'Archived') {
+            f += '<button type="button" class="btn btn-outline-secondary" id="btnEditReg" data-act="kkedit" data-key="' + esc(key) + '"><i class="bi bi-pencil-square me-1"></i>Edit Member</button>';
+        }
+        if (window.SK_CAN_MANAGE_ROLES && (r.kkStatus !== 'Archived' || r.isSK)) {
+            f += '<button type="button" class="btn btn-outline-secondary" id="btnAssignRole" data-act="role" data-key="' + esc(key) + '"><i class="bi bi-shield-check me-1"></i>' + (r.isSK ? 'Edit SK Role' : 'Assign SK Role') + '</button>';
+        }
+        if (window.SK_CAN_MANAGE_ROLES && r.isSK) {
+            f += '<button type="button" class="btn btn-outline-danger" data-act="remove" data-key="' + esc(key) + '"><i class="bi bi-person-x me-1"></i>End SK Role</button>';
+            f += '<button type="button" class="btn btn-outline-secondary" data-act="archive-role" data-key="' + esc(key) + '"><i class="bi bi-archive me-1"></i>Archive SK Role</button>';
+        }
+        if (window.SK_CAN_MANAGE_ROLES) {
+            f += '<div class="dropdown">' +
+                '<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-key me-1"></i>Login Account</button>' +
+                '<ul class="dropdown-menu dropdown-menu-end">' +
+                '<li><button class="dropdown-item" type="button" id="btnCreateLogin" data-act="create-account" data-key="' + esc(key) + '"><i class="bi bi-person-plus me-2"></i>Create Login</button></li>' +
+                '<li><button class="dropdown-item" type="button" id="btnLinkAccount" data-act="link-account" data-key="' + esc(key) + '"><i class="bi bi-link-45deg me-2"></i>Link Existing Account</button></li>';
+            if (r.kkStatus === 'Active') {
+                f += '<li><button class="dropdown-item" type="button" id="btnShowUsername" data-act="show-account-username" data-key="' + esc(key) + '"><i class="bi bi-eye me-2"></i>Show Username</button></li>' +
+                    '<li><hr class="dropdown-divider"></li>' +
+                    '<li><button class="dropdown-item text-danger" type="button" id="btnResetPassword" data-act="reset-account" data-key="' + esc(key) + '"><i class="bi bi-arrow-repeat me-2"></i>Reset Password</button></li>';
+            }
+            f += '</ul></div>';
+        }
+        f += '</div><button type="button" class="btn btn-outline-secondary kk-close-btn" data-bs-dismiss="modal">Close</button>';
         $('profileFooter').innerHTML = f;
+        $('profileFooter').classList.add('kk-footer');
         modal('profileModal').show();
     }
 
@@ -1459,6 +1612,31 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
         }
     }
 
+    function resetMemberAccount(legacyId) {
+        var member = getRec(legacyId);
+        if (!member || !window.SK_CAN_MANAGE_ROLES) return;
+        if (!window.confirm('Reset the login password for ' + member.name + '? A new temporary password will be shown once, and the member must change it at next sign-in.')) return;
+        try {
+            var result = DB.resetMemberAccountByLegacyId(legacyId);
+            window.alert('Temporary password (uppercase surname; show only once): ' + result.temporaryPassword +
+                '\n\nShare it securely. The member must change it at next sign-in.');
+        } catch (error) {
+            notify('danger', error.message || 'Could not reset the member password.');
+        }
+    }
+
+    function showMemberAccountUsername(legacyId) {
+        var member = getRec(legacyId);
+        if (!member || !window.SK_CAN_MANAGE_ROLES) return;
+        if (!window.confirm('Only continue after verifying ' + member.name + '\'s identity through a trusted channel. Reveal their login username?')) return;
+        try {
+            var result = DB.getMemberUsernameByLegacyId(legacyId);
+            window.alert('Login username: ' + result.username + '\n\nShare it privately with the verified member.');
+        } catch (error) {
+            notify('danger', error.message || 'Could not retrieve the member username.');
+        }
+    }
+
     $('confirmCreateAccount').addEventListener('click', function () {
         var username = $('newAccountUsername').value.trim();
         if (!createAccountTarget || !username) {
@@ -1472,7 +1650,7 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
                 $('guardianConsent').checked,
                 $('consentVersion').value.trim()
             );
-            $('temporaryPasswordBox').textContent = 'Temporary password (show only once): ' + result.temporaryPassword +
+            $('temporaryPasswordBox').textContent = 'Temporary password (uppercase surname; show only once): ' + result.temporaryPassword +
                 '. The member must change it at first sign-in.';
             $('temporaryPasswordBox').classList.remove('d-none');
             $('confirmCreateAccount').disabled = true;
@@ -1753,6 +1931,79 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
         });
     }
 
+    function memberIdData(record) {
+        return {
+            id: record.key,
+            name: record.name,
+            memberNo: record.code,
+            purok: record.purok,
+            photo: record.photo,
+            status: record.kkStatus
+        };
+    }
+
+    function printMemberId(key) {
+        var record = getRec(key);
+        if (!record || record.kkStatus !== 'Active') {
+            notify('warning', 'Only active KK members can print an ID.');
+            return;
+        }
+        KKId.printCard(memberIdData(record), 'automatic').then(function () {
+            notify('success', 'ID print request recorded.');
+            loadIdPrintHistory(record.key);
+        }).catch(function (error) {
+            notify('danger', error.message || 'Could not print the KK ID.');
+        });
+    }
+
+    function logManualIdPrint(key) {
+        var record = getRec(key);
+        if (!record || record.kkStatus !== 'Active') {
+            notify('warning', 'Only active KK members can have an ID print recorded.');
+            return;
+        }
+        KKId.recordPrint(record.key, 'manual').then(function () {
+            notify('success', 'Manual ID print recorded.');
+            loadIdPrintHistory(record.key);
+        }).catch(function (error) {
+            notify('danger', error.message || 'Could not record the manual ID print.');
+        });
+    }
+
+    function showScannedMember(member) {
+        var box = $('kkIdScanResult');
+        box.replaceChildren();
+        var result = document.createElement('div');
+        result.className = 'alert alert-success mb-0';
+        var title = document.createElement('strong');
+        title.textContent = 'Verified KK ID';
+        var details = document.createElement('div');
+        details.className = 'small mt-1';
+        details.textContent = member.name + ' · ' + (member.memberNo || 'No member number') + ' · ' + member.status;
+        result.appendChild(title);
+        result.appendChild(details);
+        var profileButton = document.createElement('button');
+        profileButton.type = 'button';
+        profileButton.className = 'btn btn-sm btn-outline-primary mt-2';
+        profileButton.textContent = 'Open member profile';
+        profileButton.addEventListener('click', function () {
+            afterHide('kkIdScannerModal', function () { openProfile(member.id); });
+        });
+        result.appendChild(profileButton);
+        box.appendChild(result);
+        $('kkIdCameraStatus').textContent = 'KK ID verified.';
+    }
+
+    function verifyScannedMember(value) {
+        $('verifyKkIdButton').disabled = true;
+        $('kkIdScanResult').textContent = 'Verifying QR code...';
+        KKId.verifyScan(value).then(showScannedMember).catch(function (error) {
+            $('kkIdScanResult').textContent = error.message || 'Could not verify this KK ID.';
+        }).finally(function () {
+            $('verifyKkIdButton').disabled = false;
+        });
+    }
+
     /* ---------- events ---------- */
     document.addEventListener('click', function (e) {
         var b = e.target.closest('[data-act]');
@@ -1766,6 +2017,17 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
             else if (act === 'archive-role') afterHide('profileModal', function () { archiveRole(key); });
             else if (act === 'link-account') afterHide('profileModal', function () { openAccountLink(key); });
             else if (act === 'create-account') afterHide('profileModal', function () { openCreateAccount(key); });
+            else if (act === 'reset-account') afterHide('profileModal', function () { resetMemberAccount(key); });
+            else if (act === 'show-account-username') afterHide('profileModal', function () { showMemberAccountUsername(key); });
+            else if (act === 'print-id') printMemberId(key);
+            else if (act === 'log-manual-id') logManualIdPrint(key);
+            return;
+        }
+        if (e.target.closest('#scanKkIdBtn')) {
+            $('kkIdScanValue').value = '';
+            $('kkIdScanResult').textContent = '';
+            $('kkIdCameraStatus').textContent = 'Camera scanning is optional. You can enter the QR value manually.';
+            modal('kkIdScannerModal').show();
             return;
         }
         if (e.target.closest('#dismissUnlinked')) { D.write(D.KEYS.UNLINKED, []); renderUnlinked(); return; }
@@ -1777,6 +2039,23 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
             e.preventDefault();
             openProfile(e.target.closest('[data-act="view"]').dataset.key);
         }
+    });
+
+    $('kkIdScanForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        verifyScannedMember($('kkIdScanValue').value);
+    });
+    $('startKkIdCamera').addEventListener('click', function () {
+        $('kkIdCameraStatus').textContent = 'Requesting camera access...';
+        KKId.startScanner($('kkIdCamera'), function (token) {
+            $('kkIdScanValue').value = 'KKID:' + token;
+            verifyScannedMember($('kkIdScanValue').value);
+        }, $('kkIdCameraStatus')).catch(function (error) {
+            $('kkIdCameraStatus').textContent = error.message || 'Could not start the camera scanner.';
+        });
+    });
+    $('kkIdScannerModal').addEventListener('hidden.bs.modal', function () {
+        KKId.stopScanner($('kkIdCamera'));
     });
 
     function resetPage() { page = 1; renderList(); }
@@ -1812,10 +2091,34 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     });
 
     function renderCommitteeList() {
+        var savedChairs = {};
+        try {
+            savedChairs = JSON.parse(DB.getItem('skCommitteeChairs') || '{}');
+            if (!savedChairs || typeof savedChairs !== 'object' || Array.isArray(savedChairs)) savedChairs = {};
+        } catch (error) {
+            notify('danger', 'Could not read committee chair assignments.');
+        }
+        var officials = D.roles.filter(function (role) {
+            var today = todayISO();
+            var member = D.kkById(role.kkId);
+            return role.status === 'Active' && member && (member.status || 'Active') === 'Active'
+                && (!role.termStart || role.termStart <= today)
+                && (!role.termEnd || role.termEnd >= today);
+        });
         $('committeeList').innerHTML = COMMITTEES.length
             ? COMMITTEES.map(function (name) {
+                var options = '<option value="">Select an SK official</option>' + officials.map(function (role) {
+                    var member = D.kkById(role.kkId);
+                    var officialName = D.kkName(member) + ' — ' + role.position;
+                    return '<option value="' + esc(role.id) + '"' + (String(savedChairs[name] || '') === String(role.id) ? ' selected' : '') + '>' + esc(officialName) + '</option>';
+                }).join('');
                 return '<div class="list-group-item d-flex justify-content-between align-items-center gap-2">' +
-                    '<span>' + esc(name) + '</span><button type="button" class="btn btn-sm btn-outline-primary" data-committee-edit="' + esc(name) + '">Edit</button></div>';
+                    '<div class="flex-grow-1"><div class="fw-semibold">' + esc(name) + '</div>' +
+                    '<label class="form-label small mt-2 mb-1" for="committee-chair-' + esc(name) + '">Chairperson</label>' +
+                    '<select class="form-select form-select-sm" id="committee-chair-' + esc(name) + '" data-committee-chair="' + esc(name) + '">' + options + '</select></div>' +
+                    (DEFAULT_COMMITTEES.indexOf(name) === -1
+                        ? '<button type="button" class="btn btn-sm btn-outline-primary align-self-start" data-committee-edit="' + esc(name) + '">Rename</button>'
+                        : '') + '</div>';
             }).join('')
             : '<div class="text-muted small">No committees are configured.</div>';
     }
@@ -1842,6 +2145,18 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
         $('committeeName').focus();
     });
     $('committeeCancelEditBtn').addEventListener('click', resetCommitteeForm);
+    $('saveCommitteeChairsBtn').addEventListener('click', function () {
+        var assignments = {};
+        $('committeeList').querySelectorAll('[data-committee-chair]').forEach(function (select) {
+            assignments[select.dataset.committeeChair] = select.value || null;
+        });
+        try {
+            DB.saveCommitteeChairs(assignments, COMMITTEES);
+            notify('success', 'Committee chairpersons saved.');
+        } catch (error) {
+            notify('danger', error.message || 'Could not save committee chairpersons.');
+        }
+    });
     $('committeeForm').addEventListener('submit', function (event) {
         event.preventDefault();
         var name = $('committeeName').value.trim(), original = $('committeeOriginal').value || null;

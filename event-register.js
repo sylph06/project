@@ -22,6 +22,8 @@
         var attendanceUpdates = {};
         var walkInsHere = [];
         var currentEvent = null;
+        var query = new URLSearchParams(window.location.search);
+        var requestedRosterEventId = query.get('showRoster') === '1' ? query.get('eventId') : null;
 
         /* ---------- the window used for the form / the list ---------- */
         document.body.insertAdjacentHTML('beforeend',
@@ -85,7 +87,15 @@
                 switchTo(id, function () { showForm(a); });
             });
             var l = document.getElementById('evListBtn');
-            if (l) l.addEventListener('click', function () { switchTo(id, function () { showList(a); }); });
+            if (l) {
+                l.addEventListener('click', function () { switchTo(id, function () { showList(a); }); });
+                if (requestedRosterEventId === String(id)) {
+                    requestedRosterEventId = null;
+                    window.setTimeout(function () {
+                        if (document.body.contains(l)) l.click();
+                    }, 0);
+                }
+            }
         }
         new MutationObserver(addButtons).observe(footer, { childList: true });
         addButtons();
@@ -126,7 +136,8 @@
 
         function submit() {
             var v = function (id) { return document.getElementById(id).value.trim(); };
-            var data = { name: v('evName'), age: parseInt(v('evAge'), 10) || 0, purok: v('evPurok'),
+            var ageValue = v('evAge');
+            var data = { name: v('evName'), age: ageValue === '' ? null : Number(ageValue), purok: v('evPurok'),
                          mobile: v('evMobile'), email: v('evEmail'), notes: v('evNotes') };
             if (!data.name) return err('Please enter your full name.');
             if (!data.mobile) return err('Please enter your mobile number.');

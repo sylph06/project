@@ -1,13 +1,14 @@
 <?php
 /* =========================================================
-   api/accounts.php — member account create, link, reset, deactivate
+   api/accounts.php — member account management and username recovery
    ========================================================= */
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../member_account_logic.php';
 
 $action = $_GET['action'] ?? '';
 $user = require_officer();
 
-if (!in_array($action, ['accounts_unlinked', 'account_link', 'account_create', 'account_reset', 'account_deactivate'], true)) {
+if (!in_array($action, ['accounts_unlinked', 'account_link', 'account_create', 'account_reset', 'account_reset_member', 'account_username_member', 'account_deactivate'], true)) {
     out(['ok' => false, 'error' => 'Unknown action.'], 400);
 }
 
@@ -63,7 +64,7 @@ try {
         $exists = $pdo->prepare('SELECT id FROM users WHERE legacy_id = ? OR username = ? FOR UPDATE');
         $exists->execute([$legacyId, $username]);
         if ($exists->fetchColumn() !== false) throw new RuntimeException('A member can have only one account, and usernames must be unique.');
-        $temporaryPassword = bin2hex(random_bytes(12));
+        $temporaryPassword = kk_member_temporary_password($member['lastName'] ?? '');
         $name = trim(implode(' ', array_filter([
             $member['firstName'] ?? '', $member['middleName'] ?? '', $member['lastName'] ?? '', $member['suffix'] ?? '',
         ], function ($part) { return (string)$part !== ''; })));
@@ -86,14 +87,53 @@ try {
         out(['ok' => true, 'accountId' => $newId, 'temporaryPassword' => $temporaryPassword]);
     }
 
-    $targetId = filter_var($in['accountId'] ?? null, FILTER_VALIDATE_INT);
-    if (!$targetId) throw new RuntimeException('A valid account id is required.');
-    $account = $pdo->prepare('SELECT id, username, legacy_id, is_active, must_change_password FROM users WHERE id = ? FOR UPDATE');
-    $account->execute([$targetId]);
-    $target = $account->fetch(PDO::FETCH_ASSOC);
-    if (!$target) throw new RuntimeException('The account no longer exists.');
-    if ($action === 'account_reset') {
-        $temporaryPassword = bin2hex(random_bytes(12));
+    $member = null;
+    if ($action === 'account_username_member') {
+        $legacyId = trim((string)($in['legacyId'] ?? ''));
+        if ($legacyId === '') throw new RuntimeException('A valid KK member profile is required.');
+        $member = sk_member_for_role_change($pdo, $legacyId, true);
+        if (!$member || ($member['status'] ?? 'Active') !== 'Active') {
+            throw new RuntimeException('Only an active KK member can have a login username retrieved.');
+        }
+        $account = $pdo->prepare('SELECT id, username FROM users WHERE legacy_id = ? AND is_active = 1 FOR UPDATE');
+        $account->execute([$legacyId]);
+        $target = $account->fetch(PDO::FETCH_ASSOC);
+        if (!$target) throw new RuntimeException('This member has no active login account.');
+        sk_audit($pdo, $user, $legacyId, 'account_username_retrieved', null, [
+            'account_id' => (int)$target['id'],
+        ]);
+        $pdo->commit();
+        out(['ok' => true, 'username' => $target['username']]);
+    }
+
+    if ($action === 'account_reset_member') {
+        $legacyId = trim((string)($in['legacyId'] ?? ''));
+        if ($legacyId === '') throw new RuntimeException('A valid KK member profile is required.');
+        $member = sk_member_for_role_change($pdo, $legacyId, true);
+        if (!$member || ($member['status'] ?? 'Active') !== 'Active') {
+            throw new RuntimeException('Only an active KK member can have a login password reset.');
+        }
+        $account = $pdo->prepare('SELECT id, username, legacy_id, is_active, must_change_password
+            FROM users WHERE legacy_id = ? AND is_active = 1 FOR UPDATE');
+        $account->execute([$legacyId]);
+        $target = $account->fetch(PDO::FETCH_ASSOC);
+        if (!$target) throw new RuntimeException('This member has no active login account to reset.');
+        $targetId = (int)$target['id'];
+    } else {
+        $targetId = filter_var($in['accountId'] ?? null, FILTER_VALIDATE_INT);
+        if (!$targetId) throw new RuntimeException('A valid account id is required.');
+        $account = $pdo->prepare('SELECT id, username, legacy_id, is_active, must_change_password FROM users WHERE id = ? FOR UPDATE');
+        $account->execute([$targetId]);
+        $target = $account->fetch(PDO::FETCH_ASSOC);
+        if (!$target) throw new RuntimeException('The account no longer exists.');
+    }
+    if ($action === 'account_reset' || $action === 'account_reset_member') {
+        if ($member === null && $target['legacy_id'] !== null) {
+            $member = sk_member_for_role_change($pdo, (string)$target['legacy_id'], true);
+        }
+        $temporaryPassword = $member === null
+            ? bin2hex(random_bytes(12))
+            : kk_member_temporary_password($member['lastName'] ?? '');
         $pdo->prepare('UPDATE users SET password = ?, must_change_password = 1 WHERE id = ?')
             ->execute([password_hash($temporaryPassword, PASSWORD_DEFAULT), $targetId]);
         sk_audit($pdo, $user, $target['legacy_id'], 'account_password_reset', ['must_change_password' => (bool)$target['must_change_password']],

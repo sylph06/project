@@ -24,11 +24,12 @@ if ($action === 'event_register') {
     $s = function ($k, $max) use ($d) { $v = $d[$k] ?? ''; return is_string($v) ? mb_substr(trim($v), 0, $max) : ''; };
     $name = $s('name', 100); $mobile = $s('mobile', 30); $email = $s('email', 120);
     $purok = $s('purok', 60); $notes = $s('notes', 300);
-    $age = (int)($d['age'] ?? 0);
+    require_once __DIR__ . '/../participation_logic.php';
+    $age = participation_signup_age($d['age'] ?? null);
     if ($name === '' || $mobile === '') out(['ok' => false, 'error' => 'Please enter your name and mobile number.'], 400);
     if (!preg_match('/^[0-9+\-\s()]{7,30}$/', $mobile)) out(['ok' => false, 'error' => 'Please enter a valid mobile number.'], 400);
     if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) out(['ok' => false, 'error' => 'Please enter a valid email address.'], 400);
-    if ($age < 0 || $age > 120) out(['ok' => false, 'error' => 'Please enter a valid age.'], 400);
+    if ($age === false) out(['ok' => false, 'error' => 'Please enter a valid age.'], 400);
 
     enforce_submission_limit('event_register', 15);
 

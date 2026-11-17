@@ -40,7 +40,7 @@ if (is_limited_viewer()) {
  
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="sidebar.css?v=20" rel="stylesheet">
+    <link href="sidebar.css?v=31" rel="stylesheet">
  
     <style>
         :root {
@@ -361,43 +361,163 @@ if (is_limited_viewer()) {
             font-size: 14px;
         }
 
-        /* ---- 10 Centers of Participation: grid layout ---- */
-        #centerPrograms {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 10px;
-            align-items: start;
+        .interest-help {
+            margin: -2px 0 12px;
+            color: var(--muted);
         }
 
-        #centerPrograms .center-item {
+        .interest-card {
+            cursor: pointer;
+            transition: background-color .15s ease, border-color .15s ease;
+        }
+
+        .interest-card:hover,
+        .interest-card.is-selected {
+            border-color: var(--bs-primary);
+            background: rgba(var(--bs-primary-rgb), .08);
+        }
+
+        .interest-card:focus-within {
+            outline: 2px solid var(--bs-primary);
+            outline-offset: 2px;
+        }
+
+        /* ---- 10 Centers of Participation: compact category navigation ---- */
+        #centerPrograms {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+            gap: 8px;
+        }
+
+        #centerPrograms .center-nav-button {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            width: 100%;
+            min-height: 54px;
+            padding: 8px 11px;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 7px;
+            background: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            font-size: 14px;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        #centerPrograms .center-nav-button:hover,
+        #centerPrograms .center-nav-button.is-active {
+            border-color: var(--bs-primary);
+            background: rgba(var(--bs-primary-rgb), .08);
+        }
+
+        #centerPrograms .center-nav-name {
+            flex: 1;
+            min-width: 0;
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            line-height: 1.25;
+        }
+
+        #centerPrograms .center-count {
+            flex: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 1px 6px;
+            border-radius: 12px;
+            background: var(--bs-secondary-bg);
+            color: var(--bs-secondary-color);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        #centerPrograms .center-nav-chevron {
+            flex: none;
+            color: var(--bs-secondary-color);
+            transition: transform .18s ease;
+        }
+
+        #centerPrograms .center-nav-button.is-active .center-nav-chevron {
+            transform: rotate(180deg);
+        }
+
+        .center-activity-panel {
+            max-height: 2400px;
+            margin-bottom: 12px;
+            padding: 16px;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 8px;
+            background: var(--bs-body-bg);
+            opacity: 1;
+            overflow: hidden;
+            transition: max-height .22s ease, opacity .18s ease, padding .22s ease, margin .22s ease, border-color .22s ease, visibility 0s linear .22s;
+        }
+
+        .center-activity-panel.is-collapsed {
+            max-height: 0;
+            margin-bottom: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-color: transparent;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .center-activity-panel:not(.is-collapsed) {
+            visibility: visible;
+            transition-delay: 0s;
+        }
+
+        .center-activity-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+        }
+
+        .center-activity-list .check-item {
             margin: 0;
         }
 
-        #centerPrograms .check-item {
+        .center-custom-row {
             display: flex;
             align-items: center;
-            width: 100%;
+            gap: 8px;
+            margin-top: 8px;
         }
 
-        #centerPrograms .center-subtype-options {
-            display: grid;
-            gap: 6px;
-        }
-
-        #centerPrograms .center-subtype-options .check-item {
-            padding: 6px 9px;
-            font-weight: normal;
+        .center-custom-row .form-control {
+            flex: 1;
+            min-width: 0;
         }
     </style>
 <?php include __DIR__ . '/init.php'; ?>
+<?php
+$registrationEditRequests = json_decode($__data['kkEditRequests'] ?? '[]', true);
+$registrationEditRequests = is_array($registrationEditRequests)
+    ? array_filter($registrationEditRequests, function ($request) {
+        return is_array($request) && ($request['status'] ?? '') === 'Edit Request';
+    })
+    : [];
+$registrationPendingRequests = json_decode($__data['kkPendingRegistrations'] ?? '[]', true);
+$registrationPendingRequests = is_array($registrationPendingRequests)
+    ? array_filter($registrationPendingRequests, function ($request) {
+        return is_array($request) && ($request['status'] ?? '') === 'Pending';
+    })
+    : [];
+$registrationAttentionCount = count($registrationEditRequests) + count($registrationPendingRequests);
+?>
 </head>
  
 <body>
  
 <div class="top-strip"></div>
  
-<script src="theme.js"></script>
-<script src="sidebar.js?v=10"></script>
+<script src="theme.js?v=3"></script>
+<script src="sidebar.js?v=15"></script>
  
 <main class="main page-content">
  
@@ -410,8 +530,9 @@ if (is_limited_viewer()) {
         </div></div>
  
         <div class="header-account-area">
-            <a href="announcements.php" class="header-notification" aria-label="Notifications">
-                <i class="bi bi-bell"></i><span class="header-notification-count">3</span>
+            <a href="request.php" class="header-notification" aria-label="<?= (int)$registrationAttentionCount ?> requests need review">
+                <i class="bi bi-bell" aria-hidden="true"></i>
+                <?php if ($registrationAttentionCount > 0): ?><span class="header-notification-count"><?= (int)$registrationAttentionCount ?></span><?php endif; ?>
             </a>
             <span class="header-avatar"><?= e(uinit()) ?></span>
             <div class="d-none d-md-block header-identity">
@@ -473,11 +594,18 @@ if (is_limited_viewer()) {
                                             <i class="bi bi-person"></i>
                                         </span>
  
-                                        <input type="file" class="form-control" id="photo" accept="image/*" style="max-width:320px;">
+                                        <input type="file" class="form-control" id="photo" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="max-width:320px;">
  
                                         <button type="button" class="btn btn-sm btn-outline-dark d-none" id="removePhotoBtn">
                                             <i class="bi bi-x-circle"></i> Remove
                                         </button>
+                                    </div>
+                                    <div class="form-text">JPEG, PNG, or WebP; up to 5 MB.</div>
+                                    <div class="mt-3 d-none" id="supportingDocumentsWrap">
+                                        <label class="form-label" for="supportingDocuments">Private supporting documents (optional)</label>
+                                        <input type="file" class="form-control" id="supportingDocuments" multiple
+                                               accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp">
+                                        <div class="form-text">Up to 3 PDF, JPEG, PNG, or WebP files; 8 MB each. Only the SK Chairperson and Secretary can view them for review.</div>
                                     </div>
                                 </div>
  
@@ -871,15 +999,33 @@ if (is_limited_viewer()) {
  
                                 <div class="col-12">
                                     <label class="form-label">Program Interests</label>
- 
+
                                     <div class="group-title">10 Centers of Participation</div>
-                                    <div class="check-area mb-3" id="centerPrograms"></div>
- 
-                                    <div class="group-title">Other</div>
+                                    <div class="form-text interest-help">Choose a center to see its activities. You can select more than one interest.</div>
+                                    <div id="centerPrograms" class="mb-2"></div>
+                                    <section class="center-activity-panel is-collapsed" id="centerActivityPanel" aria-live="polite" aria-hidden="true">
+                                        <h6 class="fw-bold mb-3" id="centerActivityTitle"></h6>
+                                        <div class="check-area center-activity-list" id="centerActivityChoices"></div>
+                                        <div class="mt-3">
+                                            <label class="check-item interest-card" for="centerOtherChk">
+                                                <input type="checkbox" id="centerOtherChk"> Others
+                                            </label>
+                                        </div>
+                                        <div class="mt-2 d-none" id="centerOtherInputs"></div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2 d-none" id="addCenterOtherBtn" data-center-action="add-other">
+                                            <i class="bi bi-plus-lg me-1"></i>Add another interest
+                                        </button>
+                                    </section>
+
+                                    <div class="group-title">Other Interests</div>
                                     <div class="check-area">
-                                        <label class="check-item"><input type="checkbox" class="interest-box" id="interestOtherChk" value="Other"> Other</label>
+                                        <label class="check-item interest-card" for="interestOtherChk"><input type="checkbox" class="interest-box" id="interestOtherChk" value="Other"> Others</label>
                                     </div>
- 
+                                    <div class="mt-2 d-none" id="legacyInterestBox">
+                                        <div class="form-text mb-2">Previously recorded interests</div>
+                                        <div class="check-area" id="legacyInterestChoices"></div>
+                                    </div>
+
                                     <div class="mt-2 d-none" id="box_interestOther">
                                         <label class="form-label" for="interestOther">Please specify <span class="required">*</span></label>
                                         <input type="text" id="interestOther" class="form-control" maxlength="80" placeholder="Other program interest">
@@ -1157,7 +1303,6 @@ if (is_limited_viewer()) {
         'Agriculture': ['Organic Farming', 'Urban Gardening', 'Agri-business and Market Support', 'Livestock and Poultry',
             'Agricultural Skills Training', 'Food Production and Sustainability', 'Other']
     };
- 
     /* ---------- Classification rules: school / employment / occupation / training = 'req' | 'show' | 'hide' ---------- */
     var RULES = {
         'In-School Youth': {
@@ -1262,6 +1407,8 @@ if (is_limited_viewer()) {
     var photoData = '';
     var showAll = false;
     var archiveTargetId = null;
+    var centerState = {};
+    var activeCenter = null;
  
     function normalizeMember(m) {
         if (!m.id) m.id = 'm' + Date.now() + Math.random().toString(36).slice(2, 7);
@@ -1292,10 +1439,14 @@ if (is_limited_viewer()) {
         try { return JSON.stringify(JSON.parse(raw)) === JSON.stringify(list); }
         catch (e) { return false; }
     }
-    function saveAll() {
+    function saveAll(documents, requestId) {
         try {
             if (!savedListMatches(STORAGE_KEY, members) || !savedListMatches(REQUEST_KEY, requests)) {
-                DB.saveMemberData(members, requests);
+                var result = DB.saveMemberData(members, requests, documents, requestId);
+                if (result && typeof result.requests === 'string') {
+                    var savedRequests = JSON.parse(result.requests);
+                    if (Array.isArray(savedRequests)) requests = savedRequests;
+                }
             }
             return true;
         } catch (e) {
@@ -1497,24 +1648,33 @@ if (is_limited_viewer()) {
         }
         if (!document.querySelector('input[name="skVoter"]:checked')) bad($('voterGroup'), 'Please select Yes or No.');
 
-        document.querySelectorAll('.center-item').forEach(function (item) {
-            var cb = item.querySelector('.center-interest');
-            var options = item.querySelector('.center-subtype-options');
-            if (!cb || !options) return;
-            var selected = item.querySelectorAll('.center-subtype:checked');
-            if (cb.checked && !selected.length) {
-                setError(options, 'Please select at least one classification for ' + cb.value + '.');
-                errs.push(options);
+        var emptyCenterOther = null;
+        CENTERS.some(function (center) {
+            var selection = centerState[center];
+            if (!selection || !selection.otherSelected) return false;
+            var values = selection.otherValues || [];
+            var hasValue = values.some(function (value) { return String(value).trim() !== ''; });
+            if (!hasValue && !selection.keepEmptyOther) {
+                emptyCenterOther = { center: center, index: 0 };
+                return true;
             }
-            selected.forEach(function (choice) {
-                if (choice.value !== cb.value + ' | Other') return;
-                var other = item.querySelector('.center-other');
-                if (other && !other.value.trim()) {
-                    setError(other, 'Please specify the ' + cb.value + ' classification.');
-                    errs.push(other);
+            for (var index = 0; index < values.length; index++) {
+                if (String(values[index]).trim() === ''
+                    && !(selection.keepEmptyOther && values.length === 1)) {
+                    emptyCenterOther = { center: center, index: index };
+                    return true;
                 }
-            });
+            }
+            return false;
         });
+        if (emptyCenterOther) {
+            showCenterActivities(emptyCenterOther.center);
+            var emptyInput = document.querySelectorAll('#centerOtherInputs .center-custom-input')[emptyCenterOther.index];
+            if (emptyInput) {
+                setError(emptyInput, 'Please enter an interest or remove this blank custom interest.');
+                errs.push(emptyInput);
+            }
+        }
 
         if (errs.length) {
             var first = errs[0];
@@ -1547,20 +1707,18 @@ if (is_limited_viewer()) {
             if (c.classList.contains('center-interest')) return;
             d.interests.push(c.value);
         });
-        document.querySelectorAll('.center-item').forEach(function (item) {
-            var cb = item.querySelector('.center-interest');
-            if (!cb || !cb.checked) return;
-            var selected = item.querySelectorAll('.center-subtype:checked');
-            if (!selected.length) {
-                d.interests.push(cb.value);
-                return;
-            }
-            var other = item.querySelector('.center-other');
-            selected.forEach(function (choice) {
-                d.interests.push(choice.value === cb.value + ' | Other'
-                    ? choice.value + ': ' + (other ? other.value.trim() : '')
-                    : choice.value);
+        CENTERS.forEach(function (center) {
+            var selection = centerState[center];
+            if (!selection) return;
+            if (selection.general) d.interests.push(center);
+            Object.keys(selection.activities).forEach(function (activity) {
+                if (selection.activities[activity]) d.interests.push(center + ' | ' + activity);
             });
+            if (selection.otherSelected) {
+                var custom = selection.otherValues.filter(function (value) { return String(value).trim() !== ''; });
+                custom.forEach(function (value) { d.interests.push(center + ' | Other: ' + value.trim()); });
+                if (!custom.length && selection.keepEmptyOther) d.interests.push(center + ' | Other');
+            }
         });
         d.photo = photoData;
         d.guardianConsent = $('guardianConsent').checked;
@@ -1579,6 +1737,7 @@ if (is_limited_viewer()) {
         $('classification').value = m.classification || '';
         applyRules();
         INPUT_IDS.forEach(function (k) { if (k !== 'classification') $(k).value = m[k] || ''; });
+        renderLegacyInterests(m.interests || []);
         $('guardianConsent').checked = m.guardianConsent === true;
         if (m.salaryIncome && SALARY_INCOME_RANGES.indexOf(m.salaryIncome) === -1) {
             var previousIncome = document.createElement('option');
@@ -1605,39 +1764,35 @@ if (is_limited_viewer()) {
         document.querySelectorAll('.interest-box').forEach(function (c) {
             c.checked = (m.interests || []).indexOf(c.value) !== -1;
         });
-        document.querySelectorAll('.center-item').forEach(function (item) {
-            var cb = item.querySelector('.center-interest');
-            var other = item.querySelector('.center-other');
-            if (!cb) return;
-            var center = cb.value;
-            var found = false;
-            var otherText = '';
-            (m.interests || []).forEach(function (value) {
-                if (typeof value === 'string' && value.indexOf(center + ' | ') === 0) {
-                    var otherPrefix = center + ' | Other: ';
-                    if (value.indexOf(otherPrefix) === 0) {
-                        found = true;
-                        var otherChoice = item.querySelector('.center-subtype[value="' + center + ' | Other"]');
-                        if (otherChoice) otherChoice.checked = true;
-                        otherText = value.slice(otherPrefix.length);
-                    } else {
-                        var choice = Array.prototype.find.call(
-                            item.querySelectorAll('.center-subtype'),
-                            function (option) { return option.value === value; }
-                        );
-                        if (choice) {
-                            found = true;
-                            choice.checked = true;
-                        }
-                    }
+        centerState = emptyCenterState();
+        (Array.isArray(m.interests) ? m.interests : []).forEach(function (value) {
+            if (typeof value !== 'string') return;
+            CENTERS.some(function (center) {
+                if (value === center) {
+                    centerState[center].general = true;
+                    return true;
                 }
+                var prefix = center + ' | ';
+                if (value.indexOf(prefix) !== 0) return false;
+                var activity = value.slice(prefix.length);
+                var customPrefix = 'Other: ';
+                if (activity.indexOf(customPrefix) === 0) {
+                    centerState[center].otherSelected = true;
+                    centerState[center].otherValues.push(activity.slice(customPrefix.length));
+                } else if (activity === 'Other') {
+                    centerState[center].otherSelected = true;
+                    centerState[center].keepEmptyOther = true;
+                } else {
+                    centerState[center].activities[activity] = true;
+                }
+                return true;
             });
-            cb.checked = (m.interests || []).indexOf(center) !== -1 || found;
-            if (other) other.value = otherText;
         });
+        renderCenterNavigation();
+        var savedCenter = CENTERS.filter(function (center) { return hasCenterSelection(centerState[center]); })[0];
+        if (savedCenter) showCenterActivities(savedCenter);
         setPhoto(m.photo);
         refreshBoxes();
-        refreshCenterTypeVisibility();
         applyRules();
         refreshAge();
     }
@@ -1647,10 +1802,15 @@ if (is_limited_viewer()) {
         $('guardianConsent').checked = false;
         clearAllErrors();
         $('photo').value = '';
+        renderLegacyInterests([]);
+        centerState = emptyCenterState();
+        activeCenter = null;
+        renderCenterNavigation();
+        $('centerActivityPanel').classList.add('is-collapsed');
+        $('centerActivityPanel').setAttribute('aria-hidden', 'true');
         $('barangay').value = BARANGAY; $('city').value = CITY; $('province').value = PROVINCE;
         applyRules();
         refreshBoxes();
-        refreshCenterTypeVisibility();
         refreshAge();
     }
  
@@ -1659,10 +1819,11 @@ if (is_limited_viewer()) {
         label.textContent = on ? label.dataset.edit : label.dataset.normal;
         show('cancelEditBtn', on);
         show('clearBtn', !on);
+        show('supportingDocumentsWrap', on);
         $('formMessage').innerHTML = on
             ? '<div class="alert alert-warning small"><i class="bi bi-pencil-square me-1"></i>Editing <strong>' + esc(fullName(m)) +
               '</strong> (' + esc(m.memberNo || '') + '). Changes will <strong>not</strong> replace the official record right away \u2013 ' +
-              'they are sent as an edit request for the SK officer to approve.</div>'
+              'they are sent as an edit request for the SK Chairperson or Secretary to review.</div>'
             : '';
     }
  
@@ -1687,7 +1848,7 @@ if (is_limited_viewer()) {
  
     function showAccountCredentials(result, member) {
         var message = 'Account created for ' + fullName(member) + '. Username: ' + result.username +
-            '. Temporary password: ' + result.temporaryPassword +
+            '. Temporary password (uppercase surname): ' + result.temporaryPassword +
             '. Share these credentials securely; the member must change the password at first login.';
         if (window.Swal && typeof window.Swal.fire === 'function') {
             window.Swal.fire({
@@ -1743,6 +1904,21 @@ if (is_limited_viewer()) {
             notify('danger', 'Another youth already has the same name and date of birth.');
             return;
         }
+        var documents = Array.prototype.slice.call($('supportingDocuments').files || []);
+        if (documents.length > 3) {
+            notify('danger', 'Upload no more than three supporting documents at a time.');
+            return;
+        }
+        var allowedDocumentTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+        for (var fileIndex = 0; fileIndex < documents.length; fileIndex++) {
+            var file = documents[fileIndex];
+            if (file.size < 1 || file.size > 8 * 1024 * 1024
+                || (file.type && allowedDocumentTypes.indexOf(file.type) < 0)
+                || !/\.(pdf|jpe?g|png|webp)$/i.test(file.name)) {
+                notify('danger', 'Supporting documents must be PDF, JPEG, PNG, or WebP files no larger than 8 MB each.');
+                return;
+            }
+        }
         var changes = {}, previous = {}, n = 0;
         FIELDS.forEach(function (f) {
             var k = f[0];
@@ -1753,15 +1929,20 @@ if (is_limited_viewer()) {
                 n++;
             }
         });
-        if (!n) { notify('info', 'No changes were made to the profile.'); return; }
+        if (!n) {
+            notify(documents.length ? 'warning' : 'info', documents.length
+                ? 'Make at least one profile change to submit supporting documents for review.'
+                : 'No changes were made to the profile.');
+            return;
+        }
         var rq = {
             id: 'r' + Date.now(), memberId: m.id, memberNo: m.memberNo, memberName: fullName(m),
             requestedAt: nowISO(), requestedBy: OFFICER, status: 'Edit Request',
-            previous: previous, changes: changes, reviewedAt: null, reviewedBy: '', remarks: ''
+            previous: previous, changes: changes, attachments: [], reviewedAt: null, reviewedBy: '', remarks: ''
         };
         requests.push(rq);
         m.history.push({ at: nowISO(), action: 'Edit requested', by: OFFICER, note: n + ' field(s) changed, waiting for approval.' });
-        if (!saveAll()) { requests.pop(); m.history.pop(); return; }
+        if (!saveAll(documents, rq.id)) { requests.pop(); m.history.pop(); return; }
         notify('success', 'Edit request submitted. The official profile will update once it is approved.');
         exitEdit();
         renderAll();
@@ -1804,12 +1985,17 @@ if (is_limited_viewer()) {
         );
         if (birthDate === null) return;
         birthDate = birthDate.trim();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+        var birthDateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDate);
+        var birthDateValue = new Date(birthDate + 'T00:00:00');
+        if (!birthDateParts || isNaN(birthDateValue.getTime())
+            || birthDateValue.getFullYear() !== Number(birthDateParts[1])
+            || birthDateValue.getMonth() + 1 !== Number(birthDateParts[2])
+            || birthDateValue.getDate() !== Number(birthDateParts[3])) {
             notify('danger', 'Enter a valid verified date of birth in YYYY-MM-DD format.');
             return;
         }
         var age = calcAge(birthDate);
-        if (isNaN(age) || age < MIN_AGE || age > MAX_AGE || new Date(birthDate + 'T00:00:00') > new Date()) {
+        if (isNaN(age) || age < MIN_AGE || age > MAX_AGE || birthDateValue > new Date()) {
             notify('danger', 'Cannot restore: the verified birth date must show an age of 15 to 30 years.');
             return;
         }
@@ -1990,11 +2176,22 @@ if (is_limited_viewer()) {
     $('photo').addEventListener('change', function () {
         var f = this.files[0];
         if (!f) return;
-        if (!/^image\//.test(f.type)) { setError(this, 'Please choose an image file.'); this.value = ''; return; }
+        if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) < 0) {
+            setError(this, 'Please choose a JPEG, PNG, or WebP image.'); this.value = ''; return;
+        }
+        if (f.size > 5 * 1024 * 1024) {
+            setError(this, 'Choose a profile photo smaller than 5 MB.'); this.value = ''; return;
+        }
         var reader = new FileReader();
         reader.onload = function () {
             var img = new Image();
             img.onload = function () {
+                var width = img.naturalWidth || img.width, height = img.naturalHeight || img.height;
+                if (!width || !height || width * height > 20000000) {
+                    setError($('photo'), 'Choose an image with dimensions no larger than 20 megapixels.');
+                    $('photo').value = '';
+                    return;
+                }
                 var max = 320, s = Math.min(1, max / Math.max(img.width, img.height));
                 var c = document.createElement('canvas');
                 c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
@@ -2012,23 +2209,6 @@ if (is_limited_viewer()) {
        EVENTS
        ===================================================== */
     var form = $('registrationForm');
- 
-    function refreshCenterTypeVisibility() {
-        document.querySelectorAll('.center-item').forEach(function (item) {
-            var cb = item.querySelector('.center-interest');
-            var wrap = item.querySelector('.center-subtype-wrap');
-            var otherWrap = item.querySelector('.center-other-wrap');
-            var other = item.querySelector('.center-other');
-            var otherChoice = item.querySelector('.center-subtype[value="' + (cb ? cb.value : '') + ' | Other"]');
-            if (!cb || !wrap) return;
-            wrap.classList.toggle('d-none', !cb.checked);
-            if (!cb.checked) {
-                item.querySelectorAll('.center-subtype').forEach(function (choice) { choice.checked = false; });
-                if (other) other.value = '';
-            }
-            if (otherWrap) otherWrap.classList.toggle('d-none', !cb.checked || !otherChoice || !otherChoice.checked);
-        });
-    }
 
     function handleFieldChange(e) {
         var t = e.target;
@@ -2044,10 +2224,67 @@ if (is_limited_viewer()) {
         if (t.name === 'pwd' || t.name === 'skVoter' || t.id === 'interestOtherChk') refreshBoxes();
         if (t.matches && t.matches('.disability-type')) refreshDisabilityOther();
         if (t.matches && t.matches('select[data-other]')) refreshOthers();
-        if (t.matches && (t.matches('.center-interest') || t.matches('.center-subtype'))) refreshCenterTypeVisibility();
+        if (t.id === 'centerOtherChk') {
+            var selection = centerState[activeCenter];
+            if (!selection) return;
+            selection.otherSelected = t.checked;
+            if (t.checked && !selection.otherValues.length) selection.otherValues.push('');
+            if (!t.checked) selection.otherValues = [];
+            selection.keepEmptyOther = false;
+            renderCenterCustomInputs();
+            renderCenterNavigation();
+            updateInterestCardStates();
+        } else if (t.matches && t.matches('.center-activity-choice')) {
+            centerState[activeCenter].activities[t.value] = t.checked;
+            renderCenterNavigation();
+            updateInterestCardStates();
+        } else if (t.matches && t.matches('.center-general-choice')) {
+            centerState[activeCenter].general = t.checked;
+            renderCenterNavigation();
+            updateInterestCardStates();
+        } else if (t.matches && t.matches('.center-custom-input')) {
+            centerState[activeCenter].otherValues[Number(t.dataset.index)] = t.value;
+            clearError(t);
+            renderCenterNavigation();
+        } else if (t.matches && t.matches('.interest-box')) {
+            updateInterestCardStates();
+        }
     }
     form.addEventListener('input', handleFieldChange);
     form.addEventListener('change', handleFieldChange);
+
+    document.addEventListener('click', function (e) {
+        var target = e.target.closest('[data-center-action]');
+        if (!target) return;
+        var action = target.dataset.centerAction;
+        if (action === 'toggle') {
+            if (activeCenter === target.dataset.center) collapseCenterActivities();
+            else showCenterActivities(target.dataset.center);
+        } else if (action === 'add-other') {
+            var selection = centerState[activeCenter];
+            if (!selection) return;
+            selection.otherSelected = true;
+            selection.keepEmptyOther = false;
+            selection.otherValues.push('');
+            $('centerOtherChk').checked = true;
+            renderCenterCustomInputs();
+            renderCenterNavigation();
+            updateInterestCardStates();
+            var inputs = document.querySelectorAll('#centerOtherInputs .center-custom-input');
+            inputs[inputs.length - 1].focus();
+        } else if (action === 'remove-other') {
+            var values = centerState[activeCenter].otherValues;
+            values.splice(Number(target.dataset.index), 1);
+            if (!values.length) {
+                centerState[activeCenter].otherSelected = false;
+                centerState[activeCenter].keepEmptyOther = false;
+                $('centerOtherChk').checked = false;
+            }
+            renderCenterCustomInputs();
+            renderCenterNavigation();
+            updateInterestCardStates();
+        }
+    });
  
     // number-only fields: letters, spaces and symbols are removed as they are typed or pasted
     ['houseNo', 'mobile', 'voterNo'].forEach(function (id) {
@@ -2090,31 +2327,138 @@ if (is_limited_viewer()) {
             return '<label class="check-item"><input type="checkbox" class="interest-box" value="' + esc(t) + '"> ' + esc(t) + '</label>';
         }).join('');
     }
-    function renderCenterClassifications() {
-        var box = $('centerPrograms');
-        box.innerHTML = CENTERS.map(function (center) {
-            var options = (CENTER_CLASSIFICATIONS[center] || []).map(function (type, index) {
-                var id = 'centerClass' + CENTERS.indexOf(center) + '-' + index;
-                return '<label class="check-item" for="' + id + '">' +
-                    '<input type="checkbox" class="center-subtype" id="' + id + '" value="' + esc(center + ' | ' + type) + '"> ' +
-                    esc(type) + '</label>';
-            }).join('');
-            var otherId = 'centerOther' + CENTERS.indexOf(center);
-            return '<div class="center-item">' +
-                '<label class="check-item"><input type="checkbox" class="interest-box center-interest" value="' + esc(center) + '"> ' + esc(center) + '</label>' +
-                '<div class="center-subtype-wrap mt-2 d-none">' +
-                '<div class="small text-muted mb-2">Select all that apply:</div>' +
-                '<div class="center-subtype-options check-area" role="group" aria-label="' + esc(center) + ' classifications">' + options + '</div>' +
-                '<div class="center-other-wrap mt-2 d-none">' +
-                '<label class="form-label" for="' + otherId + '">Please specify the ' + esc(center) + ' classification</label>' +
-                '<input type="text" id="' + otherId + '" class="form-control center-other" maxlength="80" placeholder="Type your classification">' +
-                '</div>' +
-                '</div>' +
-                '</div>';
-        }).join('');
-        refreshCenterTypeVisibility();
+    function emptyCenterState() {
+        var state = {};
+        CENTERS.forEach(function (center) {
+            state[center] = { general: false, activities: {}, otherSelected: false, otherValues: [], keepEmptyOther: false };
+        });
+        return state;
     }
-    renderCenterClassifications();
+
+    function hasCenterSelection(selection) {
+        return !!selection && (selection.general || Object.keys(selection.activities).some(function (activity) {
+            return selection.activities[activity];
+        }) || (selection.otherSelected && (selection.otherValues.some(function (value) {
+            return String(value).trim() !== '';
+        }) || selection.keepEmptyOther)));
+    }
+
+    function centerSelectionCount(selection) {
+        if (!selection) return 0;
+        var count = selection.general ? 1 : 0;
+        count += Object.keys(selection.activities).filter(function (activity) {
+            return selection.activities[activity];
+        }).length;
+        if (selection.otherSelected) {
+            var customCount = selection.otherValues.filter(function (value) {
+                return String(value).trim() !== '';
+            }).length;
+            count += customCount;
+            if (selection.keepEmptyOther && !customCount) count++;
+        }
+        return count;
+    }
+
+    function updateInterestCardStates() {
+        document.querySelectorAll('.interest-card').forEach(function (card) {
+            var checkbox = card.querySelector('input[type="checkbox"]');
+            card.classList.toggle('is-selected', !!checkbox && checkbox.checked);
+        });
+    }
+
+    function renderCenterNavigation() {
+        var navigation = $('centerPrograms');
+        var focusedCenter = document.activeElement && document.activeElement.classList.contains('center-nav-button')
+            ? document.activeElement.dataset.center : null;
+        navigation.innerHTML = CENTERS.map(function (center) {
+            var count = centerSelectionCount(centerState[center]);
+            var active = center === activeCenter;
+            return '<button type="button" class="center-nav-button' + (active ? ' is-active' : '') +
+                '" data-center-action="toggle" data-center="' + esc(center) + '" aria-controls="centerActivityPanel" aria-expanded="' + (active ? 'true' : 'false') + '">' +
+                '<span class="center-nav-name">' + esc(center) + '</span>' +
+                '<span class="center-count" aria-label="' + count + ' interests selected">' + count + '</span>' +
+                '<i class="bi bi-chevron-down center-nav-chevron" aria-hidden="true"></i></button>';
+        }).join('');
+        if (focusedCenter) {
+            var focusedButton = Array.prototype.filter.call(navigation.querySelectorAll('.center-nav-button'), function (button) {
+                return button.dataset.center === focusedCenter;
+            })[0];
+            if (focusedButton) focusedButton.focus();
+        }
+    }
+
+    function showCenterActivities(center) {
+        if (CENTERS.indexOf(center) === -1) return;
+        activeCenter = center;
+        var selection = centerState[center];
+        $('centerActivityTitle').textContent = center + ' interests';
+        var options = (CENTER_CLASSIFICATIONS[center] || []).filter(function (activity) {
+            return activity !== 'Other';
+        });
+        var knownValues = {};
+        options.forEach(function (activity) { knownValues[activity] = true; });
+        Object.keys(selection.activities).forEach(function (activity) {
+            if (!knownValues[activity]) options.push(activity);
+        });
+
+        $('centerActivityChoices').innerHTML =
+            '<label class="check-item interest-card"><input type="checkbox" class="center-general-choice"' +
+            (selection.general ? ' checked' : '') + '> General interest</label>' +
+            options.map(function (activity) {
+                var previous = !knownValues[activity];
+                return '<label class="check-item interest-card"><input type="checkbox" class="center-activity-choice" value="' +
+                    esc(activity) + '"' + (selection.activities[activity] ? ' checked' : '') + '> ' +
+                    esc(activity) + (previous ? ' <span class="text-muted">(previously recorded)</span>' : '') + '</label>';
+            }).join('');
+        $('centerOtherChk').checked = selection.otherSelected;
+        $('centerActivityPanel').classList.remove('is-collapsed');
+        $('centerActivityPanel').setAttribute('aria-hidden', 'false');
+        renderCenterNavigation();
+        renderCenterCustomInputs();
+        updateInterestCardStates();
+    }
+
+    function collapseCenterActivities() {
+        activeCenter = null;
+        $('centerActivityPanel').classList.add('is-collapsed');
+        $('centerActivityPanel').setAttribute('aria-hidden', 'true');
+        renderCenterNavigation();
+    }
+
+    function renderCenterCustomInputs() {
+        var selection = centerState[activeCenter];
+        if (!selection) return;
+        $('centerOtherInputs').classList.toggle('d-none', !selection.otherSelected);
+        $('addCenterOtherBtn').classList.toggle('d-none', !selection.otherSelected);
+        $('centerOtherInputs').innerHTML = selection.otherValues.map(function (value, index) {
+            return '<div class="center-custom-row">' +
+                '<input type="text" class="form-control center-custom-input" maxlength="80" data-index="' + index +
+                '" aria-label="Custom interest ' + (index + 1) + ' for ' + esc(activeCenter) +
+                '" placeholder="Enter an activity or interest" value="' + esc(value) + '">' +
+                '<button type="button" class="btn btn-outline-secondary" data-center-action="remove-other" data-index="' + index +
+                '" aria-label="Remove custom interest"><i class="bi bi-x-lg"></i></button></div>';
+        }).join('');
+    }
+
+    function renderLegacyInterests(interests) {
+        var choices = [];
+        (Array.isArray(interests) ? interests : []).forEach(function (value) {
+            if (typeof value !== 'string' || !value || value === 'Other') return;
+            var belongsToCenter = CENTERS.some(function (center) {
+                return value === center || value.indexOf(center + ' | ') === 0;
+            });
+            if (!belongsToCenter && choices.indexOf(value) === -1) choices.push(value);
+        });
+        $('legacyInterestBox').classList.toggle('d-none', !choices.length);
+        $('legacyInterestChoices').innerHTML = choices.map(function (value) {
+            return '<label class="check-item interest-card"><input type="checkbox" class="interest-box" value="' +
+                esc(value) + '"> ' + esc(value) + '</label>';
+        }).join('');
+        updateInterestCardStates();
+    }
+
+    centerState = emptyCenterState();
+    renderCenterNavigation();
 
     setOptions($('school'), SCHOOLS.concat(['Others']), 'Select school / institution');
     setOptions($('training'), TRAININGS, 'Select');

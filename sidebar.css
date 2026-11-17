@@ -532,19 +532,24 @@ html.dark-mode .dashboard-panel .list-group-item{
     text-decoration:none;
 }
 
+.sidebar.offcanvas-lg .offcanvas-body{
+    flex-grow:1;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+}
+
 @media(min-width:992px){
     .sidebar{
         position:fixed;
         top:0;
         bottom:0;
         left:0;
+        display:flex;
+        flex-direction:column;
         width:280px!important;
         z-index:1000;
         background:var(--ui-surface)!important;
-    }
-
-    .sidebar .offcanvas-body{
-        overflow-y:auto;
     }
 
     .page-content{
@@ -560,10 +565,14 @@ html.dark-mode .dashboard-panel .list-group-item{
 
 .sidebar .nav-link{
     color:var(--ui-muted);
-    font-size:15px;
-    padding:10px 12px;
+    font-size:14px;
+    padding:6px 10px;
     border-radius:var(--ui-radius-sm);
     transition:background-color .15s ease,color .15s ease;
+}
+
+.sidebar .sidebar-brand{
+    margin-bottom:1rem!important;
 }
 
 .sidebar .nav-link:hover{
@@ -654,6 +663,12 @@ html.dark-mode .dashboard-panel .list-group-item{
     font-weight:800;
     text-transform:uppercase;
     margin:22px 10px 7px;
+}
+
+.sidebar .sidebar-section-title{
+    font-size:11px;
+    margin-top:14px!important;
+    margin-bottom:4px;
 }
 
 /* hamburger button shown in the page header on mobile */
@@ -807,7 +822,46 @@ html.dark-mode .dashboard-panel .list-group-item{
 /* sidebar keeps its original (smaller) text size - only page content is enlarged */
 .sidebar{ font-size:16px; }
 .sidebar .offcanvas-title{ font-size:20px; }
-.sidebar .small{ font-size:14px; }
+.sidebar .small{ font-size:13px; }
+
+@media(min-width:992px){
+    .sidebar.offcanvas-lg .offcanvas-body{
+        padding:clamp(8px,1.67vh,16px)!important;
+    }
+
+    .sidebar.offcanvas-lg .sidebar-brand{
+        margin-bottom:clamp(8px,1.25vh,16px)!important;
+    }
+
+    .sidebar.offcanvas-lg .brand-badge{
+        width:clamp(36px,5.25vh,42px);
+        height:clamp(36px,5.25vh,42px);
+    }
+
+    .sidebar.offcanvas-lg .sidebar-brand .fw-bold{
+        font-size:clamp(13px,1.8vh,15px)!important;
+    }
+
+    .sidebar.offcanvas-lg .offcanvas-body .nav-link{
+        font-size:clamp(12px,1.75vh,14px);
+        margin:clamp(0px,.15vh,1.5px) clamp(6px,.72vw,10px);
+        padding:clamp(2px,.4vh,4px) clamp(8px,.72vw,10px);
+    }
+
+    .sidebar.offcanvas-lg .offcanvas-body .sidebar-section-title{
+        font-size:clamp(10px,1.375vh,11px);
+        margin-top:clamp(6px,1.15vh,14px)!important;
+        margin-bottom:clamp(1px,.25vh,4px);
+    }
+
+    .sidebar.offcanvas-lg .offcanvas-body > .mt-auto{
+        padding-top:clamp(6px,1vh,16px)!important;
+    }
+
+    .sidebar.offcanvas-lg .offcanvas-body .small{
+        font-size:clamp(11px,1.5vh,13px);
+    }
+}
 
 /* ---------- white text on primary-coloured elements ---------- */
 .hero-primary, .hero-primary h1, .hero-primary h2, .hero-primary p, .hero-primary small,

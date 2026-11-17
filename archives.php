@@ -10,7 +10,7 @@ require_viewer();
     <title>Archives | KK Youth Profiling System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="sidebar.css?v=20" rel="stylesheet">
+    <link href="sidebar.css?v=31" rel="stylesheet">
     <style>
         :root { --line:var(--bs-border-color); --muted:var(--bs-secondary-color); }
         * { box-sizing:border-box; }
@@ -46,6 +46,19 @@ require_viewer();
     </style>
 <?php include __DIR__ . '/init.php'; ?>
 <?php
+$archiveRequestItems = json_decode($__data['kkEditRequests'] ?? '[]', true);
+$archiveRequestItems = is_array($archiveRequestItems)
+    ? array_filter($archiveRequestItems, function ($request) {
+        return is_array($request) && ($request['status'] ?? '') === 'Edit Request';
+    })
+    : [];
+$archivePendingItems = json_decode($__data['kkPendingRegistrations'] ?? '[]', true);
+$archivePendingItems = is_array($archivePendingItems)
+    ? array_filter($archivePendingItems, function ($request) {
+        return is_array($request) && ($request['status'] ?? '') === 'Pending';
+    })
+    : [];
+$archiveAttentionCount = count($archiveRequestItems) + count($archivePendingItems);
 $archiveMembers = json_decode($__data['kkMembers'] ?? '[]', true);
 $archiveMembers = is_array($archiveMembers) ? $archiveMembers : [];
 $archiveRoles = json_decode($__data['skRoles'] ?? '[]', true);
@@ -116,12 +129,25 @@ foreach ($archiveAnnouncements as $announcement) {
         'type' => 'announcement',
         'typeLabel' => 'Cancelled event / announcement',
         'name' => $title,
+        'announcementId' => (string)($announcement['id'] ?? ''),
         'identifier' => (string)($announcement['date'] ?? ''),
         'details' => trim((string)($announcement['category'] ?? 'Cancelled')) ?: 'Cancelled',
         'date' => (string)($announcement['updatedAt'] ?? ''),
         'source' => 'announcements.php',
         'sourceLabel' => 'Announcements',
-        'search' => implode(' ', [$title, $announcement['date'] ?? '', $announcement['category'] ?? '', 'cancelled']),
+        'search' => implode(' ', array_filter([
+            $title,
+            $announcement['date'] ?? '',
+            $announcement['category'] ?? '',
+            $announcement['description'] ?? '',
+            $announcement['details'] ?? '',
+            $announcement['venue'] ?? '',
+            $announcement['organizer'] ?? '',
+            $announcement['contact'] ?? '',
+            $announcement['notes'] ?? '',
+            is_array($announcement['centers'] ?? null) ? implode(' ', array_filter($announcement['centers'], 'is_scalar')) : '',
+            'cancelled',
+        ], 'is_scalar')),
     ];
 }
 
@@ -135,7 +161,7 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
 <body>
 <div class="top-strip"></div>
 <script src="theme.js"></script>
-<script src="sidebar.js?v=10"></script>
+<script src="sidebar.js?v=15"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">
@@ -143,8 +169,9 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
             <div><div class="header-title">Archives</div><small>KK Youth Profiling System</small></div>
         </div>
         <div class="header-account-area">
-            <a href="announcements.php" class="header-notification" aria-label="Notifications">
-                <i class="bi bi-bell"></i><span class="header-notification-count">3</span>
+            <a href="<?= is_public() ? 'announcements.php' : 'request.php' ?>" class="header-notification" aria-label="<?= is_public() ? 'View announcements' : (int)$archiveAttentionCount . ' requests need review' ?>">
+                <i class="bi bi-bell" aria-hidden="true"></i>
+                <?php if (!is_public() && $archiveAttentionCount > 0): ?><span class="header-notification-count"><?= (int)$archiveAttentionCount ?></span><?php endif; ?>
             </a>
             <div class="header-avatar"><?= e(uinit()) ?></div>
             <div class="d-none d-md-block header-identity">
@@ -164,10 +191,10 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
         </section>
 
         <div class="row g-3 mb-4">
-            <div class="col-sm-6 col-xl-3"><button type="button" class="summary-card records-filter selected" data-filter="" aria-pressed="true"><div class="count"><?= count($archiveRows) ?></div><div class="label">Archived or cancelled records</div></button></div>
-            <div class="col-sm-6 col-xl-3"><button type="button" class="summary-card records-filter" data-filter="member" aria-pressed="false"><div class="count"><?= $archiveCounts['member'] ?></div><div class="label">Archived KK members</div></button></div>
-            <div class="col-sm-6 col-xl-3"><button type="button" class="summary-card records-filter" data-filter="role" aria-pressed="false"><div class="count"><?= $archiveCounts['role'] ?></div><div class="label">Ended / archived SK roles</div></button></div>
-            <div class="col-sm-6 col-xl-3"><button type="button" class="summary-card records-filter" data-filter="announcement" aria-pressed="false"><div class="count"><?= $archiveCounts['announcement'] ?></div><div class="label">Cancelled events / announcements</div></button></div>
+            <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter selected" data-filter="" aria-pressed="true"><div class="count"><?= count($archiveRows) ?></div><div class="label">Archived or cancelled records</div></button></div>
+            <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter" data-filter="member" aria-pressed="false"><div class="count"><?= $archiveCounts['member'] ?></div><div class="label">Archived KK members</div></button></div>
+            <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter" data-filter="role" aria-pressed="false"><div class="count"><?= $archiveCounts['role'] ?></div><div class="label">Ended / archived SK roles</div></button></div>
+            <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter" data-filter="announcement" aria-pressed="false"><div class="count"><?= $archiveCounts['announcement'] ?></div><div class="label">Cancelled events / announcements</div></button></div>
         </div>
 
         <section class="records-card">
@@ -196,7 +223,12 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
                                 <td><strong><?= e($row['name']) ?></strong><?php if ($row['identifier'] !== ''): ?><div class="small text-muted"><?= e($row['identifier']) ?></div><?php endif; ?></td>
                                 <td><?= e($row['date'] !== '' ? substr($row['date'], 0, 10) : 'Date not recorded') ?></td>
                                 <td><?= e($row['details']) ?></td>
-                                <td><a class="btn btn-sm btn-outline-primary text-nowrap" href="<?= e($row['source']) ?>"><?= e($row['sourceLabel']) ?> <i class="bi bi-arrow-up-right"></i></a></td>
+                                <td class="text-nowrap">
+                                    <?php if ($row['type'] === 'announcement' && !empty($row['announcementId'])): ?>
+                                        <button class="btn btn-sm btn-outline-primary" type="button" data-archive-announcement="<?= e($row['announcementId']) ?>">View details</button>
+                                    <?php endif; ?>
+                                    <a class="btn btn-sm btn-outline-primary" href="<?= e($row['source']) ?>"><?= e($row['sourceLabel']) ?> <i class="bi bi-arrow-up-right"></i></a>
+                                </td>
                             </tr>
                         <?php endforeach; endif; ?>
                             <tr id="archiveNoMatches" hidden><td colspan="5" class="text-center text-muted py-4">No matching records.</td></tr>
@@ -209,6 +241,20 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
         <div class="footer-note">KK Youth Profiling System &bull; SK Barangay Sikat, Alfonso, Cavite &bull; FY 2026&ndash;2027</div>
     </div>
 </main>
+<div class="modal fade" id="archiveAnnouncementModal" tabindex="-1" aria-labelledby="archiveAnnouncementTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5 fw-bold" id="archiveAnnouncementTitle">Cancelled announcement details</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="archiveAnnouncementDetails"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
 (function () {
     var search = document.getElementById('archiveSearch');
@@ -216,6 +262,76 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
     var filterCards = Array.prototype.slice.call(document.querySelectorAll('.records-filter'));
     var rows = Array.prototype.slice.call(document.querySelectorAll('#archiveRows tr[data-type]'));
     var noMatches = document.getElementById('archiveNoMatches');
+    var announcementRecords = [];
+    try {
+        var storedAnnouncements = JSON.parse(window.__DB.skAnnouncements || '[]');
+        if (Array.isArray(storedAnnouncements)) announcementRecords = storedAnnouncements;
+    } catch (error) {
+        console.error('Could not read archived announcement details.', error);
+    }
+
+    function showAnnouncementDetails(id) {
+        var announcement = announcementRecords.filter(function (record) {
+            return record && String(record.id) === String(id) && record.cancelled;
+        })[0];
+        if (!announcement) return;
+
+        var details = document.getElementById('archiveAnnouncementDetails');
+        details.replaceChildren();
+        var banner = announcement.banner || announcement.poster || '';
+        if (/^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/i.test(banner)) {
+            var image = document.createElement('img');
+            image.src = banner;
+            image.alt = 'Banner for ' + String(announcement.title || 'cancelled announcement');
+            image.className = 'img-fluid rounded mb-3';
+            details.appendChild(image);
+        }
+
+        var heading = document.createElement('h3');
+        heading.className = 'h5 fw-bold';
+        heading.textContent = String(announcement.title || 'Untitled announcement');
+        details.appendChild(heading);
+
+        var fields = [
+            ['Status', 'Cancelled'],
+            ['Category', announcement.category],
+            ['Centers of participation', Array.isArray(announcement.centers) ? announcement.centers.join(', ') : ''],
+            ['Event date', announcement.date],
+            ['Start time', announcement.startTime],
+            ['End time', announcement.endTime],
+            ['Venue', announcement.venue],
+            ['Organizer', announcement.organizer],
+            ['Contact', announcement.contact],
+            ['Description', announcement.description],
+            ['Details', announcement.details],
+            ['Additional notes', announcement.notes],
+            ['Publication status', announcement.publishState],
+            ['Publication date', announcement.publishDate],
+            ['Last updated', announcement.updatedAt],
+        ];
+        var list = document.createElement('dl');
+        list.className = 'row mb-0';
+        fields.forEach(function (field) {
+            if (field[1] == null || field[1] === '') return;
+            var label = document.createElement('dt');
+            label.className = 'col-sm-4';
+            label.textContent = field[0];
+            var value = document.createElement('dd');
+            value.className = 'col-sm-8';
+            value.style.whiteSpace = 'pre-wrap';
+            value.textContent = String(field[1]);
+            list.appendChild(label);
+            list.appendChild(value);
+        });
+        details.appendChild(list);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('archiveAnnouncementModal')).show();
+    }
+
+    document.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-archive-announcement]');
+        if (button) showAnnouncementDetails(button.dataset.archiveAnnouncement);
+    });
+
     function filter() {
         var query = search.value.trim().toLowerCase();
         var selectedType = type.value;

@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/config.php'; require_viewer(); ?>
+<?php require_once __DIR__ . '/config.php'; require_once __DIR__ . '/transparency_budget.php'; require_viewer(); ?>
 <!DOCTYPE html>
 <html lang="en"<?= is_public() ? ' class="is-public"' : '' ?>>
 <head>
@@ -8,90 +8,122 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="sidebar.css?v=20" rel="stylesheet">
+    <link href="sidebar.css?v=31" rel="stylesheet">
     <style>
-        .dashboard-hero{
-            color:var(--bs-body-color);
-            background:var(--bs-white);
-            border:1px solid var(--bs-border-color);
-            border-radius:.5rem;
-            padding:clamp(1.5rem,4vw,2.5rem);
+        .dashboard-page{background:var(--ui-paper)}
+        .dashboard-toolbar{
+            min-height:68px;
+            border-bottom:1px solid var(--ui-line);
         }
+        .dashboard-search{
+            width:min(340px,38vw);
+            min-height:40px;
+            border:1px solid var(--ui-line);
+            border-radius:999px;
+            background:var(--ui-paper);
+        }
+        .dashboard-search:focus{background:var(--ui-surface)}
+        .dashboard-overview{padding-top:.25rem}
         .dashboard-stat,.dashboard-panel{
             height:100%;
-            background:var(--bs-white);
-            border:1px solid var(--bs-border-color);
-            border-radius:.5rem;
+            background:var(--ui-surface);
+            border:1px solid var(--ui-line);
+            border-radius:12px;
+            box-shadow:0 2px 8px rgba(15,23,42,.035);
         }
-        .dashboard-stat{padding:1.25rem}
+        .dashboard-stat{
+            min-height:130px;
+            padding:1rem 1.1rem;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            gap:.12rem;
+        }
         .dashboard-stat-icon{
             display:grid;
             place-items:center;
-            width:2.75rem;
-            height:2.75rem;
-            border-radius:.5rem;
-            color:var(--bs-primary-text-emphasis);
+            width:2.35rem;
+            height:2.35rem;
+            margin-bottom:.35rem;
+            border-radius:50%;
+            color:var(--bs-primary);
             background:var(--bs-primary-bg-subtle);
-            font-size:1.25rem;
+            font-size:1.05rem;
         }
-        .dashboard-panel{padding:1.35rem;overflow:hidden}
-        .dashboard-greeting{max-width:1080px}
+        .dashboard-panel{padding:1.1rem 1.2rem;overflow:hidden}
+        .dashboard-greeting{max-width:none}
         .dashboard-attention{
-            background:var(--ui-surface);
+            display:flex;
+            align-items:center;
+            flex-wrap:wrap;
+            gap:.65rem 1rem;
+            padding:.7rem 1rem;
             border:1px solid var(--ui-line);
-            border-radius:var(--ui-radius);
-            box-shadow:var(--ui-shadow);
-            overflow:hidden;
+            border-radius:10px;
+            background:var(--ui-surface);
         }
         .attention-pill{
             display:inline-flex;
             align-items:center;
-            padding:.35rem .8rem;
+            gap:.4rem;
+            background:var(--bs-warning-bg-subtle);
+            color:var(--bs-warning-text-emphasis);
+            padding:.25rem .55rem;
             border-radius:999px;
-            background:#f7e0d9;
-            color:#c24a33;
-            font-size:.8rem;
-            font-weight:800;
+            font-size:.75rem;
+            font-weight:700;
         }
         .dashboard-queue-row{
             display:flex;
             align-items:center;
-            gap:1rem;
-            padding:1rem 1.25rem;
-            border-top:1px solid var(--ui-line);
+            gap:.45rem;
+            color:var(--ui-muted);
+            font-size:.82rem;
         }
-        .dashboard-stat{
-            min-height:118px;
-            display:flex;
-            flex-direction:column;
-            justify-content:center;
-            padding:1.25rem;
-        }
+        .dashboard-queue-row .btn{padding:.2rem .55rem}
         .dashboard-stat .fs-2{
-            letter-spacing:-.04em;
-        }
-        .dashboard-stat-row .dashboard-stat{
-            border-radius:var(--ui-radius);
+            color:var(--bs-emphasis-color);
+            font-size:clamp(1.2rem,2vw,1.65rem)!important;
+            font-weight:700;
+            letter-spacing:-.035em;
+            overflow-wrap:anywhere;
         }
         .budget-stat{
             height:100%;
-            padding:1rem;
-            border:1px solid var(--bs-border-color);
-            border-radius:.8rem;
-            background:var(--bs-tertiary-bg);
+            padding:.6rem .8rem;
+            border-left:1px solid var(--ui-line);
         }
-        .announcement-row+.announcement-row{border-top:1px solid var(--bs-border-color)}
-        .quick-link{
-            display:flex;
+        .announcement-row+.announcement-row{border-top:1px solid var(--ui-line)}
+        .dashboard-chart-wrap{position:relative;height:270px;min-height:220px}
+        .dashboard-chart-wrap.dashboard-chart-gauge{height:175px;min-height:175px}
+        .dashboard-chart-fallback{font-size:.875rem;color:var(--bs-secondary-color)}
+        .dashboard-activity-table th{white-space:nowrap}
+        .dashboard-activity-table td{vertical-align:middle}
+        .dashboard-status{
+            display:inline-flex;
             align-items:center;
-            gap:.8rem;
-            padding:.8rem;
-            color:var(--bs-body-color);
-            text-decoration:none;
-            border:1px solid var(--bs-border-color);
-            border-radius:.5rem;
+            padding:.22rem .55rem;
+            border-radius:999px;
+            color:var(--bs-primary-text-emphasis);
+            background:var(--bs-primary-bg-subtle);
+            font-size:.72rem;
+            font-weight:650;
+            white-space:nowrap;
         }
-        .quick-link:hover{color:var(--bs-primary-text-emphasis);background:var(--bs-tertiary-bg)}
+        .dashboard-budget-center{
+            margin-top:-1.55rem;
+            text-align:center;
+            pointer-events:none;
+        }
+        .dashboard-budget-center strong{display:block;color:var(--bs-emphasis-color);font-size:1.35rem}
+        .dashboard-budget-center span{color:var(--bs-secondary-color);font-size:.75rem}
+        .dashboard-stat-row>.col-6{min-width:0}
+        @media(max-width:575.98px){
+            .dashboard-toolbar .dashboard-search{width:100%;order:3}
+            .dashboard-toolbar{flex-wrap:wrap}
+            .budget-stat{border-left:0;border-top:1px solid var(--ui-line);padding:.75rem 0}
+            .dashboard-chart-wrap{height:240px}
+        }
     </style>
     <?php include __DIR__ . '/init.php'; ?>
     <?php
@@ -100,6 +132,19 @@
     $dashboardActiveMembers = count(array_filter($dashboardMembers, function ($member) {
         return is_array($member) && ($member['status'] ?? '') === 'Active';
     }));
+    $dashboardAgeGroups = ['15-17' => 0, '18-24' => 0, '25-30' => 0];
+    $dashboardToday = new DateTimeImmutable('today');
+    foreach ($dashboardMembers as $member) {
+        if (!is_array($member) || ($member['status'] ?? '') !== 'Active' || empty($member['birthDate'])) continue;
+        $birthDateValue = trim((string)$member['birthDate']);
+        $birthDate = DateTimeImmutable::createFromFormat('!Y-m-d', $birthDateValue);
+        if (!$birthDate || $birthDate->format('Y-m-d') !== $birthDateValue || $birthDate > $dashboardToday) continue;
+        $age = $birthDate->diff($dashboardToday)->y;
+        if ($age >= 15 && $age <= 17) $dashboardAgeGroups['15-17']++;
+        elseif ($age >= 18 && $age <= 24) $dashboardAgeGroups['18-24']++;
+        elseif ($age >= 25 && $age <= 30) $dashboardAgeGroups['25-30']++;
+    }
+    $dashboardAgeParticipationCount = array_sum($dashboardAgeGroups);
     $dashboardAnnouncements = json_decode($__data['skAnnouncements'] ?? '[]', true);
     $dashboardAnnouncements = is_array($dashboardAnnouncements) ? $dashboardAnnouncements : [];
     $today = date('Y-m-d');
@@ -126,12 +171,12 @@
         }
     }
     $dashboardBudgetYear = trim((string)($dashboardBudget['fy'] ?? ''));
-    $dashboardBudgetPublished = isset($dashboardBudget['amount']) && is_numeric($dashboardBudget['amount']);
-    $dashboardBudgetAmount = $dashboardBudgetPublished ? max(0, (float)$dashboardBudget['amount']) : 0;
+    $dashboardBudgetTotal = transparency_budget_year_total($dashboardBudget);
+    $dashboardBudgetPublished = $dashboardBudgetTotal !== null;
+    $dashboardBudgetAmount = $dashboardBudgetPublished ? $dashboardBudgetTotal : 0;
     $dashboardExpenses = json_decode($__data['skTransparencyExpenses'] ?? '[]', true);
     $dashboardExpenses = is_array($dashboardExpenses) ? $dashboardExpenses : [];
     $dashboardExpenseRows = [];
-    $dashboardCategoryTotals = [];
     $dashboardTotalSpent = 0;
     foreach ($dashboardExpenses as $expense) {
         if (!is_array($expense) || !isset($expense['amount']) || !is_numeric($expense['amount'])) continue;
@@ -140,7 +185,6 @@
         $amount = max(0, (float)$expense['amount']);
         $category = trim((string)($expense['category'] ?? '')) ?: 'Other';
         $dashboardTotalSpent += $amount;
-        $dashboardCategoryTotals[$category] = ($dashboardCategoryTotals[$category] ?? 0) + $amount;
         $dashboardExpenseRows[] = [
             'date' => (string)($expense['date'] ?? ''),
             'title' => trim((string)($expense['title'] ?? '')) ?: 'Expense',
@@ -152,7 +196,6 @@
         return strcmp($b['date'], $a['date']);
     });
     $dashboardExpenseRows = array_slice($dashboardExpenseRows, 0, 5);
-    arsort($dashboardCategoryTotals, SORT_NUMERIC);
     $dashboardEditRequests = json_decode($__data['kkEditRequests'] ?? '[]', true);
     $dashboardEditRequests = is_array($dashboardEditRequests) ? array_values(array_filter($dashboardEditRequests, function ($item) {
         return is_array($item) && ($item['status'] ?? '') === 'Edit Request';
@@ -162,6 +205,11 @@
         return is_array($item) && ($item['status'] ?? '') === 'Pending';
     })) : [];
     $dashboardAttentionCount = count($dashboardEditRequests) + count($dashboardPendingRegistrations);
+    $dashboardBudgetUtilization = $dashboardBudgetPublished && $dashboardBudgetAmount > 0
+        ? ($dashboardTotalSpent / $dashboardBudgetAmount) * 100
+        : 0;
+    $dashboardGaugeSpent = min($dashboardTotalSpent, $dashboardBudgetAmount);
+    $dashboardGaugeRemaining = max(0, $dashboardBudgetAmount - $dashboardTotalSpent);
     $dashboardCurrency = function ($amount) {
         return '₱' . number_format((float)$amount, 2);
     };
@@ -222,26 +270,52 @@
             ?: strcmp($a['title'], $b['title']);
     });
     $dashboardProgramInsights = array_slice($dashboardProgramInsights, 0, 5);
+    $dashboardProgramChart = array_map(function ($program) {
+        return [
+            'label' => $program['title'],
+            'value' => (int)$program['attendance'],
+        ];
+    }, $dashboardProgramInsights);
+    $dashboardChartData = json_encode([
+        'programs' => $dashboardProgramChart,
+        'ageGroups' => array_map(function ($label, $count) {
+            return ['label' => $label, 'value' => $count];
+        }, array_keys($dashboardAgeGroups), array_values($dashboardAgeGroups)),
+        'budgetProgress' => [
+            'spent' => round($dashboardGaugeSpent, 2),
+            'remaining' => round($dashboardGaugeRemaining, 2),
+            'utilization' => round($dashboardBudgetUtilization, 1),
+        ],
+    ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
+    $dashboardGreeting = (int)date('G') < 12 ? 'Good morning' : ((int)date('G') < 18 ? 'Good afternoon' : 'Good evening');
     ?>
 </head>
 
 <body class="dashboard-page">
 <div class="top-strip"></div>
-<script src="theme.js"></script>
-<script src="sidebar.js?v=10"></script>
+<script src="theme.js?v=3"></script>
+<script src="sidebar.js?v=15"></script>
+<script type="application/json" id="dashboardChartData"><?= $dashboardChartData ?></script>
 
 <div class="page-content">
     <header class="bg-white border-bottom sticky-top">
-        <div class="d-flex align-items-center gap-2 gap-md-3 px-3 px-lg-4 py-2 py-lg-3">
-            <button class="btn btn-outline-success d-lg-none" type="button"
+        <div class="dashboard-toolbar d-flex align-items-center gap-2 gap-md-3 px-3 px-lg-4 py-2">
+            <button class="btn btn-outline-primary d-lg-none" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
                 <i class="bi bi-list fs-5"></i>
             </button>
             <div>
                 <h1 class="h5 fw-bold mb-0">Dashboard</h1>
-                <div class="text-muted small">KK Youth Profiling System</div>
             </div>
+            <label class="dashboard-search input-group align-items-center px-3 ms-auto me-auto" aria-label="Search dashboard information">
+                <i class="bi bi-search text-muted me-2" aria-hidden="true"></i>
+                <input class="form-control border-0 bg-transparent shadow-none p-0" type="search" id="dashboardSearch" placeholder="Search activities and expenses..." autocomplete="off">
+            </label>
             <div class="ms-auto header-account-area">
+                <a class="header-notification" href="request.php" aria-label="<?= (int)$dashboardAttentionCount ?> requests need review">
+                    <i class="bi bi-bell" aria-hidden="true"></i>
+                    <?php if ($dashboardAttentionCount > 0): ?><span class="header-notification-count"><?= (int)$dashboardAttentionCount ?></span><?php endif; ?>
+                </a>
                 <span class="header-avatar"><?= e(uinit()) ?></span>
                 <div class="d-none d-md-block header-identity">
                     <div class="header-identity-name"><?= e(uname()) ?></div>
@@ -255,231 +329,351 @@
     </header>
 
     <main class="container-fluid p-3 p-lg-4">
-        <section class="dashboard-greeting d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+        <section class="dashboard-greeting dashboard-overview d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
             <div>
-                <h2 class="h3 fw-bold mb-1">Good morning, <?= e(uname()) ?></h2>
-                <p class="text-muted mb-0"><?= e(date('l, F j, Y')) ?></p>
+                <h2 class="h5 fw-bold mb-1">Overview</h2>
+                <p class="text-muted small mb-0"><?= e($dashboardGreeting) ?>, <?= e(uname()) ?> · <?= e(date('l, F j, Y')) ?></p>
             </div>
-            <a href="announcements.php" class="btn btn-primary px-4">
-                <i class="bi bi-plus-lg me-1"></i>New announcement
+            <a href="announcements.php" class="btn btn-sm btn-primary px-3">
+                <i class="bi bi-plus-lg me-1"></i>New activity
             </a>
         </section>
 
-        <section class="dashboard-attention mb-4" aria-labelledby="attentionTitle">
-            <div class="d-flex align-items-center gap-2 px-3 pt-3 pb-2">
-                <span class="attention-pill">Needs attention</span>
-                <span class="text-muted small"><?= (int)$dashboardAttentionCount ?> items waiting</span>
-            </div>
+        <section class="dashboard-attention mb-3" aria-labelledby="attentionTitle">
+            <span class="attention-pill" id="attentionTitle"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>Needs attention</span>
+            <span class="dashboard-queue-row">
             <?php if ($dashboardPendingRegistrations): ?>
-                <div class="dashboard-queue-row">
-                    <i class="bi bi-person-plus text-primary fs-5"></i>
-                    <div class="flex-grow-1"><strong><?= count($dashboardPendingRegistrations) ?> new youth registration<?= count($dashboardPendingRegistrations) === 1 ? '' : 's' ?></strong><div class="text-muted small">Waiting for review</div></div>
-                    <a href="request.php" class="btn btn-outline-secondary btn-sm px-3">Review</a>
-                </div>
+                <span><?= count($dashboardPendingRegistrations) ?> registration<?= count($dashboardPendingRegistrations) === 1 ? '' : 's' ?></span>
             <?php endif; ?>
             <?php if ($dashboardEditRequests): ?>
-                <div class="dashboard-queue-row">
-                    <i class="bi bi-pencil-square text-warning fs-5"></i>
-                    <div class="flex-grow-1"><strong><?= count($dashboardEditRequests) ?> profile edit request<?= count($dashboardEditRequests) === 1 ? '' : 's' ?></strong><div class="text-muted small">Member information needs review</div></div>
-                    <a href="request.php" class="btn btn-outline-secondary btn-sm px-3">Review</a>
-                </div>
+                <span><?= count($dashboardEditRequests) ?> profile edit<?= count($dashboardEditRequests) === 1 ? '' : 's' ?></span>
             <?php endif; ?>
             <?php if (!$dashboardAttentionCount): ?>
-                <div class="dashboard-queue-row text-muted">Nothing needs your attention right now.</div>
+                <span>Nothing is waiting for review.</span>
             <?php endif; ?>
+            </span>
+            <?php if ($dashboardAttentionCount > 0): ?><a href="request.php" class="btn btn-sm btn-outline-primary ms-auto">Review requests <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a><?php endif; ?>
         </section>
 
         <section class="row g-3 mb-4 dashboard-stat-row" aria-label="System summary">
             <div class="col-6 col-xl-3">
                 <div class="dashboard-stat">
+                    <span class="dashboard-stat-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
                     <div class="fs-2 fw-bold"><?= $dashboardActiveMembers ?></div>
                     <div class="text-muted">Active KK members</div>
                 </div>
             </div>
             <div class="col-6 col-xl-3">
                 <div class="dashboard-stat">
+                    <span class="dashboard-stat-icon"><i class="bi bi-calendar-event" aria-hidden="true"></i></span>
                     <div class="fs-2 fw-bold"><?= $upcomingAnnouncementCount ?></div>
                     <div class="text-muted">Upcoming events</div>
                 </div>
             </div>
             <div class="col-6 col-xl-3">
                 <div class="dashboard-stat">
-                    <div class="fs-2 fw-bold"><?= count($dashboardExpenseRows) ?></div>
-                    <div class="text-muted">Recent expense records</div>
+                    <span class="dashboard-stat-icon"><i class="bi bi-inbox" aria-hidden="true"></i></span>
+                    <div class="fs-2 fw-bold"><?= (int)$dashboardAttentionCount ?></div>
+                    <div class="text-muted">Pending requests</div>
                 </div>
             </div>
             <div class="col-6 col-xl-3">
                 <div class="dashboard-stat">
+                    <span class="dashboard-stat-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span>
                     <div class="fs-2 fw-bold"><?= $dashboardBudgetPublished ? e($dashboardCurrency($dashboardBudgetAmount - $dashboardTotalSpent)) : '—' ?></div>
                     <div class="text-muted">Budget remaining</div>
                 </div>
             </div>
         </section>
 
-        <section class="dashboard-panel mb-4" aria-labelledby="programInsightsTitle">
-            <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
-                <div>
-                    <h2 class="h5 fw-bold mb-1" id="programInsightsTitle">
-                        <i class="bi bi-fire text-primary me-2"></i>Program insights
-                    </h2>
-                    <p class="small text-muted mb-0">
-                        Most attended completed programs from the last 12 months. Use this as a planning signal, not a guarantee of future turnout.
-                    </p>
+        <div class="row g-3 mb-4 align-items-stretch">
+        <section class="col-12 col-xl-7" aria-labelledby="upcomingTitle">
+            <div class="dashboard-panel h-100">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                    <div>
+                        <h2 class="h6 fw-bold mb-1" id="upcomingTitle">Upcoming SK activities</h2>
+                        <p class="small text-muted mb-0">Published activities scheduled for the coming days.</p>
+                    </div>
+                    <a href="announcements.php" class="btn btn-sm btn-outline-primary">View all</a>
                 </div>
-                <a href="reports.php" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-bar-chart me-1"></i>View reports
-                </a>
+                <?php if (!$upcomingAnnouncements): ?>
+                    <div class="py-4 text-center text-muted small">No published activities are scheduled right now.</div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-sm dashboard-activity-table align-middle mb-0">
+                            <thead><tr><th>Activity</th><th>Date</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <?php foreach (array_slice($upcomingAnnouncements, 0, 5) as $item): ?>
+                                    <?php
+                                    $activitySearch = trim(
+                                        (string)($item['title'] ?? '') . ' '
+                                        . (string)($item['category'] ?? '') . ' '
+                                        . (string)($item['venue'] ?? '')
+                                    );
+                                    ?>
+                                    <tr data-dashboard-search="<?= e($activitySearch) ?>">
+                                        <td>
+                                            <div class="fw-semibold"><?= e($item['title'] ?? 'Untitled activity') ?></div>
+                                            <div class="small text-muted"><?= e($item['venue'] ?? $item['category'] ?? 'SK activity') ?></div>
+                                        </td>
+                                        <td class="text-nowrap"><?= e(date('M j, Y', strtotime($item['date']))) ?></td>
+                                        <td><span class="dashboard-status">Upcoming</span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
             </div>
-            <?php if (!$dashboardProgramInsights): ?>
-                <div class="text-muted small">No confirmed attendance records are available for completed programs in the last 12 months.</div>
+        </section>
+        <section class="col-12 col-xl-5" aria-labelledby="budgetGaugeTitle">
+            <div class="dashboard-panel h-100">
+                <div class="d-flex align-items-start justify-content-between gap-2">
+                    <div>
+                        <h2 class="h6 fw-bold mb-1" id="budgetGaugeTitle">SK budget overview</h2>
+                        <p class="small text-muted mb-0"><?= $dashboardBudgetYear !== '' ? 'Fiscal year ' . e($dashboardBudgetYear) : 'Recorded budget and expenses' ?></p>
+                    </div>
+                    <a href="reports.php" class="small text-decoration-none">Details</a>
+                </div>
+                <?php if ($dashboardBudgetPublished && $dashboardBudgetAmount > 0): ?>
+                    <div class="dashboard-chart-wrap dashboard-chart-gauge mt-2">
+                        <canvas id="budgetProgressChart" role="img" aria-label="SK budget utilization: <?= e(number_format($dashboardBudgetUtilization, 1)) ?> percent spent"></canvas>
+                    </div>
+                    <div class="dashboard-budget-center" aria-hidden="true">
+                        <strong><?= e(number_format($dashboardBudgetUtilization, 1)) ?>%</strong>
+                        <span>of budget spent</span>
+                    </div>
+                    <div class="d-flex justify-content-between gap-3 mt-3">
+                        <div>
+                            <div class="small text-muted">Recorded expenses</div>
+                            <strong><?= e($dashboardCurrency($dashboardTotalSpent)) ?></strong>
+                        </div>
+                        <div class="text-end">
+                            <div class="small text-muted">Remaining</div>
+                            <strong><?= e($dashboardCurrency($dashboardBudgetAmount - $dashboardTotalSpent)) ?></strong>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="py-4 text-center">
+                        <div class="text-muted small">A positive published budget is needed to show utilization.</div>
+                        <a href="reports.php" class="btn btn-sm btn-outline-primary mt-3">View budget transparency</a>
+                    </div>
+                <?php endif; ?>
+                <p class="dashboard-chart-fallback mt-2 mb-0" id="budgetProgressFallback" hidden>Chart is unavailable; the budget figures are shown above.</p>
+            </div>
+        </section>
+        </div>
+
+        <div class="row g-3 mb-4 align-items-stretch">
+        <section class="col-12 col-xl-7" aria-labelledby="programInsightsTitle">
+            <div class="dashboard-panel h-100">
+                <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
+                    <div>
+                        <h2 class="h6 fw-bold mb-1" id="programInsightsTitle">Program participation</h2>
+                        <p class="small text-muted mb-0">Confirmed attendance at completed activities in the past 12 months.</p>
+                    </div>
+                    <a href="participation.php" class="small text-decoration-none">Participation records</a>
+                </div>
+                <?php if (!$dashboardProgramInsights): ?>
+                    <div class="py-5 text-center text-muted small">No confirmed attendance data is available yet.</div>
+                <?php else: ?>
+                    <div class="dashboard-chart-wrap">
+                        <canvas id="programAttendanceChart" role="img" aria-label="Confirmed attendance for the most attended SK programs"></canvas>
+                    </div>
+                    <p class="dashboard-chart-fallback mb-0" id="programChartFallback" hidden>Chart is unavailable; see the participation records for attendance information.</p>
+                <?php endif; ?>
+            </div>
+        </section>
+        <section class="col-12 col-xl-5" aria-labelledby="ageParticipationTitle">
+            <div class="dashboard-panel h-100">
+                <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
+                    <div>
+                        <h2 class="h6 fw-bold mb-1" id="ageParticipationTitle">Age participation</h2>
+                        <p class="small text-muted mb-0">Active KK members aged 15-30 by age group.</p>
+                    </div>
+                    <a href="members.php" class="small text-decoration-none">View members</a>
+                </div>
+                <?php if ($dashboardAgeParticipationCount > 0): ?>
+                    <div class="dashboard-chart-wrap">
+                        <canvas id="ageParticipationChart" role="img" aria-label="Active KK members by age group: <?= e(implode(', ', array_map(function ($label, $count) { return $label . ': ' . $count; }, array_keys($dashboardAgeGroups), array_values($dashboardAgeGroups)))) ?>"></canvas>
+                    </div>
+                    <p class="dashboard-chart-fallback mb-0" id="ageParticipationChartFallback" hidden>Chart is unavailable; age-group totals could not be displayed.</p>
+                <?php else: ?>
+                    <div class="py-5 text-center text-muted small">No age information is available for active KK members yet.</div>
+                <?php endif; ?>
+            </div>
+        </section>
+        </div>
+
+        <section class="dashboard-panel mb-4" aria-labelledby="recentExpensesTitle">
+            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                <div>
+                    <h2 class="h6 fw-bold mb-1" id="recentExpensesTitle">Recent SK expenses</h2>
+                    <p class="small text-muted mb-0">Latest expense records for the selected fiscal year.</p>
+                </div>
+                <a href="reports.php" class="small text-decoration-none">View all</a>
+            </div>
+            <?php if (!$dashboardExpenseRows): ?>
+                <p class="small text-muted mb-0 py-3">No expenses have been recorded for this fiscal year.</p>
             <?php else: ?>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Program / event</th>
-                                <th>Category</th>
-                                <th>Date</th>
-                                <th class="text-end">Confirmed attendance</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th scope="col">Date</th><th scope="col">Activity / expense</th><th scope="col">Type</th><th scope="col" class="text-end">Amount</th></tr></thead>
                         <tbody>
-                            <?php foreach ($dashboardProgramInsights as $index => $program): ?>
-                                <tr>
-                                    <td class="fw-bold"><?= $index + 1 ?></td>
-                                    <td class="fw-semibold"><?= e($program['title']) ?></td>
-                                    <td><?= e($program['category']) ?></td>
-                                    <td><?= e($program['date']) ?></td>
-                                    <td class="text-end fw-bold"><?= (int)$program['attendance'] ?></td>
+                            <?php foreach ($dashboardExpenseRows as $expense): ?>
+                                <?php $expenseSearch = trim($expense['title'] . ' ' . $expense['category']); ?>
+                                <tr data-dashboard-search="<?= e($expenseSearch) ?>">
+                                    <td class="text-nowrap"><?= e($expense['date']) ?></td>
+                                    <td><?= e($expense['title']) ?></td>
+                                    <td><?= e($expense['category']) ?></td>
+                                    <td class="text-end text-nowrap"><?= e($dashboardCurrency($expense['amount'])) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
+                <p class="small text-muted mt-2 mb-0">Showing the five most recent expenses. Recipient and description fields are not displayed here.</p>
             <?php endif; ?>
         </section>
 
-        <section class="dashboard-panel mb-4" aria-labelledby="budgetTransparencyTitle">
-            <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
-                <div>
-                    <h2 class="h5 fw-bold mb-1" id="budgetTransparencyTitle">
-                        <i class="bi bi-shield-check text-primary me-2"></i>Budget transparency
-                    </h2>
-                    <p class="small text-muted mb-0">
-                        <?php if (!empty($dashboardBudget['fy'])): ?>
-                            Fiscal year <?= e($dashboardBudget['fy']) ?>
-                        <?php else: ?>
-                            SK budget and recorded expenses
-                        <?php endif; ?>
-                    </p>
-                </div>
-                <a href="reports.php" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-file-earmark-bar-graph me-1"></i>Manage budget &amp; reports
-                </a>
-            </div>
-
-            <div class="row g-2 mb-4">
-                <div class="col-md-4">
-                    <div class="budget-stat">
-                        <div class="small text-muted mb-1">Available budget</div>
-                        <div class="h4 fw-bold mb-0"><?= $dashboardBudgetPublished ? e($dashboardCurrency($dashboardBudgetAmount)) : 'Not published' ?></div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="budget-stat">
-                        <div class="small text-muted mb-1">Recorded expenses</div>
-                        <div class="h4 fw-bold mb-0"><?= e($dashboardCurrency($dashboardTotalSpent)) ?></div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="budget-stat">
-                        <div class="small text-muted mb-1">Remaining balance</div>
-                        <div class="h4 fw-bold mb-0"><?= $dashboardBudgetPublished ? e($dashboardCurrency($dashboardBudgetAmount - $dashboardTotalSpent)) : '—' ?></div>
-                    </div>
-                </div>
-            </div>
-
-            <details class="mt-3">
-                <summary class="fw-semibold">View spending breakdown and recent expenses</summary>
-                <div class="row g-4 mt-1">
-                <div class="col-lg-4">
-                    <h3 class="h6 fw-bold">Spending by category</h3>
-                    <?php if (!$dashboardCategoryTotals): ?>
-                        <p class="small text-muted mb-0">No expenses recorded yet.</p>
-                    <?php else: ?>
-                        <ul class="list-group list-group-flush">
-                            <?php foreach ($dashboardCategoryTotals as $category => $amount): ?>
-                                <li class="list-group-item px-0 d-flex justify-content-between gap-2">
-                                    <span><?= e($category) ?></span>
-                                    <strong class="text-nowrap"><?= e($dashboardCurrency($amount)) ?></strong>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-                <div class="col-lg-8">
-                    <h3 class="h6 fw-bold">Recent expense records</h3>
-                    <?php if (!$dashboardExpenseRows): ?>
-                        <p class="small text-muted mb-0">No expenses recorded yet.</p>
-                    <?php else: ?>
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead><tr><th scope="col">Date</th><th scope="col">Program / expense</th><th scope="col">Category</th><th scope="col" class="text-end">Amount</th></tr></thead>
-                                <tbody>
-                                    <?php foreach ($dashboardExpenseRows as $expense): ?>
-                                        <tr>
-                                            <td class="text-nowrap"><?= e($expense['date']) ?></td>
-                                            <td><?= e($expense['title']) ?></td>
-                                            <td><?= e($expense['category']) ?></td>
-                                            <td class="text-end text-nowrap"><?= e($dashboardCurrency($expense['amount'])) ?></td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="small text-muted mt-2 mb-0">Showing the five most recent expenses. Recipient and description fields are not displayed here.</p>
-                    <?php endif; ?>
-                </div>
-                </div>
-            </details>
-        </section>
-
-        <div class="row g-3">
-            <section class="col-12" aria-labelledby="upcomingTitle">
-                <div class="dashboard-panel">
-                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                        <h2 class="h5 fw-bold mb-0" id="upcomingTitle">Upcoming activities</h2>
-                        <a href="announcements.php" class="small fw-semibold text-decoration-none">View announcements</a>
-                    </div>
-                    <?php if (!$upcomingAnnouncements): ?>
-                        <p class="text-muted mb-0 py-3">There are no published upcoming activities right now.</p>
-                    <?php else: ?>
-                        <?php foreach ($upcomingAnnouncements as $item): ?>
-                            <article class="announcement-row py-3">
-                                <div class="d-flex justify-content-between gap-3">
-                                    <div>
-                                        <h3 class="h6 fw-bold mb-1"><?= e($item['title'] ?? 'Untitled activity') ?></h3>
-                                        <div class="small text-muted">
-                                            <?= e($item['category'] ?? 'Announcement') ?>
-                                            <?php if (!empty($item['venue'])): ?> · <?= e($item['venue']) ?><?php endif; ?>
-                                        </div>
-                                    </div>
-                                    <time class="small text-nowrap fw-semibold" datetime="<?= e($item['date']) ?>">
-                                        <?= e(date('M j, Y', strtotime($item['date']))) ?>
-                                    </time>
-                                </div>
-                            </article>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </section>
-        </div>
     </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="app-alerts.js?v=2"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    (function () {
+        var dataNode = document.getElementById('dashboardChartData');
+        var chartData = JSON.parse(dataNode.textContent || '{}');
+        var brand = getComputedStyle(document.documentElement).getPropertyValue('--ui-brand').trim() || '#2563eb';
+        var grid = getComputedStyle(document.documentElement).getPropertyValue('--ui-line').trim() || '#e5eaf1';
+
+        if (typeof Chart === 'undefined') {
+            var programFallback = document.getElementById('programChartFallback');
+            var ageParticipationFallback = document.getElementById('ageParticipationChartFallback');
+            var budgetProgressFallback = document.getElementById('budgetProgressFallback');
+            if (programFallback) programFallback.hidden = false;
+            if (ageParticipationFallback) ageParticipationFallback.hidden = false;
+            if (budgetProgressFallback) budgetProgressFallback.hidden = false;
+            return;
+        }
+
+        var progressCanvas = document.getElementById('budgetProgressChart');
+        if (progressCanvas && chartData.budgetProgress) {
+            new Chart(progressCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Recorded expenses', 'Remaining budget'],
+                    datasets: [{
+                        data: [chartData.budgetProgress.spent, chartData.budgetProgress.remaining],
+                        backgroundColor: [chartData.budgetProgress.utilization > 100 ? '#dc3545' : brand, grid],
+                        borderWidth: 0,
+                        hoverOffset: 3
+                    }]
+                },
+                options: {
+                    animation: { duration: 180 },
+                    circumference: 180,
+                    cutout: '78%',
+                    maintainAspectRatio: false,
+                    rotation: 270,
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return ' ' + context.label + ': ₱' + Number(context.raw).toLocaleString('en-PH', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        var programCanvas = document.getElementById('programAttendanceChart');
+        if (programCanvas && chartData.programs && chartData.programs.length) {
+            new Chart(programCanvas, {
+                type: 'bar',
+                data: {
+                    labels: chartData.programs.map(function (item) { return item.label; }),
+                    datasets: [{
+                        data: chartData.programs.map(function (item) { return item.value; }),
+                        backgroundColor: brand,
+                        borderRadius: 4,
+                        maxBarThickness: 26
+                    }]
+                },
+                options: {
+                    animation: { duration: 180 },
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) { return ' Confirmed attendance: ' + context.parsed.x; }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: grid } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        var ageParticipationCanvas = document.getElementById('ageParticipationChart');
+        if (ageParticipationCanvas && chartData.ageGroups && chartData.ageGroups.length) {
+            new Chart(ageParticipationCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: chartData.ageGroups.map(function (item) { return item.label; }),
+                    datasets: [{
+                        data: chartData.ageGroups.map(function (item) { return item.value; }),
+                        backgroundColor: [brand, '#60a5fa', '#123b73'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    animation: { duration: 180 },
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return ' ' + context.label + ': ' + Number(context.raw).toLocaleString('en-PH') + ' members';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        var dashboardSearch = document.getElementById('dashboardSearch');
+        if (dashboardSearch) {
+            dashboardSearch.addEventListener('input', function () {
+                var query = dashboardSearch.value.trim().toLocaleLowerCase();
+                document.querySelectorAll('[data-dashboard-search]').forEach(function (row) {
+                    var value = (row.getAttribute('data-dashboard-search') || row.textContent).toLocaleLowerCase();
+                    row.hidden = query !== '' && value.indexOf(query) === -1;
+                });
+            });
+        }
+    })();
+</script>
 </body>
 </html>

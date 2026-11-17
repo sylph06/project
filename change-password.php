@@ -6,7 +6,7 @@ if (!$user) {
     exit;
 }
 if (empty($user['must_change_password'])) {
-    header('Location: dashboard.php');
+    header('Location: ' . ($user['role'] === 'KK Member' ? 'member-portal.php' : 'dashboard.php'));
     exit;
 }
 ?>
@@ -17,7 +17,7 @@ if (empty($user['must_change_password'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Change Password | KK Youth Profiling System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link href="sidebar.css?v=20" rel="stylesheet">
+    <link href="sidebar.css?v=31" rel="stylesheet">
     <script src="theme.js"></script>
 </head>
 <body class="bg-light">
@@ -59,8 +59,10 @@ if (empty($user['must_change_password'])) {
         }).then(function (response) { return response.json(); }).then(function (result) {
             if (!result.ok) throw new Error(result.error || 'Could not update your password.');
             message.className = 'alert alert-success';
-            message.textContent = 'Password changed. Opening the dashboard…';
-            setTimeout(function () { location.href = 'dashboard.php'; }, 700);
+            message.textContent = 'Password changed. Opening your account...';
+            setTimeout(function () {
+                location.href = <?= json_encode($user['role'] === 'KK Member' ? 'member-portal.php' : 'dashboard.php') ?>;
+            }, 700);
         }).catch(function (error) {
             message.className = 'alert alert-danger';
             message.textContent = error.message;

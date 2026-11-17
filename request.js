@@ -3,6 +3,7 @@
 
     var $ = function (id) { return document.getElementById(id); };
     var OFFICER = window.SK_OFFICER || 'SK Officer';
+    var CAN_REVIEW_MEMBER_REQUESTS = window.SK_CAN_REVIEW_MEMBER_REQUESTS === true;
     var BARANGAY = 'Sikat', CITY = 'Alfonso', PROVINCE = 'Cavite';
     var MIN_AGE = 15, MAX_AGE = 30;
     var FIELD_LIST = [
@@ -187,6 +188,23 @@
         if (Array.isArray(value)) return value.length ? esc(value.join(', ')) : '—';
         return value == null || value === '' ? '—' : esc(value);
     }
+    function attachmentHtml(request) {
+        if (!CAN_REVIEW_MEMBER_REQUESTS || !Array.isArray(request.attachments) || !request.attachments.length) return '';
+        var attachments = request.attachments.filter(function (attachment) {
+            return attachment && /^[a-f0-9]{32}\.(jpg|png|webp|pdf)$/.test(String(attachment.id || ''));
+        });
+        if (!attachments.length) return '';
+        return '<section class="mt-3"><h6 class="fw-bold">Private supporting documents</h6><ul class="mb-0">' +
+            attachments.map(function (attachment) {
+                var href = 'api/member-documents.php?id=' + encodeURIComponent(attachment.id);
+                var size = Number(attachment.size);
+            var uploader = attachment.uploadedBy ? ' · uploaded by ' + esc(attachment.uploadedBy) : '';
+                return '<li><a href="' + href + '" target="_blank" rel="noopener noreferrer">' +
+                    esc(attachment.name || 'Supporting document') + '</a>' +
+                (Number.isFinite(size) && size > 0 ? ' <small class="text-muted">(' + Math.ceil(size / 1024) + ' KB' + uploader + ')</small>' : '') +
+                    '</li>';
+            }).join('') + '</ul><small class="text-muted">Only the SK Chairperson and Secretary can access these files.</small></section>';
+    }
     function showEditRequest(id) {
         var request = editRequests.filter(function (item) { return String(item.id) === String(id); })[0];
         if (!request) return;
@@ -201,12 +219,14 @@
             '<div class="d-flex justify-content-between align-items-start mb-3"><div><h6 class="fw-bold mb-0">' + esc(member ? fullName(member) : request.memberName || 'Member record unavailable') + '</h6>' +
             '<small class="text-muted">' + esc(request.memberNo || '') + ' • requested ' + dateText(request.requestedAt) + ' by ' + esc(request.requestedBy || '—') + '</small></div>' + statusBadge(request.status) + '</div>' +
             (pending && (!member || member.status === 'Archived') ? '<div class="alert alert-warning small">This member is missing or archived. The edit cannot be approved.</div>' : '') +
+            (pending && !CAN_REVIEW_MEMBER_REQUESTS ? '<div class="alert alert-info small">Only the SK Chairperson or Secretary can approve or reject profile changes.</div>' : '') +
             '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Field</th><th>Current (official)</th><th>Requested</th></tr></thead><tbody>' +
             (rows || '<tr><td colspan="3" class="text-muted">No changed fields were recorded.</td></tr>') + '</tbody></table></div>' +
+            attachmentHtml(request) +
             (pending ? '<label class="form-label" for="reviewRemarks">Remarks <span class="text-muted fw-normal">(optional)</span></label><textarea id="reviewRemarks" class="form-control" rows="2" style="height:auto;"></textarea>' :
                 '<div class="small text-muted">Reviewed ' + dateText(request.reviewedAt) + ' by ' + esc(request.reviewedBy || '—') + (request.remarks ? ' — ' + esc(request.remarks) : '') + '</div>');
-        $('approveBtn').classList.toggle('d-none', !pending);
-        $('rejectBtn').classList.toggle('d-none', !pending);
+        $('approveBtn').classList.toggle('d-none', !pending || !CAN_REVIEW_MEMBER_REQUESTS);
+        $('rejectBtn').classList.toggle('d-none', !pending || !CAN_REVIEW_MEMBER_REQUESTS);
         editModal.show();
     }
     function archiveMembersOverAgeLimit() {

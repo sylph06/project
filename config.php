@@ -17,8 +17,8 @@ define('DB_PASS', (string)config_env('KK_DB_PASS', ''));
 const USE_MEMBERS_TABLE = false;
 const USE_SK_ROLES_TABLE = false;
 const APP_WRITE_ROLES = ['SK Chairman', 'SK Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad', 'SK Vice Chairperson'];
-const MEMBER_DATA_ADMIN_ROLES = ['SK Chairman', 'SK Secretary'];
-const BACKGROUND_HISTORY_ROLES = ['SK Chairman', 'SK Secretary'];
+const MEMBER_DATA_ADMIN_ROLES = ['SK Chairman', 'SK Chairperson', 'SK Secretary'];
+const BACKGROUND_HISTORY_ROLES = ['SK Chairman', 'SK Chairperson', 'SK Secretary'];
 
 date_default_timezone_set('Asia/Manila');   // so dates match the barangay
 ini_set('display_errors', '0');
@@ -200,10 +200,27 @@ function require_viewer() {
     if ($user && !is_limited_member()) return;
     if (is_limited_viewer()) {
         if (limited_viewer_can_open_page($_SERVER['SCRIPT_NAME'] ?? '')) return;
-        header('Location: announcements.php');
+        header('Location: index.php');
         exit;
     }
     header('Location: login.php'); exit;
+}
+
+function require_member_account() {
+    $user = current_user();
+    if (!$user) {
+        header('Location: login.php');
+        exit;
+    }
+    if (!empty($user['must_change_password'])) {
+        header('Location: change-password.php');
+        exit;
+    }
+    if ($user['legacy_id'] === null) {
+        header('Location: dashboard.php');
+        exit;
+    }
+    return $user;
 }
 
 /* pages that anyone may open with no login and no "public viewer" click */
@@ -220,7 +237,7 @@ function require_official() {
     }
     if ($user && !is_limited_member()) return;
     if (is_limited_viewer()) {
-        header('Location: announcements.php');
+        header('Location: index.php');
         exit;
     }
     header('Location: ' . (is_public() ? 'dashboard.php' : 'login.php')); exit;

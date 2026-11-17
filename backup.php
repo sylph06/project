@@ -27,15 +27,19 @@ if (!kk_backup_authorized()) {
     kk_backup_json_response(['ok' => false, 'error' => 'Only the SK Chairman or SK Secretary can manage backups.'], 403);
 }
 
+require_once __DIR__ . '/role_store.php';
 $pdo = db();
+$actor = current_user();
 $action = (string)($_GET['action'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'download') {
     try {
+        kk_id_ensure_schema($pdo);
         $pdo->beginTransaction();
         $snapshot = kk_backup_snapshot($pdo);
         $pdo->commit();
         $json = kk_backup_encode($snapshot);
+        sk_audit($pdo, $actor, null, 'backup_downloaded', null, ['type' => 'operational']);
         kk_backup_download($json, 'kk-system-backup-' . gmdate('Ymd-His') . '.json');
     } catch (Throwable $ex) {
         if ($pdo->inTransaction()) $pdo->rollBack();
@@ -60,6 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'download-safety') {
             http_response_code(404);
             exit('Safety backup not found.');
         }
+        sk_audit($pdo, $actor, null, 'backup_downloaded', null, [
+            'type' => 'pre_restore_safety',
+            'backup_id' => (int)$id,
+        ]);
         kk_backup_download((string)$json, 'kk-pre-restore-safety-backup-' . $id . '.json');
     } catch (Throwable $ex) {
         error_log('KK safety backup download failed: ' . $ex->getMessage());
@@ -89,6 +97,7 @@ try {
     $contents = file_get_contents($upload['tmp_name']);
     if ($contents === false) throw new RuntimeException('Could not read the uploaded backup file.');
     $snapshot = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+    kk_id_ensure_schema($pdo);
     kk_backup_validate($snapshot, $pdo);
 
     kk_backup_ensure_table($pdo);
@@ -104,9 +113,10 @@ try {
 
     foreach (array_reverse(kk_backup_operational_tables()) as $table) kk_backup_clear_table($pdo, $table);
     kk_backup_replace_app_data($pdo, $snapshot['appData']);
-    foreach (kk_backup_operational_tables() as $table) {
+    foreach (kk_backup_operational_tables((int)$snapshot['version']) as $table) {
         kk_backup_insert_table_rows($pdo, $table, $snapshot['tables'][$table]);
     }
+    sk_audit($pdo, $actor, null, 'backup_restored', null, ['safety_backup_id' => $safetyId]);
     $pdo->commit();
 
     kk_backup_json_response([

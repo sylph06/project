@@ -29,6 +29,17 @@
         return res;
     }
 
+    function postForm(action, form) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'api.php?action=' + action, false);
+        xhr.setRequestHeader('X-CSRF-Token', w.SK_CSRF_TOKEN || '');
+        xhr.send(form);
+        var res = {};
+        try { res = JSON.parse(xhr.responseText); } catch (e) {}
+        if (xhr.status !== 200 || !res.ok) throw new Error(res.error || 'Could not save to the database.');
+        return res;
+    }
+
     function stable(value) {
         if (Array.isArray(value)) return value.map(stable);
         if (value && typeof value === 'object') {
@@ -139,24 +150,48 @@
             });
             cache.kkMembers = JSON.stringify(members);
         },
-        saveMemberData: function (members, requests) {
+        saveMemberData: function (members, requests, documents, requestId) {
             if (VIEW_ONLY) throw new Error('Public viewers cannot change KK member data.');
             if (!Array.isArray(members) || !Array.isArray(requests)) {
                 throw new Error('KK member and request data must be lists.');
             }
+            documents = Array.isArray(documents) ? documents : [];
             if (w.USE_MEMBERS_TABLE) {
+                if (documents.length) {
+                    throw new Error('Supporting documents cannot be uploaded while member-table storage is enabled.');
+                }
                 w.DB.saveMembers(members);
                 w.DB.setItem('kkEditRequests', JSON.stringify(requests));
                 return;
             }
-            var result = post('member_data_save', {
-                members: members,
-                requests: requests,
-                expectedMembers: Object.prototype.hasOwnProperty.call(cache, 'kkMembers') ? cache.kkMembers : null,
-                expectedRequests: Object.prototype.hasOwnProperty.call(cache, 'kkEditRequests') ? cache.kkEditRequests : null
-            });
+            var expectedMembers = Object.prototype.hasOwnProperty.call(cache, 'kkMembers') ? cache.kkMembers : null;
+            var expectedRequests = Object.prototype.hasOwnProperty.call(cache, 'kkEditRequests') ? cache.kkEditRequests : null;
+            var result;
+            if (documents.length) {
+                if (!requestId || typeof w.FormData !== 'function') {
+                    throw new Error('The supporting document request is incomplete. Reload the page and try again.');
+                }
+                var form = new FormData();
+                form.append('members', JSON.stringify(members));
+                form.append('requests', JSON.stringify(requests));
+                form.append('expectedMembers', expectedMembers == null ? 'null' : expectedMembers);
+                form.append('expectedRequests', expectedRequests == null ? 'null' : expectedRequests);
+                form.append('requestId', String(requestId));
+                documents.forEach(function (document) {
+                    form.append('supportingDocuments[]', document, document.name);
+                });
+                result = postForm('member_data_save', form);
+            } else {
+                result = post('member_data_save', {
+                    members: members,
+                    requests: requests,
+                    expectedMembers: expectedMembers,
+                    expectedRequests: expectedRequests
+                });
+            }
             cache.kkMembers = result.members;
             cache.kkEditRequests = result.requests;
+            return result;
         },
         registerMember: function (member, registration) {
             if (VIEW_ONLY) throw new Error('Public viewers cannot create member profiles.');
@@ -281,7 +316,56 @@
             });
             cache.skCommittees = JSON.stringify(result.committees);
             if (Array.isArray(result.roles)) cache.skRoles = JSON.stringify(result.roles);
+            if (result.assignments && typeof result.assignments === 'object') {
+                cache.skCommitteeChairs = JSON.stringify(result.assignments);
+            }
             return result;
+        },
+        saveCommitteeChairs: function (assignments, committees) {
+            var expected = Object.prototype.hasOwnProperty.call(cache, 'skCommitteeChairs')
+                ? cache.skCommitteeChairs : null;
+            var result = post('committee_chairs_save', {
+                assignments: assignments,
+                committees: committees,
+                expected: expected
+            });
+            cache.skCommitteeChairs = JSON.stringify(result.assignments);
+            return result;
+        },
+        uploadOfficialProfileFiles: function (formData) {
+            return fetch('api/official-files.php?action=profile_files', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': w.SK_CSRF_TOKEN || '' },
+                body: formData
+            }).then(function (response) {
+                return response.json().catch(function () {
+                    throw new Error('The server returned an invalid response while uploading profile files.');
+                }).then(function (result) {
+                    if (!response.ok || !result.ok) throw new Error(result.error || 'Could not upload profile files.');
+                    cache.skOfficialProfiles = result.value;
+                    return result;
+                });
+            });
+        },
+        uploadExpenseReceipt: function (expenseIndex, file) {
+            var formData = new FormData();
+            formData.append('expenseIndex', String(expenseIndex));
+            formData.append('expected', Object.prototype.hasOwnProperty.call(cache, 'skTransparencyExpenses')
+                ? cache.skTransparencyExpenses : '');
+            formData.append('receipt', file);
+            return fetch('api/official-files.php?action=receipt_upload', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': w.SK_CSRF_TOKEN || '' },
+                body: formData
+            }).then(function (response) {
+                return response.json().catch(function () {
+                    throw new Error('The server returned an invalid response while uploading the receipt.');
+                }).then(function (result) {
+                    if (!response.ok || !result.ok) throw new Error(result.error || 'Could not upload the receipt.');
+                    cache.skTransparencyExpenses = result.value;
+                    return result;
+                });
+            });
         },
         listUnlinkedAccounts: function () {
             return post('accounts_unlinked', {});
@@ -299,6 +383,12 @@
         },
         resetMemberAccount: function (accountId) {
             return post('account_reset', { accountId: accountId });
+        },
+        resetMemberAccountByLegacyId: function (legacyId) {
+            return post('account_reset_member', { legacyId: legacyId });
+        },
+        getMemberUsernameByLegacyId: function (legacyId) {
+            return post('account_username_member', { legacyId: legacyId });
         },
         deactivateMemberAccount: function (accountId) {
             return post('account_deactivate', { accountId: accountId });

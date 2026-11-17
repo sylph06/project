@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <base href="../">
+    <title>KK ID Render Test</title>
+    <link rel="stylesheet" href="kk-id.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" integrity="sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz" crossorigin="anonymous"></script>
+    <script src="kk-id.js"></script>
+</head>
+<body>
+    <div id="result">Running...</div>
+    <div id="card"></div>
+    <script>
+        try {
+            var sample = { id: 'test-member', name: 'Test KK Member', memberNo: 'KK-TEST', purok: 'Purok 1', status: 'Active' };
+            var token = 'a'.repeat(64);
+            var card = KKId.renderCard(document.getElementById('card'), sample, token);
+            var qr = card.querySelector('.kk-id-qr');
+            if (!qr || qr.src.indexOf('data:image/') !== 0) throw new Error('QR data URI was not generated.');
+            if (KKId.tokenFromValue('KKID:' + token) !== token) throw new Error('QR token parsing failed.');
+            var verifyImage = function () {
+                document.getElementById('result').textContent = qr.naturalWidth
+                    ? 'PASS: KK ID card and QR rendered locally.'
+                    : 'FAIL: QR image is empty.';
+            };
+            if (qr.complete) verifyImage();
+            else {
+                qr.addEventListener('load', verifyImage, { once: true });
+                qr.addEventListener('error', function () {
+                    document.getElementById('result').textContent = 'FAIL: QR image could not be decoded.';
+                }, { once: true });
+            }
+        } catch (error) {
+            document.getElementById('result').textContent = 'FAIL: ' + error.message;
+        }
+    </script>
+</body>
+</html>

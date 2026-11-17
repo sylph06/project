@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/config.php'; require_viewer(); ?>
+<?php require_once __DIR__ . '/config.php'; require_viewer(); if (is_limited_viewer()) { header('Location: index.php#announcements'); exit; } ?>
 <!DOCTYPE html>
 <html lang="en"<?= is_limited_viewer() ? ' class="is-public"' : '' ?>>
 <head>
@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="sidebar.css?v=20" rel="stylesheet">
+    <link href="sidebar.css?v=31" rel="stylesheet">
     <script src="theme.js"></script>
     <script>
         window.ANN_MODE = "<?= is_limited_viewer() ? 'public' : 'official' ?>";
@@ -969,7 +969,10 @@ html.dark-mode .filter-pill{
 
 <div class="top-strip"></div>
 
-<script src="sidebar.js?v=10"></script>
+<script>
+window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($memberFlagUser['legacy_id'])) ? 'true' : 'false' ?>;
+</script>
+<script src="sidebar.js?v=15"></script>
 
 <div class="page-content">
 

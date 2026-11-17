@@ -7,11 +7,16 @@ This PHP/MySQL web application serves Sangguniang Kabataan (SK) officials
 and Katipunan ng Kabataan (KK) youth in Barangay Sikat, Alfonso, Cavite.
 It provides public information, KK youth registration and member records,
 SK role and meeting management, announcements and events, participation
-tracking, reports, budget transparency, and account administration.
+tracking, reports, project budget transparency, official profiles, and account
+administration.
 
 TECHNOLOGY AND DATA
 -------------------
 - Most application data is stored as JSON records in MySQL's app_data table.
+- app_data.data_value must be LONGTEXT because KK member records include
+  resized profile photos. Apply
+  migrations/20261117_app_data_data_value_longtext.sql when upgrading a
+  database created with the earlier TEXT column.
 - init.php supplies page data. storage.js sends authorized changes to api.php,
   which checks permissions before writing.
 - KK member profiles and edit requests are saved together with stale-write
@@ -31,7 +36,9 @@ TECHNOLOGY AND DATA
 ACCESS AND ROLES
 ----------------
 - Public visitors can view the landing page, SK officials, and announcements.
-- KK Member accounts have limited, view-only access.
+- KK Member accounts have a private portal for their own profile, participation,
+  profile photo, and digital KK ID; the existing member login is reused. Linked
+  accounts have a direct "My KK Portal" shortcut in the shared sidebar.
 - Active SK accounts can use official management pages; write permissions
   depend on SK role. The SK Chairperson/Chairman and Secretary have additional
   role-management permissions.
@@ -46,7 +53,12 @@ index.php
 
 login.php / logout.php / change-password.php
   Sign-in, sign-out, and temporary-password change flow. Login attempts are
-  rate-limited.
+  rate-limited. New KK Member accounts receive their uppercase surname as a
+  temporary password and must change it at first sign-in. The SK Chairperson
+  or Secretary can retrieve an active member's username or reset their login
+  from the member profile after verifying identity. Username retrieval and
+  password resets are audited; reset credentials must be changed at first
+  sign-in. KK Member accounts go to their private member portal after login.
 
 dashboard.php
   Official overview of members, activities, budget, expenses, and upcoming
@@ -56,20 +68,40 @@ registration.php
   KK youth profiles and member archiving/restoration. Public visitors are
   directed to register with an SK official in person. Youth are eligible from
   age 15 through 30; members older than 30 are automatically archived.
+  Program interests support multiple selections across the 10 Centers of
+  Participation, including multiple custom interests within a center.
+  SK officials submit profile edits as review requests; only the SK
+  Chairperson and Secretary can approve or reject them. Requests may include
+  private supporting documents, which are stored outside the web directory and
+  are accessible only to those reviewers.
 
 request.php
   Review and manage public registration submissions and KK profile edit
-  requests, including date filtering and approval/rejection history.
+  requests, including date filtering and approval/rejection history. The SK
+  Chairperson and Secretary approve or reject profile edits; SK officials can
+  review public registrations.
 
 members.php
   Member list and SK role administration. Each person has one KK member record;
-  SK roles reference that member. Active standalone Chairman and Secretary
-  accounts also occupy their position seat. Roles can be ended or archived.
+  SK roles reference that member. Staff can print a KK ID, record a manual ID
+  print, view print history, and scan QR codes from this existing member page;
+  there is no separate admin ID module. Active standalone Chairman and
+  Secretary accounts also occupy their position seat. Roles can be ended or
+  archived.
+
+member-portal.php
+  Private KK member portal using the existing linked account. Members can view
+  their own profile and activity tracking, update only their profile picture,
+  and show a digital ID. ID printing remains an SK staff action. The QR contains an opaque random
+  verification token, not personal details; only authorized SK staff can scan
+  it from the member directory.
 
 officials.php
   Public listing of current SK officials, showing public-safe profile details
-  from active SK roles and standalone Chairman/Secretary accounts. Placeholder
-  account names are displayed as the position name without duplication.
+  from active SK roles and standalone Chairman/Secretary accounts, including
+  optional bios, monthly honoraria, profile photos, and published redacted
+  SALNs. Linked active officials can edit their own profile and upload both
+  their private original SALN and redacted public copy.
 
 announcements.php
   Public announcements and events, with official publishing and cancellation
@@ -82,8 +114,11 @@ participation.php
 
 reports.php
   Printable reports for KK members, SK meeting attendance, event participation,
-  programs, annual summary, and budget/expenses. Meeting and event attendance
-  are reported separately.
+  programs, annual summary, and budget/expenses. Budgets are organized in
+  fiscal-year folders and entered per project, with Annual, Supplemental, or
+  Continuing plan types, COP and committee links, project expenses, and print
+  reports. Expense records include supplier/recipient disclosure and internal
+  receipt uploads. Meeting and event attendance are reported separately.
 
 sk-management.php
   SK meeting scheduling and records, meeting attendance, and print views.
@@ -94,8 +129,9 @@ sk-management.php
 
 archives.php
   Searchable archive index for archived KK members, ended/inactive or archived
-  SK roles, and cancelled announcements/events. Records are managed or
-  restored from their original pages.
+  SK roles, and cancelled announcements/events. Cancelled event details remain
+  available in the archive. Records are managed or restored from their
+  original pages.
 
 settings.php
   Application settings and account administration for authorized officials.
@@ -111,9 +147,18 @@ Important app_data keys include:
 - skMeetings and skAttendance: SK meetings and their attendance.
 - Meeting records also carry private minutes, draft/approved state, and
   updater metadata. Minutes are not included in public bootstrap data.
-- skTransparencyBudget and skTransparencyExpenses: budget and expense data.
+- skTransparencyBudget and skTransparencyExpenses: fiscal-year project budgets
+  and expenses linked to projects. Older year-wide budgets are surfaced as
+  flagged legacy entries for officials to break down into projects.
+- skCommittees and skCommitteeChairs: committee names and chair assignments to
+  active SK official roles.
+- skOfficialProfiles: public-safe profile text and references to profile photos
+  and SALN documents; original SALNs remain private.
+- kk_member_id_tokens and kk_member_id_prints: opaque QR verification tokens and
+  server-timestamped automatic/manual ID print records, respectively.
 - kkPendingRegistrations and kkEditRequests: submissions awaiting review and
-  their review status.
+  their review status. Profile edit requests may reference private supporting
+  documents stored outside the public web directory.
 
 KEY WORKFLOWS
 -------------
@@ -124,6 +169,29 @@ EVENT SIGN-UP AND ATTENDANCE
   and reports count walk-ins as attendance, not as sign-ups.
 - The walk-in workflow prevents duplicate attendance for the same member/event.
   Older or unlinked sign-ups cannot be automatically tied to a member.
+- The Participation page filters records, attendance totals, the COP heatmap,
+  age groups (15-17, 18-20, 21-24, 25-30, outside that range, or unknown),
+  and Purok summaries by activity and event date. Linked profiles are used
+  when available; sign-up age and Purok fill missing profile values and are
+  used for unlinked sign-ups.
+- Empty sign-up age is stored as unknown, not age zero. Unique KK attendees
+  counts linked profiles; confirmed attendance totals also include unlinked
+  sign-ups. The event action opens the relevant roster for attendance updates.
+
+KK MEMBER PORTAL AND ID
+- Members sign in with their existing linked KK account; no separate portal
+  credentials are created. The portal API resolves the member ID from the
+  authenticated session and only returns that member's profile and tracking.
+- Profile picture changes are limited to the signed-in member, validated as
+  JPG/PNG/WebP images, and recorded in the audit log without storing the image
+  in the audit entry. Other profile edits continue through the existing review
+  process.
+- QR contents are opaque, random tokens. ID token lookup is restricted to the
+  member themself or authorized SK staff; QR scans are staff-only and disclose
+  only the member's name, KK number, and status.
+- ID print events are recorded by a CSRF-protected API with a server timestamp,
+  the actor, and an `automatic` or `manual` method. Showing a digital ID does
+  not create a print record.
 
 ARCHIVING
 - Archived KK members retain their records and may be restored if eligible.
@@ -133,8 +201,26 @@ ARCHIVING
 
 BUDGET TRANSPARENCY
 - Budget and expense summaries appear on the public landing page and dashboard.
-  Public summaries omit expense recipients and descriptions; officials can view
-  detailed expense records in Reports.
+  The public landing page lists officials first, then expenses including
+  supplier/recipient and amount, followed by project budget, expenses, and
+  balance. Receipt images and expense descriptions remain internal to
+  signed-in SK officials.
+- Receipt uploads and original SALNs are stored outside the public web root in
+  the private upload directory. Only active SK officials can download receipts;
+  only the owning official can download their original SALN. Private member
+  supporting documents are available only to the SK Chairperson and Secretary.
+  The public can access only profile photos and explicitly uploaded redacted
+  SALN copies referenced by current official profiles.
+- The default private upload directory is `kk-private-files` alongside the
+  XAMPP installation directory. `KK_PRIVATE_UPLOAD_DIR` can set another
+  location, but it must remain outside the public web root. The JSON
+  backup/restore workflow does not include these files: separately back up and
+  restore the configured private upload directory while preserving its
+  `receipts`, `saln-original`, `saln-public`, `official-photos`, and
+  `member-documents` folders.
+- JSON backup format version 2 includes KK ID QR tokens and print history.
+  Restoring a version-1 backup clears those records, so previously printed QR
+  IDs must be refreshed.
 
 MEETING MINUTES
 - Minutes are edited with the local Summernote Bootstrap 5 editor and sanitized

@@ -19,7 +19,7 @@ try {
     if ($action === 'role_archive_expired') {
         $today = date('Y-m-d');
         $count = 0;
-        foreach ($roles as $expired) {
+        foreach ($roles as $index => $expired) {
             if (($expired['status'] ?? '') !== 'Active' || empty($expired['termEnd']) || $expired['termEnd'] >= $today) continue;
             $old = $expired;
             $expired['status'] = 'Archived';
@@ -32,6 +32,7 @@ try {
             ];
             sk_role_write($pdo, $expired, $user['username']);
             sk_audit($pdo, $user, (string)$expired['kkId'], 'role_archived', $old, $expired);
+            $roles[$index] = $expired;
             $count++;
         }
         $pdo->commit();
@@ -47,6 +48,9 @@ try {
             throw new RuntimeException('Only an active KK member can be assigned an SK role.');
         }
         if ($roleId === '' || $oldRole) throw new RuntimeException('The role id is missing or already exists.');
+        if (sk_role_member_has_current_assignment($roles, $kkId)) {
+            throw new RuntimeException('This KK member already has a current SK role. Update that role instead.');
+        }
         $validated = sk_role_validate_payload($inputRole, false, $pdo);
         $seatError = sk_role_seat_error($pdo, $roles, $validated['position']);
         if ($seatError !== '') throw new RuntimeException($seatError);
@@ -90,9 +94,11 @@ try {
         if (!in_array($newStatus, ['Active', 'Inactive'], true)) {
             throw new RuntimeException('Use the dedicated archive action to archive an SK role.');
         }
-        $wasOccupyingSeat = ($oldRole['status'] ?? '') === 'Active'
-            && (empty($oldRole['termStart']) || $oldRole['termStart'] <= date('Y-m-d'))
-            && (empty($oldRole['termEnd']) || $oldRole['termEnd'] >= date('Y-m-d'));
+        $wasOccupyingSeat = sk_role_is_current($oldRole);
+        if ($newStatus === 'Active'
+            && sk_role_member_has_current_assignment($roles, (string)$oldRole['kkId'], (string)$oldRole['id'])) {
+            throw new RuntimeException('This KK member already has another current SK role.');
+        }
         if ($newStatus === 'Active'
             && (!$wasOccupyingSeat || $validated['position'] !== ($oldRole['position'] ?? ''))) {
             $seatError = sk_role_seat_error($pdo, $roles, $validated['position'], (string)$oldRole['id']);

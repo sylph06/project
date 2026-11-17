@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/kk_id_schema.php';
 
 const KK_BACKUP_FORMAT = 'kk-youth-profiling-backup';
-const KK_BACKUP_VERSION = 1;
+const KK_BACKUP_VERSION = 2;
 const KK_BACKUP_MAX_BYTES = 52428800;
 
 function kk_backup_authorized() {
@@ -23,16 +24,26 @@ function kk_backup_ensure_table($pdo) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 }
 
-function kk_backup_operational_tables() {
+function kk_backup_operational_tables($version = KK_BACKUP_VERSION) {
     $tables = [];
     if (USE_MEMBERS_TABLE) $tables[] = 'members';
     if (USE_SK_ROLES_TABLE) $tables[] = 'sk_roles';
+    if ($version >= 2) {
+        $tables[] = 'kk_member_id_tokens';
+        $tables[] = 'kk_member_id_prints';
+    }
     return $tables;
 }
 
 function kk_backup_table_columns($pdo, $table) {
-    if (!in_array($table, ['members', 'sk_roles'], true)) {
+    if (!in_array($table, ['members', 'sk_roles', 'kk_member_id_tokens', 'kk_member_id_prints'], true)) {
         throw new RuntimeException('The backup contains an unsupported table.');
+    }
+    if ($pdo === null && $table === 'kk_member_id_tokens') {
+        return ['member_id', 'token', 'created_at'];
+    }
+    if ($pdo === null && $table === 'kk_member_id_prints') {
+        return ['id', 'member_id', 'printed_by_user_id', 'printed_by', 'print_method', 'printed_at'];
     }
     $columns = $pdo->query('SHOW COLUMNS FROM `' . $table . '`')->fetchAll(PDO::FETCH_ASSOC);
     if (!$columns) throw new RuntimeException('The ' . $table . ' table is unavailable.');
@@ -70,7 +81,7 @@ function kk_backup_encode($snapshot) {
 function kk_backup_validate($snapshot, $pdo) {
     if (!is_array($snapshot)
         || ($snapshot['format'] ?? null) !== KK_BACKUP_FORMAT
-        || ($snapshot['version'] ?? null) !== KK_BACKUP_VERSION
+        || !in_array($snapshot['version'] ?? null, [1, KK_BACKUP_VERSION], true)
         || !is_string($snapshot['createdAt'] ?? null)
         || !is_array($snapshot['sources'] ?? null)
         || !is_array($snapshot['appData'] ?? null)
@@ -96,7 +107,7 @@ function kk_backup_validate($snapshot, $pdo) {
         throw new RuntimeException('This backup was created with a different data-storage configuration.');
     }
 
-    $expectedTables = kk_backup_operational_tables();
+    $expectedTables = kk_backup_operational_tables((int)$snapshot['version']);
     $providedTables = array_keys($snapshot['tables']);
     sort($expectedTables);
     sort($providedTables);
@@ -152,14 +163,14 @@ function kk_backup_validate($snapshot, $pdo) {
 }
 
 function kk_backup_clear_table($pdo, $table) {
-    if (!in_array($table, ['members', 'sk_roles'], true)) {
+    if (!in_array($table, ['members', 'sk_roles', 'kk_member_id_tokens', 'kk_member_id_prints'], true)) {
         throw new RuntimeException('The restore contains an unsupported table.');
     }
     $pdo->exec('DELETE FROM `' . $table . '`');
 }
 
 function kk_backup_insert_table_rows($pdo, $table, $rows) {
-    if (!in_array($table, ['members', 'sk_roles'], true)) {
+    if (!in_array($table, ['members', 'sk_roles', 'kk_member_id_tokens', 'kk_member_id_prints'], true)) {
         throw new RuntimeException('The restore contains an unsupported table.');
     }
     $columns = kk_backup_table_columns($pdo, $table);

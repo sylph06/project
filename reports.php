@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="sidebar.css?v=20" rel="stylesheet">
+    <link href="sidebar.css?v=31" rel="stylesheet">
 
     <style>
         :root {
@@ -564,7 +564,7 @@
 <div class="top-strip"></div>
 
 <script src="theme.js"></script>
-<script src="sidebar.js?v=10"></script>
+<script src="sidebar.js?v=15"></script>
 
 <main class="main page-content">
 
@@ -627,7 +627,7 @@
         <div class="report-card">
             <div class="report-icon"><i class="bi bi-person-check"></i></div>
             <h5>Participation Report</h5>
-            <p>Monitor youth participation and involvement in programs.</p>
+            <p>Review confirmed attendance by activity, age group, and Purok.</p>
             <button class="btn-report" onclick="generateReport('Participation Report')">
                 <i class="bi bi-file-earmark-text me-1"></i> Generate
             </button>
@@ -732,41 +732,24 @@
                 <div>
                     <h4>Transparency Hub - Budget & Expenses</h4>
                     <div style="font-size:13px;color:var(--bs-secondary-color);margin-top:3px;">
-                    Each fiscal year has its own budget, allocations, and expenses.
+                    Each folder holds that year's project budgets and expenses. New expenses are saved to the selected folder.
                     </div>
                 </div>
                 <div class="fy-badge" id="fyBadge">FY 2026-2027</div>
             </div>
 
             <div class="fund-box">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                    <div>
-                        <div style="font-size:17px;font-weight:800;">Set Barangay Youth Fund</div>
-                        <div style="font-size:13px;color:var(--bs-secondary-color);margin-top:5px;">
-                            Enter the total budget available for the fiscal year.
-                        </div>
-                    </div>
-                    <i class="bi bi-stack" style="font-size:26px;"></i>
-                </div>
-
                 <div class="fund-grid">
                     <div>
-                        <label class="field-label">View Fiscal Year</label>
+                        <label class="field-label" for="budgetYearSelect">Year folder</label>
                         <select id="budgetYearSelect" class="budget-select"></select>
                     </div>
-
                     <div>
-                        <label class="field-label">Fiscal Year</label>
-                        <input id="budgetFY" class="budget-input" value="2026-2027">
+                        <label class="field-label" for="budgetFY">Create fiscal year folder</label>
+                        <input id="budgetFY" class="budget-input" value="2026-2027" placeholder="2026-2027">
                     </div>
-
-                    <div>
-                        <label class="field-label">Total Budget (₱)</label>
-                        <input id="budgetAmount" type="number" min="0" step="0.01" class="budget-input" value="0">
-                    </div>
-
-                    <button class="save-budget-btn" onclick="saveBudget()">
-                        <i class="bi bi-floppy-fill me-1"></i> Save Budget
+                    <button class="save-budget-btn" onclick="createBudgetYear()">
+                        <i class="bi bi-folder-plus me-1"></i> Open / Create Year
                     </button>
                 </div>
             </div>
@@ -776,7 +759,7 @@
                 <div class="summary-card">
                     <div class="summary-label">Total Budget</div>
                     <div class="summary-value" id="summaryBudget">₱0.00</div>
-                    <div class="summary-note">Approved/available budget</div>
+                    <div class="summary-note">Sum of project budgets in this year</div>
                 </div>
 
                 <div class="summary-card">
@@ -802,14 +785,57 @@
             </div>
 
             <div class="records-card mb-3">
-                <h4>Fiscal-Year COP Allocations</h4>
-                <p class="small text-muted">Allocate the total budget across Centers of Participation. Allocations may not exceed the total budget.</p>
+                <h4>Projects in this fiscal year</h4>
+                <p class="small text-muted">Each entry is a project budget linked to one Center of Participation and committee.</p>
+                <div class="entry-card mb-3" id="projectEditor">
+                    <h4 id="projectEditorTitle">Add a project budget</h4>
+                    <div class="entry-row">
+                        <div>
+                            <label class="field-label" for="projectName">Project name</label>
+                            <input id="projectName" class="budget-input" maxlength="160" placeholder="e.g. Leadership Training">
+                        </div>
+                        <div>
+                            <label class="field-label" for="projectAmount">Project budget (₱)</label>
+                            <input id="projectAmount" type="number" min="0.01" step="0.01" class="budget-input" placeholder="1087000">
+                        </div>
+                    </div>
+                    <div class="entry-row four">
+                        <div>
+                            <label class="field-label" for="projectType">Budget plan</label>
+                            <select id="projectType" class="budget-select">
+                                <option value="Annual">Annual budget</option>
+                                <option value="Supplemental">Supplemental budget</option>
+                                <option value="Continuing">Continuing plan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label" for="projectCop">Center of Participation</label>
+                            <select id="projectCop" class="budget-select"></select>
+                        </div>
+                        <div>
+                            <label class="field-label" for="projectCommittee">Committee</label>
+                            <select id="projectCommittee" class="budget-select"></select>
+                        </div>
+                        <div>
+                            <label class="field-label">Committee chairperson</label>
+                            <div id="projectChairperson" class="budget-input d-flex align-items-center" aria-live="polite">Not assigned</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="field-label" for="projectDescription">Project details (optional)</label>
+                        <textarea id="projectDescription" class="budget-textarea" maxlength="1000" placeholder="Purpose, planned outputs, or notes"></textarea>
+                    </div>
+                    <button class="add-expense-btn mt-3" id="projectSubmitBtn" onclick="addOrUpdateProject()">
+                        <i class="bi bi-plus-lg me-1"></i> Add Project Budget
+                    </button>
+                    <button class="btn btn-sm btn-light ms-1 d-none" id="cancelProjectEditBtn" onclick="cancelProjectEdit()">Cancel Edit</button>
+                </div>
                 <div class="table-scroll">
                     <table class="expense-table">
                         <thead>
-                            <tr><th>Center of Participation</th><th>Allocated (₱)</th><th>Spent (₱)</th><th>Remaining (₱)</th></tr>
+                            <tr><th>Project</th><th>Budget plan</th><th>Center of Participation</th><th>Committee</th><th>Committee chairperson</th><th>Budget (₱)</th><th>Spent (₱)</th><th>Remaining (₱)</th><th>Actions</th></tr>
                         </thead>
-                        <tbody id="allocationTableBody"></tbody>
+                        <tbody id="projectTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -826,34 +852,20 @@
                         </div>
 
                         <div>
-                            <label class="field-label">Program / Expense Title</label>
+                            <label class="field-label" for="expenseTitle">Expense title</label>
                             <input id="expenseTitle" class="budget-input" placeholder="e.g. Basketball Equipment">
                         </div>
                     </div>
 
                     <div class="entry-row four">
                         <div>
-                            <label class="field-label">Category</label>
-                            <select id="expenseCategory" class="budget-select">
-                                <option value="">Select category</option>
-                                <option>Sports & Recreation</option>
-                                <option>Education</option>
-                                <option>Health</option>
-                                <option>Livelihood</option>
-                                <option>Events & Programs</option>
-                                <option>Supplies & Equipment</option>
-                                <option>Food & Refreshments</option>
-                                <option>Transportation</option>
-                                <option>Training & Seminars</option>
-                                <option>Other</option>
-                            </select>
+                            <label class="field-label" for="expenseProject">Project</label>
+                            <select id="expenseProject" class="budget-select"></select>
                         </div>
 
                         <div>
                             <label class="field-label">Center of Participation</label>
-                            <select id="expenseCop" class="budget-select">
-                                <option value="">Select COP</option>
-                            </select>
+                            <div id="expenseCopLabel" class="budget-input d-flex align-items-center">Select a project</div>
                         </div>
 
                         <div>
@@ -862,7 +874,7 @@
                         </div>
 
                         <div>
-                            <label class="field-label">Paid To / Recipient</label>
+                            <label class="field-label">Supplier / Recipient (shown publicly)</label>
                             <input id="expenseRecipient" class="budget-input" placeholder="Person / supplier / organization">
                         </div>
                     </div>
@@ -870,6 +882,12 @@
                     <div>
                         <label class="field-label">Where did the money go? / Description</label>
                         <textarea id="expenseDescription" class="budget-textarea" placeholder="Explain what the money was used for."></textarea>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="field-label" for="expenseReceipt">Internal receipt (PDF, JPEG, PNG, or WebP; max 8 MB)</label>
+                        <input type="file" id="expenseReceipt" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp">
+                        <div id="expenseReceiptStatus" class="small text-muted mt-1" aria-live="polite">Receipts are visible only to signed-in SK officials.</div>
                     </div>
 
                     <button class="add-expense-btn" id="expenseSubmitBtn" onclick="addOrUpdateExpense()">
@@ -883,7 +901,7 @@
 
                 <div class="where-card">
                     <h4>Where the Money Went <i class="bi bi-pie-chart-fill float-end"></i></h4>
-                    <div id="categoryBreakdown" class="where-empty">
+                    <div id="projectBreakdown" class="where-empty">
                         No spending recorded yet.
                     </div>
                 </div>
@@ -904,18 +922,19 @@
                         <thead>
                             <tr>
                                 <th>DATE</th>
-                                <th>PROGRAM / EXPENSE</th>
-                                <th>CATEGORY</th>
+                                <th>PROJECT / EXPENSE</th>
+                                <th>COMMITTEE</th>
                                 <th>COP</th>
-                                <th>PAID TO</th>
+                                <th>SUPPLIER / RECIPIENT</th>
                                 <th>AMOUNT</th>
                                 <th>DESCRIPTION</th>
+                                <th>INTERNAL RECEIPT</th>
                                 <th>ACTION</th>
                             </tr>
                         </thead>
                         <tbody id="expenseTableBody">
                             <tr>
-                                <td colspan="8" class="empty-row">
+                                <td colspan="9" class="empty-row">
                                     No expenses recorded yet. Add an expense above to show where the money went.
                                 </td>
                             </tr>
@@ -948,28 +967,35 @@ const BUDGET_KEY = 'skTransparencyBudget';
 const EXPENSE_KEY = 'skTransparencyExpenses';
 const COP_CATEGORIES = ['Health', 'Education', 'Economic Empowerment', 'Social Inclusion and Equity',
     'Peace-Building and Security', 'Governance', 'Active Citizenship', 'Environment', 'Global Mobility', 'Agriculture'];
-COP_CATEGORIES.forEach(cop => {
-    const option = document.createElement('option');
-    option.value = cop;
-    option.textContent = cop;
-    document.getElementById('expenseCop').appendChild(option);
-});
-
-let budgetData = {
-    fy: '2026-2027',
-    amount: 0,
-    allocations: {}
-};
-
+const DEFAULT_COMMITTEES = [
+    'Committee on Good Governance and Active Citizenship',
+    'Committee on Environment & Disaster Risk Resiliency',
+    'Committee on Anti-Drug Abuse and Social Protection',
+    'Committee on Education and Culture',
+    'Committee on Health and Sanitation',
+    'Committee on Youth and Sports Development',
+    'Committee on Budget and Appropriation'
+];
+let committees = DEFAULT_COMMITTEES.slice();
+let committeeChairs = {};
+let officialsById = {};
+let budgetData = { fy:'2026-2027', projects:[] };
 let budgetsByYear = {};
 let expenseData = [];
 let editingExpenseIndex = -1;
+let editingProjectId = null;
 
 function formatPeso(value) {
     return '₱' + Number(value || 0).toLocaleString('en-PH', {
         minimumFractionDigits:2,
         maximumFractionDigits:2
     });
+}
+
+function budgetTypeLabel(value) {
+    if (value === 'Supplemental') return 'Supplemental budget';
+    if (value === 'Continuing') return 'Continuing plan';
+    return 'Annual budget';
 }
 
 function escapeReportHtml(value) {
@@ -981,36 +1007,116 @@ function escapeReportHtml(value) {
         .replace(/'/g,'&#39;');
 }
 
+function storedArray(key) {
+    const raw = DB.getItem(key);
+    if (raw === null) return [];
+    const value = JSON.parse(raw);
+    if (!Array.isArray(value)) throw new Error('Saved ' + key + ' data is not a list.');
+    return value;
+}
+
+function storedObject(key) {
+    const raw = DB.getItem(key);
+    if (raw === null) return {};
+    const value = JSON.parse(raw);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Saved ' + key + ' data is invalid.');
+    return value;
+}
+
+function legacyProject(year, amount) {
+    return {
+        id:'legacy-' + year.replace(/[^0-9]/g, ''),
+        name:'Legacy budget — add project breakdown',
+        type:'Annual',
+        amount:Number(amount || 0),
+        cop:'',
+        committee:'',
+        description:'Imported year-wide budget. Edit or replace this entry with individual project budgets.',
+        legacy:true
+    };
+}
+
+function normalizeYearBudget(year, value) {
+    const projects = Array.isArray(value && value.projects) ? value.projects.map(function (project) {
+        if (!project || typeof project !== 'object') return null;
+        return {
+            id:String(project.id || ''),
+            name:String(project.name || ''),
+            type:['Annual', 'Supplemental', 'Continuing'].includes(project.type) ? project.type : 'Annual',
+            amount:Number(project.amount || 0),
+            cop:String(project.cop || ''),
+            committee:String(project.committee || ''),
+            description:String(project.description || ''),
+            legacy:project.legacy === true
+        };
+    }).filter(Boolean) : [];
+    if (!projects.length && Number(value && value.amount || 0) > 0) {
+        projects.push(legacyProject(year, value.amount));
+    }
+    return { fy:year, projects:projects };
+}
+
 function loadBudgetData() {
-    budgetData = { fy:'2026-2027', amount:0, allocations:{} };
+    budgetData = { fy:'2026-2027', projects:[] };
     budgetsByYear = {};
-    document.getElementById('allocationTableBody').innerHTML = '';
     try {
         const savedBudget = JSON.parse(DB.getItem(BUDGET_KEY) || 'null');
         const savedExpenses = JSON.parse(DB.getItem(EXPENSE_KEY) || '[]');
-
-        if (savedBudget && typeof savedBudget === 'object') {
-            const legacyBudget = {
-                fy: savedBudget.fy || '2026-2027',
-                amount: Number(savedBudget.amount || 0),
-                allocations: savedBudget.allocations && typeof savedBudget.allocations === 'object'
-                    ? savedBudget.allocations : {}
-            };
-            budgetsByYear = savedBudget.budgets && typeof savedBudget.budgets === 'object'
-                ? savedBudget.budgets : {};
-            if (!budgetsByYear[legacyBudget.fy]) budgetsByYear[legacyBudget.fy] = legacyBudget;
-            const selectedYear = savedBudget.fy && budgetsByYear[savedBudget.fy] ? savedBudget.fy : Object.keys(budgetsByYear)[0];
-            budgetData = budgetsByYear[selectedYear] || legacyBudget;
+        const savedYears = savedBudget && savedBudget.budgets && typeof savedBudget.budgets === 'object'
+            ? savedBudget.budgets : {};
+        Object.keys(savedYears).forEach(function (year) {
+            if (/^\d{4}-\d{4}$/.test(year)) budgetsByYear[year] = normalizeYearBudget(year, savedYears[year]);
         }
-
-        expenseData = Array.isArray(savedExpenses) ? savedExpenses.map(function (expense) {
-            if (!expense || typeof expense !== 'object') return expense;
-            if (!expense.fiscalYear) expense.fiscalYear = budgetData.fy;
+        );
+        const legacyYear = String(savedBudget && savedBudget.fy || '2026-2027');
+        if (/^\d{4}-\d{4}$/.test(legacyYear) && !budgetsByYear[legacyYear]) {
+            budgetsByYear[legacyYear] = normalizeYearBudget(legacyYear, savedBudget || {});
+        }
+        if (!Object.keys(budgetsByYear).length) budgetsByYear['2026-2027'] = { fy:'2026-2027', projects:[] };
+        const selectedYear = savedBudget && savedBudget.fy && budgetsByYear[savedBudget.fy]
+            ? savedBudget.fy : Object.keys(budgetsByYear).sort().pop();
+        budgetData = budgetsByYear[selectedYear];
+        expenseData = Array.isArray(savedExpenses) ? savedExpenses.filter(expense => expense && typeof expense === 'object').map(function (expense) {
+            const year = String(expense.fiscalYear || selectedYear);
+            if (!budgetsByYear[year]) budgetsByYear[year] = { fy:year, projects:[] };
+            const projects = budgetsByYear[year].projects;
+            if (!expense.projectId) {
+                const legacy = projects.find(project => project.legacy);
+                if (legacy) expense.projectId = legacy.id;
+            }
+            expense.fiscalYear = year;
             return expense;
         }) : [];
+        budgetData = budgetsByYear[selectedYear];
+        const savedCommittees = storedArray('skCommittees');
+        committees = Array.from(new Set(DEFAULT_COMMITTEES.concat(savedCommittees.filter(name => typeof name === 'string'))));
+        committeeChairs = storedObject('skCommitteeChairs');
+        const roles = storedArray('skRoles');
+        const members = storedArray('kkMembers');
+        const memberById = {};
+        members.forEach(member => { if (member && member.id != null) memberById[String(member.id)] = member; });
+        officialsById = {};
+        const currentDate = new Date();
+        const today = [
+            currentDate.getFullYear(),
+            String(currentDate.getMonth() + 1).padStart(2, '0'),
+            String(currentDate.getDate()).padStart(2, '0')
+        ].join('-');
+        roles.forEach(role => {
+            if (!role || role.status !== 'Active'
+                || (role.termStart && role.termStart > today)
+                || (role.termEnd && role.termEnd < today)) return;
+            const member = memberById[String(role.kkId)];
+            if (!member || (member.status || 'Active') !== 'Active') return;
+            officialsById[String(role.id)] = {
+                name:[member.firstName, member.middleName, member.lastName, member.suffix].filter(Boolean).join(' ').trim(),
+                position:String(role.position || '')
+            };
+        });
+        renderProjectCommitteeOptions();
         renderBudgetYearOptions();
     } catch(error) {
-        budgetData = { fy:'2026-2027', amount:0, allocations:{} };
+        budgetData = { fy:'2026-2027', projects:[] };
         budgetsByYear = { '2026-2027': budgetData };
         expenseData = [];
         if (window.AppAlerts) AppAlerts.error('Could not load the saved budget and expense records.');
@@ -1032,135 +1138,244 @@ function expensesForSelectedYear() {
 }
 
 function saveBudgetStore() {
-    budgetsByYear[budgetData.fy] = {
-        fy: budgetData.fy,
-        amount: Number(budgetData.amount || 0),
-        allocations: Object.assign({}, budgetData.allocations || {})
-    };
+    budgetsByYear[budgetData.fy] = { fy:budgetData.fy, projects:budgetData.projects };
     DB.setItem(BUDGET_KEY, JSON.stringify({
         fy: budgetData.fy,
-        amount: budgetData.amount,
-        allocations: budgetData.allocations,
         budgets: budgetsByYear
     }));
 }
 
-function currentAllocations() {
-    const inputs = Array.from(document.querySelectorAll('[data-cop-allocation]'));
-    if (!inputs.length) return Object.assign({}, budgetData.allocations || {});
-    const allocations = {};
-    inputs.forEach(input => { allocations[input.dataset.copAllocation] = Number(input.value || 0); });
-    return allocations;
+function renderProjectCommitteeOptions() {
+    const copSelect = document.getElementById('projectCop');
+    const committeeSelect = document.getElementById('projectCommittee');
+    const copValue = copSelect.value, committeeValue = committeeSelect.value;
+    copSelect.innerHTML = '<option value="">Select a Center of Participation</option>' +
+        COP_CATEGORIES.map(cop => '<option value="' + escapeReportHtml(cop) + '">' + escapeReportHtml(cop) + '</option>').join('');
+    committeeSelect.innerHTML = '<option value="">Select a committee</option>' +
+        committees.map(name => '<option value="' + escapeReportHtml(name) + '">' + escapeReportHtml(name) + '</option>').join('');
+    if (COP_CATEGORIES.includes(copValue)) copSelect.value = copValue;
+    if (committees.includes(committeeValue)) committeeSelect.value = committeeValue;
+    updateProjectChairperson();
 }
 
-function allocationTotal(allocations) {
-    return Object.values(allocations).reduce((sum, amount) => sum + Number(amount || 0), 0);
+function updateProjectChairperson() {
+    const roleId = committeeChairs[document.getElementById('projectCommittee').value];
+    const official = roleId ? officialsById[String(roleId)] : null;
+    document.getElementById('projectChairperson').textContent = official
+        ? official.name + ' — ' + official.position : 'Not assigned';
 }
 
-function renderAllocationTable(allocationsOverride) {
-    const allocations = allocationsOverride || currentAllocations();
-    const spent = {};
-    expensesForSelectedYear().forEach(expense => {
-        if (COP_CATEGORIES.indexOf(expense.cop) !== -1) spent[expense.cop] = (spent[expense.cop] || 0) + Number(expense.amount || 0);
-    });
-    document.getElementById('allocationTableBody').innerHTML = COP_CATEGORIES.map(cop => {
-        const allocated = Number(allocations[cop] || 0), totalSpent = Number(spent[cop] || 0);
-        const remaining = allocated - totalSpent;
-        return `<tr>
-            <td>${escapeReportHtml(cop)}</td>
-            <td><input type="number" min="0" step="0.01" class="budget-input" data-cop-allocation="${escapeReportHtml(cop)}" value="${allocated}"></td>
-            <td>${formatPeso(totalSpent)}</td>
-            <td class="${remaining < 0 ? 'text-danger' : 'text-success'}">${formatPeso(remaining)}</td>
-        </tr>`;
-    }).join('');
+function renderExpenseProjectOptions(selectedId) {
+    const select = document.getElementById('expenseProject');
+    select.innerHTML = '<option value="">Select a project budget</option>' + budgetData.projects.map(project =>
+        '<option value="' + escapeReportHtml(project.id) + '">' + escapeReportHtml(project.name) +
+        ' — ' + escapeReportHtml(project.cop || 'COP not set') + '</option>'
+    ).join('');
+    select.value = selectedId || '';
+    updateExpenseCopLabel();
 }
 
-function saveBudget() {
-    const fy = document.getElementById('budgetFY').value.trim() || '2026-2027';
-    const amount = Number(document.getElementById('budgetAmount').value || 0);
-    const allocations = currentAllocations();
-    if (!Number.isFinite(amount) || amount < 0
-        || Object.values(allocations).some(value => !Number.isFinite(value) || value < 0)
-        || allocationTotal(allocations) > amount + 0.005) {
-        AppAlerts.warning('Enter a valid total budget and ensure COP allocations do not exceed it.');
+function updateExpenseCopLabel() {
+    const project = budgetData.projects.find(item => item.id === document.getElementById('expenseProject').value);
+    document.getElementById('expenseCopLabel').textContent = project
+        ? project.cop || 'COP not set' : 'Select a project';
+}
+
+function createBudgetYear() {
+    const fy = document.getElementById('budgetFY').value.trim();
+    if (!/^\d{4}-\d{4}$/.test(fy)) {
+        AppAlerts.warning('Enter a fiscal year in YYYY-YYYY format.');
         return;
     }
-
     const previous = budgetData;
-    budgetData = { fy, amount, allocations };
+    if (!budgetsByYear[fy]) budgetsByYear[fy] = { fy:fy, projects:[] };
+    budgetData = budgetsByYear[fy];
     try {
         saveBudgetStore();
-        renderBudgetYearOptions();
+        updateBudgetInterface();
+        AppAlerts.success('Fiscal-year folder opened.');
     } catch (error) {
         budgetData = previous;
-        AppAlerts.error(error.message || 'Could not save budget allocations.');
-        updateBudgetInterface();
+        AppAlerts.error(error.message || 'Could not create the fiscal-year folder.');
+    }
+}
+
+function newProjectId() {
+    return 'project-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+function addOrUpdateProject() {
+    const name = document.getElementById('projectName').value.trim();
+    const amount = Number(document.getElementById('projectAmount').value);
+    const cop = document.getElementById('projectCop').value;
+    const committee = document.getElementById('projectCommittee').value;
+    if (!name || name.length > 160 || !Number.isFinite(amount) || amount <= 0
+        || !COP_CATEGORIES.includes(cop) || !committees.includes(committee)) {
+        AppAlerts.warning('Enter a project name, a positive project budget, a COP, and a committee.');
         return;
     }
+    const project = {
+        id:editingProjectId || newProjectId(),
+        name:name,
+        type:document.getElementById('projectType').value,
+        amount:amount,
+        cop:cop,
+        committee:committee,
+        description:document.getElementById('projectDescription').value.trim()
+    };
+    const previous = budgetData.projects.slice();
+    const index = budgetData.projects.findIndex(item => item.id === editingProjectId);
+    if (index >= 0) budgetData.projects[index] = project;
+    else budgetData.projects.push(project);
+    try {
+        saveBudgetStore();
+        cancelProjectEdit();
+        updateBudgetInterface();
+        AppAlerts.success(index >= 0 ? 'Project budget updated.' : 'Project budget added.');
+    } catch (error) {
+        budgetData.projects = previous;
+        AppAlerts.error(error.message || 'Could not save the project budget.');
+        updateBudgetInterface();
+    }
+}
 
-    updateBudgetInterface();
+function editProject(id) {
+    const project = budgetData.projects.find(item => item.id === id);
+    if (!project) return;
+    editingProjectId = id;
+    document.getElementById('projectName').value = project.name;
+    document.getElementById('projectAmount').value = project.amount;
+    document.getElementById('projectType').value = project.type;
+    document.getElementById('projectCop').value = project.cop;
+    document.getElementById('projectCommittee').value = project.committee;
+    document.getElementById('projectDescription').value = project.description;
+    document.getElementById('projectEditorTitle').textContent = 'Edit project budget';
+    document.getElementById('projectSubmitBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i> Update Project Budget';
+    document.getElementById('cancelProjectEditBtn').classList.remove('d-none');
+    updateProjectChairperson();
+    document.getElementById('projectEditor').scrollIntoView({ behavior:'smooth', block:'start' });
+}
 
-    AppAlerts.success('Budget saved successfully.');
+function cancelProjectEdit() {
+    editingProjectId = null;
+    document.getElementById('projectName').value = '';
+    document.getElementById('projectAmount').value = '';
+    document.getElementById('projectType').value = 'Annual';
+    document.getElementById('projectCop').value = '';
+    document.getElementById('projectCommittee').value = '';
+    document.getElementById('projectDescription').value = '';
+    document.getElementById('projectEditorTitle').textContent = 'Add a project budget';
+    document.getElementById('projectSubmitBtn').innerHTML = '<i class="bi bi-plus-lg me-1"></i> Add Project Budget';
+    document.getElementById('cancelProjectEditBtn').classList.add('d-none');
+    updateProjectChairperson();
+}
+
+function deleteProject(id) {
+    if (expenseData.some(expense => expense.projectId === id)) {
+        AppAlerts.warning('This project has expense records. Reassign or delete those expenses before removing the project.');
+        return;
+    }
+    AppAlerts.confirm('Delete this project budget?', 'Delete project?', 'Delete').then(function (confirmed) {
+        if (!confirmed) return;
+        const previous = budgetData.projects.slice();
+        budgetData.projects = budgetData.projects.filter(project => project.id !== id);
+        try {
+            saveBudgetStore();
+            if (editingProjectId === id) cancelProjectEdit();
+            updateBudgetInterface();
+        } catch (error) {
+            budgetData.projects = previous;
+            AppAlerts.error(error.message || 'Could not delete the project budget.');
+        }
+    });
+}
+
+function projectById(id) {
+    return budgetData.projects.find(project => project.id === id);
+}
+
+function renderProjectTable() {
+    const expenses = expensesForSelectedYear();
+    const body = document.getElementById('projectTableBody');
+    if (!budgetData.projects.length) {
+        body.innerHTML = '<tr><td colspan="9" class="empty-row">No project budgets in this year folder. Add each project with its own budget.</td></tr>';
+        return;
+    }
+    body.innerHTML = budgetData.projects.map(project => {
+        const spent = expenses.filter(expense => expense.projectId === project.id)
+            .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+        const chairId = committeeChairs[project.committee];
+        const chair = chairId ? officialsById[String(chairId)] : null;
+        return '<tr><td><strong>' + escapeReportHtml(project.name) + '</strong>' +
+            (project.legacy ? '<div class="small text-warning">Legacy total — review and split into projects</div>' : '') +
+            (project.description ? '<div class="small text-muted">' + escapeReportHtml(project.description) + '</div>' : '') +
+            '</td><td>' + escapeReportHtml(budgetTypeLabel(project.type)) + '</td><td>' + escapeReportHtml(project.cop || 'Not set') +
+            '</td><td>' + escapeReportHtml(project.committee || 'Not set') + '</td><td>' +
+            escapeReportHtml(chair ? chair.name : 'Not assigned') + '</td><td>' + formatPeso(project.amount) +
+            '</td><td>' + formatPeso(spent) + '</td><td>' + formatPeso(project.amount - spent) + '</td><td>' +
+            '<button class="table-action edit-btn" data-project-edit="' + escapeReportHtml(project.id) + '">Edit</button> ' +
+            '<button class="table-action delete-btn" data-project-delete="' + escapeReportHtml(project.id) + '">Delete</button></td></tr>';
+    }).join('');
 }
 
 function updateBudgetInterface() {
     renderBudgetYearOptions();
     document.getElementById('budgetFY').value = budgetData.fy;
-    document.getElementById('budgetAmount').value = budgetData.amount;
     document.getElementById('fyBadge').textContent = 'FY ' + budgetData.fy;
     document.getElementById('expenseFiscalYearLabel').textContent = 'FY ' + budgetData.fy;
-
-    const totalBudget = Number(budgetData.amount || 0);
     const selectedExpenses = expensesForSelectedYear();
-    const totalSpent = selectedExpenses.reduce((sum, expense) => {
-        return sum + Number(expense.amount || 0);
-    }, 0);
-
-    const remaining = totalBudget - totalSpent;
+    const totalBudget = budgetData.projects.reduce((sum, project) => sum + Number(project.amount || 0), 0);
+    const totalSpent = selectedExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
     const utilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-    const progress = Math.min(100, Math.max(0, utilization));
-
     document.getElementById('summaryBudget').textContent = formatPeso(totalBudget);
     document.getElementById('summarySpent').textContent = formatPeso(totalSpent);
-    document.getElementById('summaryRemaining').textContent = formatPeso(remaining);
-    document.getElementById('summaryUtilization').textContent =
-        (totalBudget > 0 ? utilization.toFixed(1) : '0.0') + '%';
-
-    document.getElementById('summaryProgress').style.width = progress + '%';
-
-    renderCategoryBreakdown(totalSpent, selectedExpenses);
-    renderAllocationTable(budgetData.allocations);
+    document.getElementById('summaryRemaining').textContent = formatPeso(totalBudget - totalSpent);
+    document.getElementById('summaryUtilization').textContent = (totalBudget > 0 ? utilization.toFixed(1) : '0.0') + '%';
+    document.getElementById('summaryProgress').style.width = Math.min(100, Math.max(0, utilization)) + '%';
+    renderExpenseProjectOptions(document.getElementById('expenseProject').value);
+    renderProjectTable();
+    renderProjectBreakdown(totalSpent, selectedExpenses);
     renderExpenseTable(selectedExpenses);
 }
 
-function addOrUpdateExpense() {
+document.getElementById('projectTableBody').addEventListener('click', function (event) {
+    const edit = event.target.closest('[data-project-edit]');
+    const remove = event.target.closest('[data-project-delete]');
+    if (edit) editProject(edit.dataset.projectEdit);
+    if (remove) deleteProject(remove.dataset.projectDelete);
+});
+
+async function addOrUpdateExpense() {
     const date = document.getElementById('expenseDate').value;
     const title = document.getElementById('expenseTitle').value.trim();
-    const category = document.getElementById('expenseCategory').value;
-    const cop = document.getElementById('expenseCop').value;
+    const project = projectById(document.getElementById('expenseProject').value);
     const amount = Number(document.getElementById('expenseAmount').value || 0);
     const recipient = document.getElementById('expenseRecipient').value.trim();
     const description = document.getElementById('expenseDescription').value.trim();
+    const receiptFile = document.getElementById('expenseReceipt').files[0] || null;
 
-    if (!date || !title || !category || !cop || !Number.isFinite(amount) || amount <= 0 || !recipient || !description) {
-        AppAlerts.warning('Please complete all expense fields.');
+    if (!date || !title || !project || !Number.isFinite(amount) || amount <= 0 || !recipient || !description) {
+        AppAlerts.warning('Complete the expense details and select a project in this fiscal year.');
         return;
     }
 
-    const expense = {
+    const targetIndex = editingExpenseIndex >= 0 ? editingExpenseIndex : expenseData.length;
+    const priorExpense = editingExpenseIndex >= 0 ? expenseData[editingExpenseIndex] : null;
+    const expense = Object.assign({}, priorExpense || {}, {
         fiscalYear: budgetData.fy,
+        projectId: project.id,
         date,
         title,
-        category,
-        cop,
+        committee: project.committee,
+        cop: project.cop,
         amount,
         recipient,
         description
-    };
+    });
 
     const previousExpenses = expenseData.slice();
     if (editingExpenseIndex >= 0) {
-        expenseData[editingExpenseIndex] = expense;
+        expenseData[targetIndex] = expense;
     } else {
         expenseData.push(expense);
     }
@@ -1172,6 +1387,23 @@ function addOrUpdateExpense() {
         AppAlerts.error(error.message || 'Could not save the expense.');
         updateBudgetInterface();
         return;
+    }
+
+    if (receiptFile) {
+        try {
+            const result = await DB.uploadExpenseReceipt(targetIndex, receiptFile);
+            expenseData = JSON.parse(result.value);
+        } catch (error) {
+            editingExpenseIndex = targetIndex;
+            document.getElementById('expenseSubmitBtn').innerHTML =
+                '<i class="bi bi-check-lg me-1"></i> Update Expense';
+            document.getElementById('cancelEditBtn').classList.remove('d-none');
+            document.getElementById('expenseReceiptStatus').textContent =
+                'Expense saved, but the receipt was not uploaded: ' + (error.message || 'try again.');
+            AppAlerts.error('The expense was saved, but its receipt was not uploaded. Edit the expense to retry.');
+            updateBudgetInterface();
+            return;
+        }
     }
 
     clearExpenseForm();
@@ -1193,11 +1425,16 @@ function editExpense(index) {
 
     document.getElementById('expenseDate').value = expense.date || '';
     document.getElementById('expenseTitle').value = expense.title || '';
-    document.getElementById('expenseCategory').value = expense.category || '';
-    document.getElementById('expenseCop').value = expense.cop || '';
+    document.getElementById('expenseProject').value = expense.projectId || '';
+    updateExpenseCopLabel();
     document.getElementById('expenseAmount').value = expense.amount || '';
     document.getElementById('expenseRecipient').value = expense.recipient || '';
     document.getElementById('expenseDescription').value = expense.description || '';
+    document.getElementById('expenseReceipt').value = '';
+    document.getElementById('expenseReceiptStatus').innerHTML = expense.receiptId
+        ? 'Receipt on file. <a target="_blank" rel="noopener noreferrer" href="api/official-files.php?action=receipt_view&amp;id=' +
+            encodeURIComponent(expense.receiptId) + '">Download internal receipt</a>. Choose a file to replace it.'
+        : 'No receipt attached. Uploading one keeps it internal to SK officials.';
 
     document.getElementById('expenseSubmitBtn').innerHTML =
         '<i class="bi bi-check-lg me-1"></i> Update Expense';
@@ -1248,15 +1485,18 @@ function deleteExpense(index) {
 function clearExpenseForm() {
     document.getElementById('expenseDate').value = '';
     document.getElementById('expenseTitle').value = '';
-    document.getElementById('expenseCategory').value = '';
-    document.getElementById('expenseCop').value = '';
+    document.getElementById('expenseProject').value = '';
+    updateExpenseCopLabel();
     document.getElementById('expenseAmount').value = '';
     document.getElementById('expenseRecipient').value = '';
     document.getElementById('expenseDescription').value = '';
+    document.getElementById('expenseReceipt').value = '';
+    document.getElementById('expenseReceiptStatus').textContent =
+        'Receipts are visible only to signed-in SK officials.';
 }
 
-function renderCategoryBreakdown(totalSpent, selectedExpenses) {
-    const container = document.getElementById('categoryBreakdown');
+function renderProjectBreakdown(totalSpent, selectedExpenses) {
+    const container = document.getElementById('projectBreakdown');
 
     if (!selectedExpenses.length) {
         container.className = 'where-empty';
@@ -1265,22 +1505,21 @@ function renderCategoryBreakdown(totalSpent, selectedExpenses) {
     }
 
     const totals = {};
-
     selectedExpenses.forEach(expense => {
-        const category = expense.category || 'Other';
-        totals[category] = (totals[category] || 0) + Number(expense.amount || 0);
+        const project = projectById(expense.projectId);
+        const name = project ? project.name : 'Unlinked legacy expense';
+        totals[name] = (totals[name] || 0) + Number(expense.amount || 0);
     });
-
     const entries = Object.entries(totals).sort((a,b) => b[1] - a[1]);
 
     container.className = '';
-    container.innerHTML = entries.map(([category, amount]) => {
+    container.innerHTML = entries.map(([name, amount]) => {
         const percent = totalSpent > 0 ? (amount / totalSpent) * 100 : 0;
 
         return `
             <div class="category-item">
                 <div class="category-head">
-                    <span>${escapeReportHtml(category)}</span>
+                    <span>${escapeReportHtml(name)}</span>
                     <span>${formatPeso(amount)}</span>
                 </div>
                 <div class="category-bar">
@@ -1300,7 +1539,7 @@ function renderExpenseTable(selectedExpenses) {
     if (!selectedExpenses.length) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="empty-row">
+                <td colspan="9" class="empty-row">
                     No expenses recorded yet. Add an expense above to show where the money went.
                 </td>
             </tr>
@@ -1313,15 +1552,21 @@ function renderExpenseTable(selectedExpenses) {
         originalIndex: expenseData.indexOf(expense)
     })).sort((a,b) => String(b.date).localeCompare(String(a.date)));
 
-    tbody.innerHTML = sorted.map(expense => `
+    tbody.innerHTML = sorted.map(expense => {
+        const project = projectById(expense.projectId);
+        return `
         <tr>
             <td>${escapeReportHtml(expense.date)}</td>
             <td>${escapeReportHtml(expense.title)}</td>
-            <td>${escapeReportHtml(expense.category)}</td>
-            <td>${escapeReportHtml(expense.cop || 'Unallocated')}</td>
+            <td>${escapeReportHtml(project ? project.committee : expense.committee || '')}</td>
+            <td>${escapeReportHtml(project ? project.cop || 'Unallocated' : expense.cop || 'Unallocated')}</td>
             <td>${escapeReportHtml(expense.recipient)}</td>
             <td>${formatPeso(expense.amount)}</td>
             <td>${escapeReportHtml(expense.description)}</td>
+            <td>${expense.receiptId
+                ? '<a target="_blank" rel="noopener noreferrer" href="api/official-files.php?action=receipt_view&amp;id=' +
+                    encodeURIComponent(expense.receiptId) + '">Download receipt</a>'
+                : '—'}</td>
             <td>
                 <button class="table-action edit-btn" onclick="editExpense(${expense.originalIndex})">
                     <i class="bi bi-pencil-fill"></i> Edit
@@ -1331,11 +1576,13 @@ function renderExpenseTable(selectedExpenses) {
                 </button>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function generateBudgetReport() {
     loadBudgetData();
+    cancelProjectEdit();
     updateBudgetInterface();
 
     document.getElementById('budgetModal').classList.add('show');
@@ -1345,11 +1592,23 @@ function generateBudgetReport() {
 document.getElementById('budgetYearSelect').addEventListener('change', function () {
     const selected = this.value;
     if (!budgetsByYear[selected]) return;
+    const previous = budgetData;
     budgetData = budgetsByYear[selected];
+    try {
+        saveBudgetStore();
+    } catch (error) {
+        budgetData = previous;
+        this.value = previous.fy;
+        AppAlerts.error(error.message || 'Could not open the selected fiscal-year folder.');
+        return;
+    }
     editingExpenseIndex = -1;
     cancelExpenseEdit();
+    cancelProjectEdit();
     updateBudgetInterface();
 });
+document.getElementById('projectCommittee').addEventListener('change', updateProjectChairperson);
+document.getElementById('expenseProject').addEventListener('change', updateExpenseCopLabel);
 
 function closeBudgetReport() {
     document.getElementById('budgetModal').classList.remove('show');
@@ -1370,74 +1629,43 @@ document.addEventListener('keydown', function(event) {
 });
 
 function generateBudgetPDF() {
-    const fy = document.getElementById('budgetFY').value.trim() || '2026-2027';
-    const totalBudget = Number(document.getElementById('budgetAmount').value || 0);
-    const allocations = currentAllocations();
-    if (!Number.isFinite(totalBudget) || totalBudget < 0
-        || Object.values(allocations).some(value => !Number.isFinite(value) || value < 0)
-        || allocationTotal(allocations) > totalBudget + 0.005) {
-        AppAlerts.warning('Enter a valid total budget and ensure COP allocations do not exceed it.');
-        return;
-    }
-
-    /* Save the current edited budget before generating */
-    const previousBudget = budgetData;
-    budgetData = { fy, amount: totalBudget, allocations };
-    try {
-        saveBudgetStore();
-    } catch (error) {
-        budgetData = previousBudget;
-        AppAlerts.error(error.message || 'Could not save the budget report.');
-        updateBudgetInterface();
-        return;
-    }
-
+    const fy = budgetData.fy;
+    const totalBudget = budgetData.projects.reduce((sum, project) => sum + Number(project.amount || 0), 0);
     const selectedExpenses = expensesForSelectedYear();
     const totalSpent = selectedExpenses.reduce((sum,e) => sum + Number(e.amount || 0),0);
     const remaining = totalBudget - totalSpent;
     const utilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-
-    const categoryTotals = {};
-
-    selectedExpenses.forEach(expense => {
-        const category = expense.category || 'Other';
-        categoryTotals[category] =
-            (categoryTotals[category] || 0) + Number(expense.amount || 0);
-    });
-
-    const categoryRows = Object.entries(categoryTotals)
-        .sort((a,b) => b[1] - a[1])
-        .map(([category,amount]) => `
-            <tr>
-                <td>${escapeReportHtml(category)}</td>
-                <td class="right">${formatPeso(amount)}</td>
-            </tr>
-        `).join('');
-
-    const spentByCop = {};
-    selectedExpenses.forEach(expense => {
-        if (COP_CATEGORIES.indexOf(expense.cop) !== -1) spentByCop[expense.cop] = (spentByCop[expense.cop] || 0) + Number(expense.amount || 0);
-    });
-    const allocationRows = COP_CATEGORIES.map(cop => {
-        const allocated = Number(allocations[cop] || 0), spent = Number(spentByCop[cop] || 0);
-        return `<tr><td>${escapeReportHtml(cop)}</td><td class="right">${formatPeso(allocated)}</td><td class="right">${formatPeso(spent)}</td><td class="right">${formatPeso(allocated - spent)}</td></tr>`;
+    const projectRows = budgetData.projects.map(project => {
+        const spent = selectedExpenses.filter(expense => expense.projectId === project.id)
+            .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+        const chairId = committeeChairs[project.committee];
+        const chair = chairId ? officialsById[String(chairId)] : null;
+        return '<tr><td>' + escapeReportHtml(project.name) + '</td><td>' + escapeReportHtml(budgetTypeLabel(project.type)) +
+            '</td><td>' + escapeReportHtml(project.cop || 'Not set') + '</td><td>' +
+            escapeReportHtml(project.committee || 'Not set') + '</td><td>' +
+            escapeReportHtml(chair ? chair.name : 'Not assigned') + '</td><td class="right">' +
+            formatPeso(project.amount) + '</td><td class="right">' + formatPeso(spent) +
+            '</td><td class="right">' + formatPeso(project.amount - spent) + '</td></tr>';
     }).join('');
 
     const expenseRows = selectedExpenses.length
         ? selectedExpenses
             .slice()
             .sort((a,b) => String(b.date).localeCompare(String(a.date)))
-            .map(expense => `
+            .map(expense => {
+                const project = projectById(expense.projectId);
+                return `
                 <tr>
                     <td>${escapeReportHtml(expense.date)}</td>
                     <td>${escapeReportHtml(expense.title)}</td>
-                    <td>${escapeReportHtml(expense.category)}</td>
-                    <td>${escapeReportHtml(expense.cop || 'Unallocated')}</td>
+                    <td>${escapeReportHtml(project ? project.committee : expense.committee || '')}</td>
+                    <td>${escapeReportHtml(project ? project.cop || 'Unallocated' : expense.cop || 'Unallocated')}</td>
                     <td>${escapeReportHtml(expense.recipient)}</td>
                     <td class="right">${formatPeso(expense.amount)}</td>
                     <td>${escapeReportHtml(expense.description)}</td>
                 </tr>
-            `).join('')
+            `;
+            }).join('')
         : `<tr><td colspan="7" class="center">No expenses recorded.</td></tr>`;
 
     const reportWindow = window.open('', '_blank', 'width=1200,height=800');
@@ -1636,31 +1864,16 @@ function generateBudgetPDF() {
                     </div>
                 </div>
 
-                <h2>Spending Breakdown by Category</h2>
-
+                <h2>Project Budgets</h2>
                 <table>
                     <thead>
                         <tr>
-                            <th>Category</th>
-                            <th style="text-align:right;">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${categoryRows || `<tr><td colspan="2" class="center">No spending recorded.</td></tr>`}
-                    </tbody>
-                </table>
-
-                <h2>Fiscal-Year COP Allocations</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Center of Participation</th>
-                            <th style="text-align:right;">Allocated</th>
-                            <th style="text-align:right;">Spent</th>
+                            <th>Project</th><th>Plan</th><th>COP</th><th>Committee</th><th>Chairperson</th>
+                            <th style="text-align:right;">Budget</th><th style="text-align:right;">Spent</th>
                             <th style="text-align:right;">Remaining</th>
                         </tr>
                     </thead>
-                    <tbody>${allocationRows}</tbody>
+                    <tbody>${projectRows || `<tr><td colspan="8" class="center">No project budgets recorded.</td></tr>`}</tbody>
                 </table>
 
                 <h2>Complete Expense Records</h2>
@@ -1670,7 +1883,7 @@ function generateBudgetPDF() {
                         <tr>
                             <th>Date</th>
                             <th>Program / Expense</th>
-                            <th>Category</th>
+                            <th>Committee</th>
                             <th>COP</th>
                             <th>Paid To / Recipient</th>
                             <th style="text-align:right;">Amount</th>
@@ -1735,6 +1948,41 @@ function reportMemberAge(member) {
     return age >= 0 && age <= 120 ? String(age) : '';
 }
 
+function reportMemberAgeAt(member, eventDate, fallbackAge) {
+    const birthValue = member && member.birthDate ? String(member.birthDate).slice(0, 10) : '';
+    const eventValue = String(eventDate || '').slice(0, 10);
+    const birthMatch = birthValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const eventMatch = eventValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (birthMatch && eventMatch) {
+        const birth = new Date(Date.UTC(Number(birthMatch[1]), Number(birthMatch[2]) - 1, Number(birthMatch[3])));
+        const event = new Date(Date.UTC(Number(eventMatch[1]), Number(eventMatch[2]) - 1, Number(eventMatch[3])));
+        const validBirth = birth.getUTCFullYear() === Number(birthMatch[1]) &&
+            birth.getUTCMonth() === Number(birthMatch[2]) - 1 &&
+            birth.getUTCDate() === Number(birthMatch[3]);
+        const validEvent = event.getUTCFullYear() === Number(eventMatch[1]) &&
+            event.getUTCMonth() === Number(eventMatch[2]) - 1 &&
+            event.getUTCDate() === Number(eventMatch[3]);
+        if (validBirth && validEvent) {
+            let age = event.getUTCFullYear() - birth.getUTCFullYear();
+            if (event.getUTCMonth() < birth.getUTCMonth() ||
+                (event.getUTCMonth() === birth.getUTCMonth() && event.getUTCDate() < birth.getUTCDate())) age--;
+            if (age >= 0 && age <= 120) return age;
+        }
+    }
+    if (fallbackAge === null || fallbackAge === undefined || fallbackAge === '') return null;
+    const age = Number(fallbackAge);
+    return Number.isInteger(age) && age >= 1 && age <= 120 ? age : null;
+}
+
+function reportAgeGroup(age) {
+    if (age === null) return 'Unknown';
+    if (age >= 15 && age <= 17) return '15-17';
+    if (age >= 18 && age <= 20) return '18-20';
+    if (age >= 21 && age <= 24) return '21-24';
+    if (age >= 25 && age <= 30) return '25-30';
+    return 'Outside ages 15-30';
+}
+
 function reportDateLabel(startDate, endDate) {
     if (startDate && endDate) return startDate + ' to ' + endDate;
     if (startDate) return 'From ' + startDate;
@@ -1793,6 +2041,21 @@ function openDataReport(title, subtitle, columns, rows, notes, metrics, sections
         notesHtml + extraHtml + '<div class="footer">Prepared from records currently saved in the KK Youth Profiling System.</div>' +
         '</main></body></html>');
     reportWindow.document.close();
+}
+
+function reportBreakdownSection(title, columns, rows) {
+    const headerHtml = columns.map(function (column) {
+        return '<th>' + escapeReportHtml(column) + '</th>';
+    }).join('');
+    const bodyHtml = rows.length
+        ? rows.map(function (row) {
+            return '<tr>' + row.map(function (cell) {
+                return '<td>' + escapeReportHtml(cell) + '</td>';
+            }).join('') + '</tr>';
+        }).join('')
+        : '<tr><td class="empty" colspan="' + Math.max(columns.length, 1) + '">No confirmed attendance records match this report and date range.</td></tr>';
+    return '<section class="minutes-section"><h2>' + escapeReportHtml(title) + '</h2><table><thead><tr>' +
+        headerHtml + '</tr></thead><tbody>' + bodyHtml + '</tbody></table></section>';
 }
 
 function buildMemberReport(startDate, endDate) {
@@ -1903,10 +2166,28 @@ function buildParticipationReport(startDate, endDate) {
     const walkins = reportArray('skEventAttendance').filter(function (record) {
         return record && selectedEventIds[String(record.eventId || '')];
     });
+    const memberById = {};
+    reportArray('kkMembers').forEach(function (member) {
+        if (member && member.id != null) memberById[String(member.id)] = member;
+    });
     const totals = {};
     const linkedAttendees = {};
     const attendedSignupMemberEvents = {};
     const walkinMemberEvents = {};
+    const activityBreakdowns = {};
+    const ageGroups = ['15-17', '18-20', '21-24', '25-30', 'Outside ages 15-30', 'Unknown'];
+    function recordDemographicAttendance(eventId, title, member, fallbackAge, fallbackPurok) {
+        const key = eventId || title;
+        if (!activityBreakdowns[key]) {
+            activityBreakdowns[key] = { title: title, ages: {}, puroks: {} };
+        }
+        const age = reportMemberAgeAt(member, eventDates[eventId] || '', fallbackAge);
+        const ageGroup = reportAgeGroup(age);
+        const memberPurok = member && String(member.purok || '').trim();
+        const purok = memberPurok || String(fallbackPurok || '').trim() || 'Not recorded';
+        activityBreakdowns[key].ages[ageGroup] = (activityBreakdowns[key].ages[ageGroup] || 0) + 1;
+        activityBreakdowns[key].puroks[purok] = (activityBreakdowns[key].puroks[purok] || 0) + 1;
+    }
     signups.forEach(function (signup) {
         const eventId = String(signup.eventId || '');
         const title = signup.eventTitle || eventTitles[eventId] || 'Unknown event';
@@ -1921,6 +2202,14 @@ function buildParticipationReport(startDate, endDate) {
                 linkedAttendees[String(signup.memberId)] = true;
                 attendedSignupMemberEvents[eventId + ':' + String(signup.memberId)] = true;
             }
+            const memberId = String(signup.memberId || '');
+            recordDemographicAttendance(
+                eventId,
+                title,
+                memberById[memberId] || null,
+                signup.age,
+                signup.purok
+            );
         } else if (status === 'Did not attend') totals[key].absent++;
         else totals[key].unmarked++;
     });
@@ -1938,6 +2227,13 @@ function buildParticipationReport(startDate, endDate) {
             totals[key].members[memberId] = true;
             linkedAttendees[memberId] = true;
         }
+        recordDemographicAttendance(
+            eventId,
+            title,
+            memberById[memberId] || null,
+            null,
+            ''
+        );
     });
     const rows = Object.keys(totals).map(function (key) {
         return [
@@ -1951,19 +2247,60 @@ function buildParticipationReport(startDate, endDate) {
     }).sort(function (a, b) {
         return Number(b[2]) - Number(a[2]) || Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]);
     });
+    const activityKeys = Object.keys(activityBreakdowns).sort(function (a, b) {
+        return activityBreakdowns[a].title.localeCompare(activityBreakdowns[b].title);
+    });
+    const ageBreakdownRows = activityKeys.map(function (key) {
+        const activity = activityBreakdowns[key];
+        const counts = ageGroups.map(function (group) { return activity.ages[group] || 0; });
+        return [activity.title].concat(
+            counts.map(String),
+            [String(counts.reduce(function (sum, count) { return sum + count; }, 0))]
+        );
+    });
+    const puroks = [];
+    activityKeys.forEach(function (key) {
+        Object.keys(activityBreakdowns[key].puroks).forEach(function (purok) {
+            if (puroks.indexOf(purok) === -1) puroks.push(purok);
+        });
+    });
+    puroks.sort(function (a, b) {
+        if (a === 'Not recorded') return 1;
+        if (b === 'Not recorded') return -1;
+        return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    });
+    const purokBreakdownRows = activityKeys.map(function (key) {
+        const activity = activityBreakdowns[key];
+        const counts = puroks.map(function (purok) { return activity.puroks[purok] || 0; });
+        return [activity.title].concat(
+            counts.map(String),
+            [String(counts.reduce(function (sum, count) { return sum + count; }, 0))]
+        );
+    });
+    const breakdownSections = reportBreakdownSection(
+        'Confirmed attendance by age group and activity',
+        ['Activity'].concat(ageGroups, ['Total']),
+        ageBreakdownRows
+    ) + reportBreakdownSection(
+        'Confirmed attendance by Purok and activity',
+        ['Activity'].concat(puroks, ['Total']),
+        purokBreakdownRows
+    );
     openDataReport('Participation Report', reportDateLabel(startDate, endDate),
         ['Event / program', 'Sign-ups', 'Attended', 'Did not attend', 'Not recorded', 'Linked KK members attended'], rows,
         [
             'Sign-up totals and confirmed attendance are tracked separately. Unmarked sign-ups are not counted as attendees; walk-in attendance is included.',
             'The date filter applies to the scheduled event date. All sign-ups and attendance records belonging to events in the selected range are included.',
-            'A walk-in is counted unless the same linked member already has a sign-up marked Attended for that event. A prior sign-up marked Did not attend does not suppress a recorded walk-in. Records linked to deleted or unknown events are not included because their event date cannot be verified.'
+            'A walk-in is counted unless the same linked member already has a sign-up marked Attended for that event. A prior sign-up marked Did not attend does not suppress a recorded walk-in. Records linked to deleted or unknown events are not included because their event date cannot be verified.',
+            'Age groups use a linked member’s age on the scheduled event date when the birth date is available; otherwise, the captured sign-up age is used when available. Purok uses the linked member profile when available, otherwise the captured sign-up value. Missing or out-of-range values are shown separately.'
         ],
         [
             { label: 'Sign-ups in range', value: String(signups.length) },
             { label: 'Confirmed attendance records', value: String(rows.reduce(function (total, row) { return total + Number(row[2]); }, 0)) },
             { label: 'Linked KK members attended', value: String(Object.keys(linkedAttendees).length) },
             { label: 'Events with attendance or sign-ups', value: String(rows.length) }
-        ]);
+        ],
+        breakdownSections);
 }
 
 function buildProgramsReport(startDate, endDate) {

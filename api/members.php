@@ -3,6 +3,11 @@
    api/members.php — KK member add, update, delete
    ========================================================= */
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../private_files.php';
+require_once __DIR__ . '/../member_documents.php';
+require_once __DIR__ . '/../member_account_logic.php';
+
+class MemberDocumentUploadException extends RuntimeException {}
 
 $action = $_GET['action'] ?? '';
 $user = require_officer();
@@ -18,15 +23,34 @@ if ($action === 'member_data_save') {
     if (USE_MEMBERS_TABLE) {
         out(['ok' => false, 'error' => 'Use the dedicated member actions to save member-table data.'], 400);
     }
-    $members = $in['members'] ?? null;
-    $requests = $in['requests'] ?? null;
-    $expectedMembers = $in['expectedMembers'] ?? null;
-    $expectedRequests = $in['expectedRequests'] ?? null;
+    $multipart = isset($_POST['members']) || isset($_FILES['supportingDocuments']);
+    if ($multipart) {
+        $members = json_decode((string)($_POST['members'] ?? ''), true);
+        $requests = json_decode((string)($_POST['requests'] ?? ''), true);
+        $expectedMembers = ($_POST['expectedMembers'] ?? '') === 'null' ? null : ($_POST['expectedMembers'] ?? null);
+        $expectedRequests = ($_POST['expectedRequests'] ?? '') === 'null' ? null : ($_POST['expectedRequests'] ?? null);
+    } else {
+        $members = $in['members'] ?? null;
+        $requests = $in['requests'] ?? null;
+        $expectedMembers = $in['expectedMembers'] ?? null;
+        $expectedRequests = $in['expectedRequests'] ?? null;
+    }
     if (!is_array($members) || ($members !== [] && array_keys($members) !== range(0, count($members) - 1))
         || !is_array($requests) || ($requests !== [] && array_keys($requests) !== range(0, count($requests) - 1))
         || ($expectedMembers !== null && !is_string($expectedMembers))
         || ($expectedRequests !== null && !is_string($expectedRequests))) {
         out(['ok' => false, 'error' => 'Member or request data is invalid. Reload the page and try again.'], 400);
+    }
+
+    try {
+        $documentUploads = member_document_normalize_uploads($_FILES['supportingDocuments'] ?? null);
+    } catch (InvalidArgumentException $exception) {
+        out(['ok' => false, 'error' => $exception->getMessage()], 400);
+    }
+    $documentRequestId = $_POST['requestId'] ?? '';
+    if (($documentUploads && (!is_string($documentRequestId) || $documentRequestId === ''))
+        || (!$documentUploads && $documentRequestId !== '')) {
+        out(['ok' => false, 'error' => 'Supporting documents must be submitted with a new member edit request.'], 400);
     }
 
     $memberIds = [];
@@ -46,6 +70,7 @@ if ($action === 'member_data_save') {
         $requestIds[(string)$id] = true;
     }
 
+    $newDocumentFiles = [];
     $pdo->beginTransaction();
     try {
         $memberLock = $pdo->query("SELECT data_value FROM app_data WHERE data_key = 'kkMembers' FOR UPDATE");
@@ -64,6 +89,23 @@ if ($action === 'member_data_save') {
         if (!is_array($oldMembers) || ($oldMembers !== [] && array_keys($oldMembers) !== range(0, count($oldMembers) - 1))
             || !is_array($oldRequests) || ($oldRequests !== [] && array_keys($oldRequests) !== range(0, count($oldRequests) - 1))) {
             throw new RuntimeException('Saved member or request data is invalid.');
+        }
+        foreach ($oldRequests as $index => $oldRequest) {
+            $newRequest = $requests[$index] ?? null;
+            if (!is_array($oldRequest) || !is_array($newRequest)
+                || !is_array($oldRequest['attachments'] ?? []) || !is_array($newRequest['attachments'] ?? [])
+                || !sk_role_equal($oldRequest['attachments'] ?? [], $newRequest['attachments'] ?? [])) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'Existing request attachments cannot be changed. Reload and try again.'], 403);
+            }
+        }
+        for ($index = count($oldRequests); $index < count($requests); $index++) {
+            $newRequest = $requests[$index];
+            if (is_array($newRequest) && (!is_array($newRequest['attachments'] ?? [])
+                || ($newRequest['attachments'] ?? []) !== [])) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'Request attachments must be uploaded through the secure upload flow.'], 400);
+            }
         }
         $oldMemberIds = [];
         $oldMembersById = [];
@@ -119,6 +161,11 @@ if ($action === 'member_data_save') {
                                         break;
                                     }
                                 } catch (RuntimeException $exception) {
+                                    $validChanges = false;
+                                    break;
+                                }
+                            } elseif ($field === 'photo') {
+                                if (!member_profile_photo_is_valid($value)) {
                                     $validChanges = false;
                                     break;
                                 }
@@ -249,8 +296,17 @@ if ($action === 'member_data_save') {
             for ($index = count($oldRequests); $canUpdateRequests && $index < count($requests); $index++) {
                 $newRequest = $requests[$index];
                 $memberId = is_array($newRequest) ? (string)($newRequest['memberId'] ?? '') : '';
+                $hasPendingRequest = false;
+                foreach ($oldRequests as $oldRequest) {
+                    if (is_array($oldRequest) && (string)($oldRequest['memberId'] ?? '') === $memberId
+                        && ($oldRequest['status'] ?? '') === 'Edit Request') {
+                        $hasPendingRequest = true;
+                        break;
+                    }
+                }
                 if (!is_array($newRequest) || ($newRequest['status'] ?? '') !== 'Edit Request'
                     || !isset($oldMemberIds[$memberId]) || ($newMembersById[$memberId]['status'] ?? '') === 'Archived'
+                    || $hasPendingRequest
                     || !is_array($newRequest['changes'] ?? null) || !$newRequest['changes']
                     || !is_array($newRequest['previous'] ?? null)) {
                     $canUpdateRequests = false;
@@ -258,8 +314,60 @@ if ($action === 'member_data_save') {
             }
             if (!$canUpdateRequests) {
                 $pdo->rollBack();
-                out(['ok' => false, 'error' => 'Only the Chairman or Secretary can review existing member requests.'], 403);
+                out(['ok' => false, 'error' => 'Only the SK Chairperson or Secretary can review existing member requests.'], 403);
             }
+        }
+
+        if ($documentUploads) {
+            if (count($requests) !== count($oldRequests) + 1) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'Submit supporting documents with exactly one new edit request.'], 400);
+            }
+            $requestIndex = count($oldRequests);
+            $request = $requests[$requestIndex] ?? null;
+            $memberId = is_array($request) ? (string)($request['memberId'] ?? '') : '';
+            $hasPendingRequest = false;
+            foreach ($oldRequests as $oldRequest) {
+                if (is_array($oldRequest) && (string)($oldRequest['memberId'] ?? '') === $memberId
+                    && ($oldRequest['status'] ?? '') === 'Edit Request') {
+                    $hasPendingRequest = true;
+                    break;
+                }
+            }
+            if (!is_array($request) || (string)($request['id'] ?? '') !== $documentRequestId
+                || ($request['status'] ?? '') !== 'Edit Request'
+                || !isset($oldMemberIds[$memberId])
+                || ($oldMembersById[$memberId]['status'] ?? 'Active') === 'Archived'
+                || $hasPendingRequest
+                || !is_array($request['changes'] ?? null) || !$request['changes']
+                || !is_array($request['previous'] ?? null)
+                || !is_string($request['requestedAt'] ?? null) || $request['requestedAt'] === ''
+                || !is_string($request['requestedBy'] ?? null) || $request['requestedBy'] === '') {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'Supporting documents must belong to a valid, pending member edit request.'], 400);
+            }
+            $attachments = [];
+            foreach ($documentUploads as $upload) {
+                try {
+                    $stored = private_file_store_upload(
+                        $upload, 'member-documents',
+                        ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+                        MEMBER_DOCUMENT_MAX_BYTES
+                    );
+                } catch (RuntimeException $exception) {
+                    throw new MemberDocumentUploadException($exception->getMessage(), 0, $exception);
+                }
+                $newDocumentFiles[] = $stored['id'];
+                $attachments[] = [
+                    'id' => $stored['id'],
+                    'name' => $upload['name'],
+                    'mime' => $stored['mime'],
+                    'size' => (int)$upload['size'],
+                    'uploadedAt' => date(DATE_ATOM),
+                    'uploadedBy' => (string)$user['username'],
+                ];
+            }
+            $requests[$requestIndex]['attachments'] = $attachments;
         }
 
         $save = $pdo->prepare('INSERT INTO app_data (data_key, data_value, updated_by) VALUES (?, ?, ?)
@@ -270,8 +378,13 @@ if ($action === 'member_data_save') {
         $save->execute(['kkEditRequests', $requestJson, $user['username']]);
         $pdo->commit();
         out(['ok' => true, 'members' => $memberJson, 'requests' => $requestJson]);
+    } catch (MemberDocumentUploadException $ex) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        foreach ($newDocumentFiles as $id) private_file_delete('member-documents', $id);
+        out(['ok' => false, 'error' => $ex->getMessage()], 400);
     } catch (Throwable $ex) {
         if ($pdo->inTransaction()) $pdo->rollBack();
+        foreach ($newDocumentFiles as $id) private_file_delete('member-documents', $id);
         error_log('KK member data update failed: ' . $ex->getMessage());
         out(['ok' => false, 'error' => 'Could not save KK member data.'], 500);
     }
@@ -412,7 +525,7 @@ if ($action === 'member_register') {
                 ->execute([json_encode($pending, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR), $user['username']]);
         }
 
-        $temporaryPassword = bin2hex(random_bytes(12));
+        $temporaryPassword = kk_member_temporary_password($member['lastName'] ?? '');
         $fullName = trim(implode(' ', array_filter([
             $member['firstName'] ?? '', $member['middleName'] ?? '', $member['lastName'] ?? '', $member['suffix'] ?? '',
         ], function ($part) { return (string)$part !== ''; })));

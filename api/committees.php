@@ -31,6 +31,9 @@ try {
 
     $targetIndex = null;
     if ($original !== null) {
+        if (in_array($original, sk_default_committees(), true) && $name !== $original) {
+            throw new RuntimeException('The required committees cannot be renamed.');
+        }
         foreach ($committees as $index => $committee) {
             if ($committee === $original) {
                 $targetIndex = $index;
@@ -55,6 +58,22 @@ try {
         $oldName = $committees[$targetIndex];
         $committees[$targetIndex] = $name;
         if ($oldName !== $name) {
+            $chairLock = $pdo->query("SELECT data_value FROM app_data WHERE data_key = 'skCommitteeChairs' FOR UPDATE");
+            $chairRaw = $chairLock->fetchColumn();
+            if ($chairRaw !== false) {
+                $chairAssignments = json_decode((string)$chairRaw, true);
+                if (!is_array($chairAssignments) || ($chairAssignments !== [] && array_is_list($chairAssignments))) {
+                    throw new RuntimeException('Committee chair data is invalid.');
+                }
+                if (array_key_exists($oldName, $chairAssignments)) {
+                    $chairAssignments[$name] = $chairAssignments[$oldName];
+                    unset($chairAssignments[$oldName]);
+                    $pdo->prepare("UPDATE app_data SET data_value = ?, updated_by = ? WHERE data_key = 'skCommitteeChairs'")
+                        ->execute([json_encode($chairAssignments, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), $user['username']]);
+                }
+            }
+        }
+        if ($oldName !== $name) {
             foreach ($roles as $index => $role) {
                 if (($role['committee'] ?? null) !== $oldName) continue;
                 $oldRole = $role;
@@ -76,8 +95,18 @@ try {
 
     $pdo->prepare("UPDATE app_data SET data_value = ?, updated_by = ? WHERE data_key = 'skCommittees'")
         ->execute([json_encode($committees, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR), $user['username']]);
+    $chairRaw = $pdo->query("SELECT data_value FROM app_data WHERE data_key = 'skCommitteeChairs'")->fetchColumn();
+    $chairAssignments = $chairRaw === false ? [] : json_decode((string)$chairRaw, true);
+    if (!is_array($chairAssignments) || ($chairAssignments !== [] && array_is_list($chairAssignments))) {
+        throw new RuntimeException('Committee chair data is invalid.');
+    }
     $pdo->commit();
-    out(['ok' => true, 'committees' => $committees, 'roles' => array_values($roles)]);
+    out([
+        'ok' => true,
+        'committees' => $committees,
+        'roles' => array_values($roles),
+        'assignments' => $chairAssignments === [] ? (object)[] : $chairAssignments,
+    ]);
 } catch (DomainException $ex) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     out(['ok' => false, 'error' => $ex->getMessage()], 409);

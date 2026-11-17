@@ -218,6 +218,7 @@ try {
     $pdo->prepare('INSERT INTO audit_log (actor_user_id, actor, target_legacy_id, action, old_value, new_value)
                    VALUES (?, ?, ?, ?, NULL, NULL)')
         ->execute([$user['id'], $user['username'], 'meeting:' . $meetingId, $auditAction]);
+    $GLOBALS['SK_AUDIT_RECORD_WRITTEN'] = true;
     $pdo->commit();
     out(['ok' => true, 'meeting' => $meeting]);
 } catch (Throwable $ex) {

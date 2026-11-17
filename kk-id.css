@@ -1,0 +1,164 @@
+.kk-id-card {
+    --kk-id-blue: #1769aa;
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 2mm;
+    width: 85.6mm;
+    height: 54mm;
+    padding: 4mm;
+    overflow: hidden;
+    color: #14283d;
+    background: #fff;
+    border: 1px solid #d5e0eb;
+    border-radius: 3mm;
+    box-shadow: 0 10px 24px rgba(20, 45, 70, .12);
+    font: 9pt/1.2 Arial, sans-serif;
+}
+
+.kk-id-header {
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+    padding-bottom: 1.5mm;
+    border-bottom: .6mm solid var(--kk-id-blue);
+}
+
+.kk-id-header img {
+    width: 9mm;
+    height: 9mm;
+    object-fit: cover;
+    border-radius: 2mm;
+}
+
+.kk-id-header strong {
+    display: block;
+    color: var(--kk-id-blue);
+    font-size: 8pt;
+}
+
+.kk-id-header span {
+    display: block;
+    margin-top: .5mm;
+    color: #506174;
+    font-size: 6.5pt;
+}
+
+.kk-id-main {
+    display: grid;
+    grid-template-columns: 19mm 1fr 18mm;
+    gap: 2.5mm;
+    align-items: center;
+    min-height: 0;
+}
+
+.kk-id-photo {
+    width: 19mm;
+    height: 23mm;
+    object-fit: cover;
+    border: .4mm solid #d5e0eb;
+    border-radius: 2mm;
+}
+
+.kk-id-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: var(--kk-id-blue);
+    font-size: 13pt;
+    font-weight: 800;
+}
+
+.kk-id-details {
+    min-width: 0;
+}
+
+.kk-id-details strong {
+    display: block;
+    overflow: hidden;
+    color: #14283d;
+    font-size: 10pt;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kk-id-details span {
+    display: block;
+    margin-top: 1.2mm;
+    overflow: hidden;
+    color: #506174;
+    font-size: 7pt;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kk-id-qr {
+    width: 18mm;
+    height: 18mm;
+    image-rendering: pixelated;
+}
+
+.kk-id-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 2mm;
+    color: #506174;
+    font-size: 6pt;
+}
+
+.kk-id-footer strong {
+    color: var(--kk-id-blue);
+}
+
+.kk-portal-profile-photo {
+    width: 112px;
+    height: 112px;
+    border: 3px solid var(--bs-border-color);
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--bs-tertiary-bg);
+}
+
+.kk-portal-qr-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .5rem;
+    background: #fff;
+    border: 1px solid #d5e0eb;
+    border-radius: .75rem;
+}
+
+.kk-portal-qr-wrap img {
+    width: 144px;
+    height: 144px;
+    image-rendering: pixelated;
+}
+
+@media screen and (max-width: 575.98px) {
+    .kk-id-card {
+        width: min(85.6mm, calc(100vw - 4.5rem));
+    }
+}
+
+#printArea {
+    display: none;
+}
+
+@media print {
+    body > *:not(#printArea) {
+        display: none !important;
+    }
+
+    #printArea {
+        display: block !important;
+        color: #14283d;
+    }
+
+    #printArea .kk-id-card {
+        box-shadow: none;
+        border-radius: 0;
+        border: 0;
+    }
+}

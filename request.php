@@ -10,7 +10,7 @@ require_official();
     <title>Review Requests | KK Youth Profiling System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="sidebar.css?v=20" rel="stylesheet">
+    <link href="sidebar.css?v=31" rel="stylesheet">
     <style>
         :root { --line:var(--bs-border-color); --muted:var(--bs-secondary-color); }
         * { box-sizing:border-box; }
@@ -20,9 +20,9 @@ require_official();
         .content { padding:20px; max-width:1500px; margin:0 auto; }
         .records-card { background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
         .review-welcome { background:#fff; border:1px solid var(--line); border-left:4px solid var(--bs-primary); border-radius:12px; padding:14px 18px; margin-bottom:16px; }
-        .review-date-tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
-        .review-date-tools .form-control { width:auto; min-width:145px; height:36px; font-size:13px; }
-        .review-date-tools .btn { font-size:12px; font-weight:700; white-space:nowrap; }
+        .review-date-tools { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:12px; }
+        .review-date-tools .form-control { width:140px; min-width:125px; height:36px; font-size:13px; }
+        .review-date-tools .btn { padding-right:6px; padding-left:6px; font-size:12px; font-weight:700; white-space:nowrap; }
         .review-date-tools .btn.active { background:var(--bs-primary-text-emphasis); border-color:var(--bs-primary-text-emphasis); color:#fff; }
         .review-summary-grid { display:grid; grid-template-columns:repeat(5,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
         .review-summary-card { min-height:70px; padding:10px 12px; border:1px solid var(--line); border-left:4px solid var(--review-accent,var(--bs-primary)); border-radius:10px; background:#fff; color:var(--bs-body-color); text-align:left; }
@@ -31,9 +31,9 @@ require_official();
         .review-summary-label { display:block; color:var(--muted); font-size:12px; }
         .card-header { background:var(--bs-primary-text-emphasis); color:#fff; padding:14px 16px; font-size:16px; font-weight:bold; }
         .request-tabs { gap:6px; }
-        .request-tabs .nav-link { padding:7px 12px; border-radius:8px; color:#fff; font-size:14px; font-weight:700; white-space:nowrap; }
-        .request-tabs .nav-link:hover,.request-tabs .nav-link:focus { background:rgba(255,255,255,.14); color:#fff; }
-        .request-tabs .nav-link.active { background:#fff; color:var(--bs-primary-text-emphasis); }
+        .request-tabs .nav-link { padding:7px 12px; border-radius:8px; color:inherit; font-size:14px; font-weight:700; white-space:nowrap; }
+        .request-tabs .nav-link:hover,.request-tabs .nav-link:focus { background:var(--bs-primary-bg-subtle); color:inherit; }
+        .request-tabs .nav-link.active { background:var(--bs-primary); color:#fff; }
         .table { font-size:14px; }
         .table th { white-space:nowrap; }
         .table td,.table th { padding:12px; vertical-align:middle; }
@@ -46,11 +46,29 @@ require_official();
         @media(max-width:767px) { .content { padding:14px; } .header { padding:0 16px; } .review-date-tools .form-control { flex:1; min-width:120px; } }
     </style>
     <?php include __DIR__ . '/init.php'; ?>
+    <?php
+    $requestEditItems = json_decode($__data['kkEditRequests'] ?? '[]', true);
+    $requestEditItems = is_array($requestEditItems)
+        ? array_filter($requestEditItems, function ($request) {
+            return is_array($request) && ($request['status'] ?? '') === 'Edit Request';
+        })
+        : [];
+    $requestPendingItems = json_decode($__data['kkPendingRegistrations'] ?? '[]', true);
+    $requestPendingItems = is_array($requestPendingItems)
+        ? array_filter($requestPendingItems, function ($request) {
+            return is_array($request) && ($request['status'] ?? '') === 'Pending';
+        })
+        : [];
+    $requestAttentionCount = count($requestEditItems) + count($requestPendingItems);
+    ?>
+    <script>
+        window.SK_CAN_REVIEW_MEMBER_REQUESTS = <?= in_array(urole(), MEMBER_DATA_ADMIN_ROLES, true) ? 'true' : 'false' ?>;
+    </script>
 </head>
 <body>
 <div class="top-strip"></div>
 <script src="theme.js"></script>
-<script src="sidebar.js?v=10"></script>
+<script src="sidebar.js?v=15"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">
@@ -58,7 +76,10 @@ require_official();
             <div><div class="header-title">Review Requests</div><small>KK Youth Profiling System</small></div>
         </div>
         <div class="header-account-area">
-            <a href="announcements.php" class="header-notification" aria-label="Notifications"><i class="bi bi-bell"></i><span class="header-notification-count">3</span></a>
+            <a href="request.php" class="header-notification" aria-label="<?= (int)$requestAttentionCount ?> requests need review">
+                <i class="bi bi-bell" aria-hidden="true"></i>
+                <?php if ($requestAttentionCount > 0): ?><span class="header-notification-count"><?= (int)$requestAttentionCount ?></span><?php endif; ?>
+            </a>
             <span class="header-avatar"><?= e(uinit()) ?></span>
             <div class="d-none d-md-block header-identity"><div class="header-identity-name"><?= e(uname()) ?></div><div class="header-identity-role"><?= e(strtoupper(urole())) ?></div></div>
             <a href="logout.php" class="btn btn-sm header-logout"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>

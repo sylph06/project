@@ -16,7 +16,7 @@ $base = [
     'appData' => [
         ['data_key' => 'skAnnouncements', 'data_value' => '[]', 'updated_by' => 'tester'],
     ],
-    'tables' => [],
+    'tables' => array_fill_keys(kk_backup_operational_tables(), []),
 ];
 
 try {
@@ -24,6 +24,25 @@ try {
     $assert(true, '');
 } catch (Throwable $ex) {
     $assert(false, 'A valid application-data backup must be accepted: ' . $ex->getMessage());
+}
+
+$legacyBackup = $base;
+$legacyBackup['version'] = 1;
+$legacyBackup['tables'] = array_fill_keys(kk_backup_operational_tables(1), []);
+try {
+    kk_backup_validate($legacyBackup, null);
+    $assert(true, '');
+} catch (Throwable $ex) {
+    $assert(false, 'Version-1 backups must remain restorable: ' . $ex->getMessage());
+}
+
+$invalidTableRow = $base;
+$invalidTableRow['tables']['kk_member_id_tokens'][] = ['member_id' => 'member-1'];
+try {
+    kk_backup_validate($invalidTableRow, null);
+    $assert(false, 'Incomplete ID token records must be rejected.');
+} catch (RuntimeException $ex) {
+    $assert(true, '');
 }
 
 $invalidVersion = $base;

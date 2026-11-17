@@ -190,6 +190,12 @@ if (isset($__data['skRoles']) && !can_view_background_history()) {
         $__data['skRoles'] = json_encode(array_values($__roles));
     }
 }
+if ($__official && can_write_app_data()) {
+    require_once __DIR__ . '/role_store.php';
+    sk_audit(db(), $__user, null, 'page_view', null, [
+        'page' => basename((string)($_SERVER['SCRIPT_NAME'] ?? '')),
+    ]);
+}
 $__flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
 ?>
 <?php if (!$__public): ?>
@@ -201,8 +207,10 @@ document.documentElement.classList.add('sidebar-expand-lg');
 window.__DB = <?= json_encode((object)$__data, $__flags) ?>;
 window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), $__flags) ?>;
 window.SK_PUBLIC = <?= $__public ? 'true' : 'false' ?>;
+window.SK_MEMBER_PORTAL = <?= !empty($__user['legacy_id']) ? 'true' : 'false' ?>;
 window.SK_OFFICER = <?= json_encode($__official ? uname() . ' (' . urole() . ')' : '', $__flags) ?>;
 window.SK_CAN_MANAGE_ROLES = <?= can_manage_sk_roles() ? 'true' : 'false' ?>;
+window.SK_CAN_VIEW_AUDIT_LOG = <?= can_view_background_history() ? 'true' : 'false' ?>;
 window.USE_MEMBERS_TABLE = <?= USE_MEMBERS_TABLE ? 'true' : 'false' ?>;
 window.USE_SK_ROLES_TABLE = <?= USE_SK_ROLES_TABLE ? 'true' : 'false' ?>;
 </script>

@@ -28,13 +28,13 @@ function sk_role_rows($pdo, $forUpdate = false) {
 
 function sk_default_committees() {
     return [
-        'Committee on Education and Culture',
-        'Committee on Environmental Protection',
-        'Committee on Youth Employment and Livelihood',
-        'Committee on Health',
-        'Committee on Gender and Development (GAD)',
-        'Committee on Sports Development',
+        'Committee on Good Governance and Active Citizenship',
+        'Committee on Environment & Disaster Risk Resiliency',
         'Committee on Anti-Drug Abuse and Social Protection',
+        'Committee on Education and Culture',
+        'Committee on Health and Sanitation',
+        'Committee on Youth and Sports Development',
+        'Committee on Budget and Appropriation',
     ];
 }
 
@@ -50,7 +50,7 @@ function sk_committee_names($pdo = null, $forUpdate = false) {
     foreach ($names as $name) {
         if (!is_string($name) || trim($name) === '') throw new RuntimeException('Committee data is invalid.');
     }
-    return array_values(array_unique($names));
+    return array_values(array_unique(array_merge(sk_default_committees(), $names)));
 }
 
 function sk_role_write($pdo, $role, $updatedBy) {
@@ -96,6 +96,24 @@ function sk_role_write($pdo, $role, $updatedBy) {
 function sk_role_find($roles, $id) {
     foreach ($roles as $role) if ((string)($role['id'] ?? '') === (string)$id) return $role;
     return null;
+}
+
+function sk_role_is_current($role, $today = null) {
+    if (!is_array($role) || ($role['status'] ?? '') !== 'Active') return false;
+    $today = $today ?? date('Y-m-d');
+    return (empty($role['termStart']) || $role['termStart'] <= $today)
+        && (empty($role['termEnd']) || $role['termEnd'] >= $today);
+}
+
+function sk_role_member_has_current_assignment($roles, $legacyId, $exceptRoleId = null, $today = null) {
+    foreach ($roles as $role) {
+        if ((string)($role['kkId'] ?? '') === (string)$legacyId
+            && (string)($role['id'] ?? '') !== (string)$exceptRoleId
+            && sk_role_is_current($role, $today)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function sk_role_canonicalize($value) {
@@ -146,6 +164,7 @@ function sk_audit($pdo, $actor, $targetLegacyId, $action, $oldValue, $newValue) 
             $encode($oldValue),
             $encode($newValue),
         ]);
+    $GLOBALS['SK_AUDIT_RECORD_WRITTEN'] = true;
 }
 
 function sk_role_valid_date($value, $field, $required = false) {
@@ -191,15 +210,12 @@ function sk_role_seat_error($pdo, $roles, $position, $exceptRoleId = null) {
     $capacities = ['SK Chairperson' => 1, 'SK Chairman' => 1, 'SK Secretary' => 1, 'SK Treasurer' => 1, 'SK Kagawad' => 7];
     if (!isset($capacities[$position])) return '';
 
-    $today = date('Y-m-d');
     $used = 0;
     foreach ($roles as $role) {
         $rolePosition = ($role['position'] ?? '') === 'SK Chairman' ? 'SK Chairperson' : ($role['position'] ?? '');
         if ((string)($role['id'] ?? '') === (string)$exceptRoleId
             || $rolePosition !== $position
-            || ($role['status'] ?? '') !== 'Active'
-            || (!empty($role['termStart']) && $role['termStart'] > $today)
-            || (!empty($role['termEnd']) && $role['termEnd'] < $today)) continue;
+            || !sk_role_is_current($role)) continue;
         $used++;
     }
     $accountSeats = sk_role_account_seat_counts($pdo);

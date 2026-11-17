@@ -9,9 +9,67 @@ require_once __DIR__ . '/../meeting_minutes.php';
 header('Content-Type: application/json; charset=utf-8');
 
 function out($arr, $code = 200) {
+    if ($code === 200 && is_array($arr) && ($arr['ok'] ?? false) === true) {
+        try {
+            audit_successful_api_action();
+        } catch (Throwable $error) {
+            error_log('Successful API action could not be audited: ' . $error->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'ok' => false,
+                'error' => 'The action completed, but its audit entry could not be saved. Do not retry; contact an administrator.',
+            ]);
+            exit;
+        }
+    }
     http_response_code($code);
     echo json_encode($arr);
     exit;
+}
+
+function audit_successful_api_action() {
+    $actions = [
+        'login', 'password',
+        'event_register', 'event_attendance', 'event_walkin',
+        'meeting_minutes_save', 'meeting_minutes_approve', 'meeting_minutes_reopen',
+        'meeting_attendance_save', 'meeting_attendance_delete',
+        'role_assign', 'role_update', 'role_end', 'role_archive', 'role_archive_expired',
+        'committee_save', 'committee_chairs_save',
+        'accounts_unlinked', 'account_link', 'account_create', 'account_reset',
+        'account_reset_member', 'account_username_member', 'account_deactivate',
+        'member_add', 'member_update', 'member_delete', 'member_restore', 'member_register',
+        'member_data_save', 'member_portal_data', 'member_portal_photo',
+        'kk_id_token', 'kk_id_print', 'kk_id_prints', 'kk_id_scan',
+        'set', 'remove', 'profile_files', 'receipt_upload',
+    ];
+    $action = (string)($_GET['action'] ?? '');
+    if (!in_array($action, $actions, true)) return;
+
+    $actor = $GLOBALS['user'] ?? current_user();
+    if (!is_array($actor) || !in_array($actor['role'] ?? '', APP_WRITE_ROLES, true)) return;
+    if (!empty($GLOBALS['SK_AUDIT_RECORD_WRITTEN'])) return;
+
+    $request = is_array($GLOBALS['in'] ?? null) ? $GLOBALS['in'] : [];
+    $target = null;
+    if ($action === 'set' || $action === 'remove') {
+        $target = isset($request['key']) && is_string($request['key']) ? $request['key'] : null;
+    } else {
+        foreach (['memberId', 'legacyId', 'kkId', 'meetingId', 'eventId', 'registrationId', 'accountId', 'id'] as $field) {
+            if (isset($request[$field]) && is_scalar($request[$field])) {
+                $candidate = (string)$request[$field];
+                if ($candidate !== '' && strlen($candidate) <= 100) {
+                    $target = $candidate;
+                    break;
+                }
+            }
+        }
+    }
+
+    $details = ['api_action' => $action];
+    if (($action === 'set' || $action === 'remove') && $target !== null) {
+        $details['resource_key'] = $target;
+    }
+    sk_audit(db(), $actor, $target, 'api_' . $action, null, $details);
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(['ok' => false, 'error' => 'POST only.'], 405);
