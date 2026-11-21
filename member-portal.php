@@ -10,9 +10,9 @@ $memberPortalUser = require_member_account();
     <title>KK Youth Profiling System | Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="sidebar.css?v=31" rel="stylesheet">
-    <link href="kk-id.css?v=1" rel="stylesheet">
-    <link href="participation-heatmap.css?v=1" rel="stylesheet">
+    <link href="css/sidebar.css?v=31" rel="stylesheet">
+    <link href="css/kk-id.css?v=1" rel="stylesheet">
+    <link href="css/participation-heatmap.css?v=1" rel="stylesheet">
     <style>
         .dashboard-page{background:var(--ui-paper)}
         .dashboard-toolbar{
@@ -131,8 +131,8 @@ $memberPortalUser = require_member_account();
     window.SK_PUBLIC = true;
     window.SK_MEMBER_PORTAL = true;
 </script>
-<script src="theme.js?v=3"></script>
-<script src="sidebar.js?v=15"></script>
+<script src="js/theme.js?v=3"></script>
+<script src="js/sidebar.js?v=15"></script>
 
 <div class="page-content">
     <header class="bg-white border-bottom sticky-top">
@@ -314,9 +314,9 @@ $memberPortalUser = require_member_account();
 
 <div id="printArea"></div>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" integrity="sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz" crossorigin="anonymous"></script>
-<script src="kk-id.js?v=1"></script>
+<script src="js/kk-id.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-<script src="participation-heatmap.js?v=1"></script>
+<script src="js/participation-heatmap.js?v=1"></script>
 <script>
 (function () {
     'use strict';

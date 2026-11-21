@@ -2,7 +2,7 @@
    SHARED SIDEBAR  (copied from dashboard.php)
    Usage: put this where the sidebar should be, right after
    <div class="top-strip"></div>:
-        <script src="sidebar.js"></script>
+        <script src="js/sidebar.js"></script>
    Add/rename menu items in the MENU list below -> every page updates.
    The active link is detected from the current file name.
    ========================================================= */

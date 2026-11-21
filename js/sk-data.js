@@ -3,7 +3,7 @@
    - KK youth records stay ONLY in 'kkMembers' (owned by registration.html).
    - An SK position is a small "role" record in 'skRoles' that points to a KK
      member by id (kkId). No SK person is ever stored twice.
-   - Load it with <script src="sk-data.js"></script> BEFORE the page script.
+   - Load it with <script src="js/sk-data.js"></script> BEFORE the page script.
    ========================================================= */
 (function (w) {
     'use strict';

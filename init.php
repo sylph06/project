@@ -215,4 +215,4 @@ window.SK_CAN_VIEW_AUDIT_LOG = <?= can_view_background_history() ? 'true' : 'fal
 window.USE_MEMBERS_TABLE = <?= USE_MEMBERS_TABLE ? 'true' : 'false' ?>;
 window.USE_SK_ROLES_TABLE = <?= USE_SK_ROLES_TABLE ? 'true' : 'false' ?>;
 </script>
-<script src="storage.js?v=<?= filemtime(__DIR__ . '/storage.js') ?>"></script>
+<script src="js/storage.js?v=<?= filemtime(__DIR__ . '/js/storage.js') ?>"></script>

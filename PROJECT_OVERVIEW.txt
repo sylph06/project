@@ -10,6 +10,18 @@ SK role and meeting management, announcements and events, participation
 tracking, reports, project budget transparency, official profiles, and account
 administration.
 
+PROJECT LAYOUT
+--------------
+- Public pages, account pages, and migration entry points remain in the project
+  root so their existing URLs continue to work.
+- api/ contains JSON API endpoints.
+- css/ and js/ contain shared stylesheets and browser scripts.
+- includes/ contains shared database helpers; images/ contains public branding.
+- migrations/ contains database upgrade scripts; tests/ contains automated and
+  browser-rendering tests.
+- vendor/ contains existing third-party frontend assets. Install Composer
+  dependencies with Composer; generated vendor files are ignored by Git.
+
 TECHNOLOGY AND DATA
 -------------------
 - Most application data is stored as JSON records in MySQL's app_data table.
@@ -17,7 +29,7 @@ TECHNOLOGY AND DATA
   resized profile photos. Apply
   migrations/20261117_app_data_data_value_longtext.sql when upgrading a
   database created with the earlier TEXT column.
-- init.php supplies page data. storage.js sends authorized changes to api.php,
+- init.php supplies page data. js/storage.js sends authorized changes to api.php,
   which checks permissions before writing.
 - KK member profiles and edit requests are saved together with stale-write
   checks, so concurrent updates cannot partially overwrite the two records.

@@ -245,8 +245,8 @@ $L_EVENTS   = '#announcements';
 
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="sidebar.css?v=31" rel="stylesheet">
-    <script src="theme.js?v=3"></script>
+    <link href="css/sidebar.css?v=31" rel="stylesheet">
+    <script src="js/theme.js?v=3"></script>
 
     <style>
         :root{
@@ -424,7 +424,7 @@ $L_EVENTS   = '#announcements';
 window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;
 window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
 </script>
-<script src="sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=15"></script>
 
 <div class="page-content lp-main">
     <nav class="lp-mobilebar navbar" aria-label="Landing page header">
@@ -871,7 +871,7 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js?v=2"></script>
+<script src="js/app-alerts.js?v=2"></script>
 <script>
 document.querySelectorAll('#sidebar a[href*="#"]').forEach(function (link) {
     link.addEventListener('click', function () {

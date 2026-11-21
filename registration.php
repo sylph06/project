@@ -42,7 +42,7 @@ $googleRegistrationReady = google_oauth_configured() && google_oauth_schema_read
  
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="sidebar.css?v=31" rel="stylesheet">
+    <link href="css/sidebar.css?v=31" rel="stylesheet">
  
     <style>
         :root {
@@ -518,8 +518,8 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
  
 <div class="top-strip"></div>
  
-<script src="theme.js?v=3"></script>
-<script src="sidebar.js?v=15"></script>
+<script src="js/theme.js?v=3"></script>
+<script src="js/sidebar.js?v=15"></script>
  
 <main class="main page-content">
  
@@ -1218,7 +1218,7 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
 </div>
  
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js?v=2"></script>
+<script src="js/app-alerts.js?v=2"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <!-- members.js is no longer needed by this page: all registration logic is below -->
 <script>

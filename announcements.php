@@ -8,8 +8,8 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="sidebar.css?v=31" rel="stylesheet">
-    <script src="theme.js"></script>
+    <link href="css/sidebar.css?v=31" rel="stylesheet">
+    <script src="js/theme.js"></script>
     <script>
         window.ANN_MODE = "<?= is_limited_viewer() ? 'public' : 'official' ?>";
         window.ANN_AUTHENTICATED = <?= current_user() ? 'true' : 'false' ?>;
@@ -972,7 +972,7 @@ html.dark-mode .filter-pill{
 <script>
 window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($memberFlagUser['legacy_id'])) ? 'true' : 'false' ?>;
 </script>
-<script src="sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=15"></script>
 
 <div class="page-content">
 
@@ -1316,7 +1316,7 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js?v=2"></script>
+<script src="js/app-alerts.js?v=2"></script>
 <script>
 /* =========================================================
    ANNOUNCEMENTS CORE  (used by both the official view and the public view)
@@ -2262,7 +2262,7 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
 </script>
 
 <!-- Event sign-up; bump the query when this script changes to avoid stale browser copies. -->
-<script src="event-register.js?v=7"></script>
+<script src="js/event-register.js?v=7"></script>
 
 </body>
 </html>

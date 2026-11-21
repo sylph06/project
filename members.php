@@ -17,8 +17,8 @@ if (can_manage_sk_roles()) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="sidebar.css?v=31" rel="stylesheet">
-    <link href="kk-id.css?v=1" rel="stylesheet">
+    <link href="css/sidebar.css?v=31" rel="stylesheet">
+    <link href="css/kk-id.css?v=1" rel="stylesheet">
 
 <style>
 
@@ -564,8 +564,8 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
 
 <div class="top-strip"></div>
 
-<script src="theme.js"></script>
-<script src="sidebar.js?v=15"></script>
+<script src="js/theme.js"></script>
+<script src="js/sidebar.js?v=15"></script>
 
 <div class="page-content">
 
@@ -1113,8 +1113,8 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" integrity="sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz" crossorigin="anonymous"></script>
-<script src="kk-id.js?v=1"></script>
-<script src="sk-data.js?v=2"></script>
+<script src="js/kk-id.js?v=1"></script>
+<script src="js/sk-data.js?v=2"></script>
 <script>
 (function () {
     'use strict';

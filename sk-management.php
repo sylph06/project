@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="sidebar.css?v=31" rel="stylesheet">
+    <link href="css/sidebar.css?v=31" rel="stylesheet">
     <link href="vendor/summernote/summernote-bs5.min.css" rel="stylesheet">
 
     <style>
@@ -474,8 +474,8 @@ html{
 
 <div class="top-strip"></div>
 
-<script src="theme.js"></script>
-<script src="sidebar.js?v=15"></script>
+<script src="js/theme.js"></script>
+<script src="js/sidebar.js?v=15"></script>
 
 
 <div class="page-content">
@@ -827,13 +827,13 @@ html{
 <div id="printArea"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="app-alerts.js?v=2"></script>
+<script src="js/app-alerts.js?v=2"></script>
 <script src="vendor/jquery/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="vendor/summernote/summernote-bs5.min.js"></script>
 <script src="vendor/dompurify/purify.min.js"></script>
-<script src="minutes-render.js"></script>
-<script src="sk-data.js"></script>
+<script src="js/minutes-render.js"></script>
+<script src="js/sk-data.js"></script>
 <script>
 (function () {
     'use strict';
