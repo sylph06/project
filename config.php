@@ -9,11 +9,27 @@ function config_env($name, $default = null) {
     return $value === false ? $default : $value;
 }
 
+function config_env_bool($name, $default = false) {
+    $value = config_env($name, null);
+    if ($value === null) return $default;
+    $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    if ($parsed === null) throw new RuntimeException($name . ' must be true or false.');
+    return $parsed;
+}
+
 define('APP_ENV', strtolower((string)config_env('KK_APP_ENV', 'development')));
 define('DB_HOST', (string)config_env('KK_DB_HOST', 'localhost'));
 define('DB_NAME', (string)config_env('KK_DB_NAME', 'kk'));
 define('DB_USER', (string)config_env('KK_DB_USER', APP_ENV === 'development' ? 'root' : ''));
 define('DB_PASS', (string)config_env('KK_DB_PASS', ''));
+define('GOOGLE_OAUTH_CLIENT_ID', trim((string)config_env('KK_GOOGLE_CLIENT_ID', '')));
+define('GOOGLE_OAUTH_CLIENT_SECRET', trim((string)config_env('KK_GOOGLE_CLIENT_SECRET', '')));
+define('GOOGLE_OAUTH_REDIRECT_URI', trim((string)config_env(
+    'KK_GOOGLE_REDIRECT_URI',
+    'http://localhost/project/google-callback.php'
+)));
+define('GEOIP_DB_PATH', trim((string)config_env('KK_GEOIP_DB_PATH', '')));
+define('GOOGLE_KK_LOGIN_REQUIRED', config_env_bool('KK_GOOGLE_REQUIRE_KK', false));
 const USE_MEMBERS_TABLE = false;
 const USE_SK_ROLES_TABLE = false;
 const APP_WRITE_ROLES = ['SK Chairman', 'SK Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad', 'SK Vice Chairperson'];
@@ -164,7 +180,20 @@ function can_write_app_data() {
 
 function can_manage_sk_roles() {
     $user = current_user();
-    return $user && in_array($user['role'] ?? '', ['SK Chairman', 'SK Secretary'], true);
+    return $user && google_member_link_role_can_approve($user['role'] ?? '');
+}
+
+function google_member_link_role_can_approve($role) {
+    return in_array($role, ['SK Chairman', 'SK Chairperson', 'SK Secretary'], true);
+}
+
+function google_member_link_role_can_request($role) {
+    return in_array($role, ['SK Kagawad', 'SK Chairman', 'SK Chairperson', 'SK Secretary'], true);
+}
+
+function can_request_google_member_links() {
+    $user = current_user();
+    return $user && google_member_link_role_can_request($user['role'] ?? '');
 }
 
 function can_view_background_history() {

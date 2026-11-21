@@ -193,12 +193,13 @@
             cache.kkEditRequests = result.requests;
             return result;
         },
-        registerMember: function (member, registration) {
+        registerMember: function (member, registration, googleRegistrationTicket) {
             if (VIEW_ONLY) throw new Error('Public viewers cannot create member profiles.');
             if (!member || !member.id) throw new Error('A complete member profile is required.');
             var result = post('member_register', {
                 member: member,
-                registrationId: registration ? String(registration.id) : null
+                registrationId: registration ? String(registration.id) : null,
+                googleRegistrationTicket: googleRegistrationTicket || null
             });
             var members;
             try {
@@ -372,6 +373,21 @@
         },
         linkMemberAccount: function (accountId, legacyId) {
             return post('account_link', { accountId: accountId, legacyId: legacyId });
+        },
+        requestMemberGoogleLink: function (legacyId, googleRegistrationTicket) {
+            return post('account_link_google_request', {
+                legacyId: String(legacyId),
+                googleRegistrationTicket: googleRegistrationTicket
+            });
+        },
+        listPendingGoogleMemberLinks: function () {
+            return post('account_google_links_pending', {});
+        },
+        approveGoogleMemberLink: function (requestId) {
+            return post('account_link_google_approve', { requestId: requestId });
+        },
+        rejectGoogleMemberLink: function (requestId) {
+            return post('account_link_google_reject', { requestId: requestId });
         },
         createMemberAccount: function (legacyId, username, guardianConsent, consentVersion) {
             return post('account_create', {

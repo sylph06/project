@@ -53,6 +53,10 @@ $routes = [
     /* Member accounts */
     'accounts_unlinked'       => 'api/accounts.php',
     'account_link'            => 'api/accounts.php',
+    'account_link_google_request' => 'api/accounts.php',
+    'account_google_links_pending' => 'api/accounts.php',
+    'account_link_google_approve' => 'api/accounts.php',
+    'account_link_google_reject' => 'api/accounts.php',
     'account_create'          => 'api/accounts.php',
     'account_reset'           => 'api/accounts.php',
     'account_reset_member'    => 'api/accounts.php',

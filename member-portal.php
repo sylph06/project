@@ -12,6 +12,7 @@ $memberPortalUser = require_member_account();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
     <link href="sidebar.css?v=31" rel="stylesheet">
     <link href="kk-id.css?v=1" rel="stylesheet">
+    <link href="participation-heatmap.css?v=1" rel="stylesheet">
     <style>
         .dashboard-page{background:var(--ui-paper)}
         .dashboard-toolbar{
@@ -107,6 +108,12 @@ $memberPortalUser = require_member_account();
             font-size:.875rem;
         }
         .portal-empty i{display:block;font-size:1.6rem;margin-bottom:.4rem;color:var(--bs-primary)}
+        .member-heatmap-section{
+            padding:.85rem 0 1rem;
+            margin-bottom:1rem;
+            border-bottom:1px solid var(--ui-line);
+        }
+        .member-heatmap-year{width:auto;min-width:100px}
         @media(max-width:575.98px){
             .dashboard-toolbar{flex-wrap:wrap}
             .portal-details>div{flex-direction:column;gap:.1rem}
@@ -241,7 +248,7 @@ $memberPortalUser = require_member_account();
                     <form id="photoForm" class="portal-upload">
                         <label for="profilePicture" class="form-label small fw-semibold">Change my picture</label>
                         <input type="file" class="form-control form-control-sm" id="profilePicture" accept="image/jpeg,image/png,image/webp">
-                        <div class="form-text">JPG, PNG, or WebP. The image is resized before it is saved.</div>
+                        <div class="form-text">JPG, PNG, or WebP; up to 10 MB. The image is resized before it is saved.</div>
                         <button type="submit" class="btn btn-sm btn-outline-primary mt-3" id="savePhotoButton">
                             <i class="bi bi-image me-1"></i>Save picture
                         </button>
@@ -257,6 +264,27 @@ $memberPortalUser = require_member_account();
                         </div>
                         <span class="dashboard-status" id="participationCount">0 records</span>
                     </div>
+                    <section class="member-heatmap-section" aria-labelledby="memberHeatmapTitle">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <div>
+                                <h3 class="h6 fw-bold mb-1" id="memberHeatmapTitle">My attendance activity</h3>
+                                <p class="small text-muted mb-0">Only confirmed attendance linked to your KK profile is counted.</p>
+                            </div>
+                            <div>
+                                <label class="visually-hidden" for="memberHeatmapYear">Heatmap year</label>
+                                <select class="form-select form-select-sm member-heatmap-year" id="memberHeatmapYear">
+                                    <option value="<?= e(date('Y')) ?>"><?= e(date('Y')) ?></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="heatmap-summary" id="memberHeatmapSummary" aria-live="polite"></div>
+                        <div class="heatmap-scroll">
+                            <div id="memberHeatmapCalendar"></div>
+                        </div>
+                        <div class="heatmap-legend" aria-label="Attendance intensity legend">
+                            <span>Less</span><span class="heatmap-day"></span><span class="heatmap-day" data-level="1"></span><span class="heatmap-day" data-level="2"></span><span class="heatmap-day" data-level="3"></span><span class="heatmap-day" data-level="4"></span><span>More</span>
+                        </div>
+                    </section>
                     <div class="table-responsive">
                         <table class="table table-sm table-hover align-middle mb-0 dashboard-table">
                             <thead><tr><th scope="col">Activity</th><th scope="col">Date</th><th scope="col">Status</th><th scope="col">Record</th></tr></thead>
@@ -288,10 +316,14 @@ $memberPortalUser = require_member_account();
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" integrity="sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz" crossorigin="anonymous"></script>
 <script src="kk-id.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="participation-heatmap.js?v=1"></script>
 <script>
 (function () {
     'use strict';
     var member = null;
+    var participationRecords = [];
+    var memberHeatmapInitialized = false;
+    var defaultHeatmapYear = <?= json_encode(date('Y')) ?>;
     var $ = function (id) { return document.getElementById(id); };
 
     function showError(message) {
@@ -332,7 +364,57 @@ $memberPortalUser = require_member_account();
         return row;
     }
 
+    function participationDateYear(value) {
+        var dateText = String(value || '').slice(0, 10);
+        var match = dateText.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) return null;
+        var date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+        if (date.getUTCFullYear() !== Number(match[1]) ||
+            date.getUTCMonth() !== Number(match[2]) - 1 ||
+            date.getUTCDate() !== Number(match[3])) return null;
+        return match[1];
+    }
+
+    function renderMemberHeatmap() {
+        var year = Number($('memberHeatmapYear').value);
+        var dates = participationRecords.filter(function (record) {
+            return record.status === 'Attended';
+        }).map(function (record) {
+            return String(record.date || '').slice(0, 10);
+        });
+        var total = window.KKParticipationHeatmap.render(
+            $('memberHeatmapCalendar'),
+            year,
+            dates,
+            'Your confirmed attendance in ' + year
+        );
+        $('memberHeatmapSummary').textContent = total
+            ? total + ' confirmed attendance record' + (total === 1 ? '' : 's') + ' in ' + year
+            : 'No confirmed attendance records in ' + year + '.';
+    }
+
+    function initializeMemberHeatmap(records) {
+        if (memberHeatmapInitialized) return;
+        var years = new Set([defaultHeatmapYear]);
+        records.forEach(function (record) {
+            var year = participationDateYear(record.date);
+            if (year) years.add(year);
+        });
+        var yearFilter = $('memberHeatmapYear');
+        yearFilter.innerHTML = Array.from(years).sort(function (left, right) {
+            return Number(right) - Number(left);
+        }).map(function (year) {
+            return '<option value="' + year + '">' + year + '</option>';
+        }).join('');
+        yearFilter.value = defaultHeatmapYear;
+        yearFilter.addEventListener('change', renderMemberHeatmap);
+        memberHeatmapInitialized = true;
+    }
+
     function renderParticipation(records) {
+        participationRecords = records;
+        initializeMemberHeatmap(records);
+        renderMemberHeatmap();
         var label = records.length + ' record' + (records.length === 1 ? '' : 's');
         $('participationCount').textContent = label;
         $('statParticipation').textContent = records.length;
@@ -408,8 +490,12 @@ $memberPortalUser = require_member_account();
 
     function resizePicture(file) {
         return new Promise(function (resolve, reject) {
-            if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 10485760) {
-                reject(new Error('Choose a JPG, PNG, or WebP image smaller than 10 MB.'));
+            if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type)) {
+                reject(new Error('Choose a JPG, PNG, or WebP image.'));
+                return;
+            }
+            if (file.size > 10485760) {
+                reject(new Error('This picture is too big. The maximum size is 10 MB.'));
                 return;
             }
             var reader = new FileReader();

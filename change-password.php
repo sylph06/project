@@ -9,6 +9,14 @@ if (empty($user['must_change_password'])) {
     header('Location: ' . ($user['role'] === 'KK Member' ? 'member-portal.php' : 'dashboard.php'));
     exit;
 }
+$changePasswordDestination = $user['role'] === 'KK Member' ? 'member-portal.php' : 'dashboard.php';
+if (($_GET['next'] ?? '') === 'announcements.php') {
+    $changePasswordDestination = 'announcements.php?view=public';
+    $eventId = (string)($_GET['eventId'] ?? '');
+    if (preg_match('/^[A-Za-z0-9_-]{1,60}$/', $eventId)) {
+        $changePasswordDestination .= '&eventId=' . rawurlencode($eventId);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -61,7 +69,7 @@ if (empty($user['must_change_password'])) {
             message.className = 'alert alert-success';
             message.textContent = 'Password changed. Opening your account...';
             setTimeout(function () {
-                location.href = <?= json_encode($user['role'] === 'KK Member' ? 'member-portal.php' : 'dashboard.php') ?>;
+                location.href = <?= json_encode($changePasswordDestination) ?>;
             }, 700);
         }).catch(function (error) {
             message.className = 'alert alert-danger';

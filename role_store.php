@@ -147,6 +147,108 @@ function sk_member_for_role_change($pdo, $legacyId, $lock = false) {
     return null;
 }
 
+function sk_audit_user_agent() {
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+    if (!is_string($userAgent)) return null;
+    $userAgent = preg_replace('/[^\x20-\x7E]/', '', trim($userAgent));
+    if ($userAgent === '') return null;
+    return substr($userAgent, 0, 512);
+}
+
+function sk_audit_device_type($userAgent) {
+    if (!is_string($userAgent) || $userAgent === '') return null;
+    if (preg_match('/iPad|Tablet/i', $userAgent)
+        || (preg_match('/Android/i', $userAgent) && !preg_match('/Mobile/i', $userAgent))) {
+        return 'Tablet';
+    }
+    if (preg_match('/Mobile|iPhone|iPod|Android/i', $userAgent)) return 'Mobile';
+    if (preg_match('/Windows NT|Macintosh|Mac OS X|X11|Linux|CrOS/i', $userAgent)) return 'Desktop';
+    return 'Unknown';
+}
+
+function sk_audit_browser($userAgent) {
+    if (!is_string($userAgent) || $userAgent === '') return null;
+    $browsers = [
+        'Microsoft Edge' => '/(?:EdgA|EdgiOS|Edg|Edge)\/([\d.]+)/i',
+        'Opera' => '/(?:OPR|Opera)\/([\d.]+)/i',
+        'Samsung Internet' => '/SamsungBrowser\/([\d.]+)/i',
+        'Firefox' => '/(?:Firefox|FxiOS)\/([\d.]+)/i',
+        'Chrome' => '/(?:Chrome|CriOS)\/([\d.]+)/i',
+        'Safari' => '/Version\/([\d.]+).*Safari/i',
+    ];
+    foreach ($browsers as $name => $pattern) {
+        if (preg_match($pattern, $userAgent, $matches)) {
+            $version = explode('.', $matches[1])[0];
+            return $name . ($version !== '' ? ' ' . $version : '');
+        }
+    }
+    if (preg_match('/MSIE\s([\d.]+)/i', $userAgent, $matches)) return 'Internet Explorer ' . explode('.', $matches[1])[0];
+    if (strpos($userAgent, 'Trident/') !== false) return 'Internet Explorer';
+    return 'Unknown';
+}
+
+function sk_audit_ip_address() {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+    if (!is_string($ip) || filter_var($ip, FILTER_VALIDATE_IP) === false) return null;
+    return substr($ip, 0, 45);
+}
+
+function sk_audit_location($ip) {
+    if (!is_string($ip) || filter_var($ip, FILTER_VALIDATE_IP) === false) return null;
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+        return 'Local or non-public IP address';
+    }
+    if (GEOIP_DB_PATH === '') return null;
+    if (!is_file(GEOIP_DB_PATH) || !is_readable(GEOIP_DB_PATH)) {
+        static $missingDatabaseLogged = false;
+        if (!$missingDatabaseLogged) {
+            error_log('Local GeoIP lookup is unavailable because KK_GEOIP_DB_PATH does not point to a readable database file.');
+            $missingDatabaseLogged = true;
+        }
+        return null;
+    }
+
+    $autoload = __DIR__ . '/vendor/autoload.php';
+    if (!class_exists('MaxMind\\Db\\Reader') && is_file($autoload)) require_once $autoload;
+    if (!class_exists('MaxMind\\Db\\Reader')) {
+        static $readerMissingLogged = false;
+        if (!$readerMissingLogged) {
+            error_log('Local GeoIP lookup is unavailable because the MaxMind DB reader is not installed.');
+            $readerMissingLogged = true;
+        }
+        return null;
+    }
+
+    static $reader = null;
+    try {
+        if ($reader === null) $reader = new \MaxMind\Db\Reader(GEOIP_DB_PATH);
+        $record = $reader->get($ip);
+        if (!is_array($record)) return null;
+        $city = $record['city']['names']['en'] ?? null;
+        $region = $record['subdivisions'][0]['names']['en'] ?? null;
+        $country = $record['country']['names']['en'] ?? ($record['registered_country']['names']['en'] ?? null);
+        $parts = array_values(array_unique(array_filter([$city, $region, $country], function ($part) {
+            return is_string($part) && trim($part) !== '';
+        })));
+        return $parts ? implode(', ', $parts) : null;
+    } catch (Throwable $error) {
+        error_log('Local GeoIP lookup failed (' . get_class($error) . '): ' . $error->getMessage());
+        return null;
+    }
+}
+
+function sk_audit_client_metadata() {
+    $userAgent = sk_audit_user_agent();
+    $ipAddress = sk_audit_ip_address();
+    return [
+        'user_agent' => $userAgent,
+        'device_type' => sk_audit_device_type($userAgent),
+        'browser' => sk_audit_browser($userAgent),
+        'ip_address' => $ipAddress,
+        'location' => sk_audit_location($ipAddress),
+    ];
+}
+
 function sk_audit($pdo, $actor, $targetLegacyId, $action, $oldValue, $newValue) {
     $encode = function ($value) {
         return $value === null ? null : json_encode(
@@ -154,8 +256,11 @@ function sk_audit($pdo, $actor, $targetLegacyId, $action, $oldValue, $newValue) 
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR
         );
     };
-    $pdo->prepare('INSERT INTO audit_log (actor_user_id, actor, target_legacy_id, action, old_value, new_value)
-                   VALUES (?, ?, ?, ?, ?, ?)')
+    $client = sk_audit_client_metadata();
+    $pdo->prepare('INSERT INTO audit_log
+        (actor_user_id, actor, target_legacy_id, action, old_value, new_value,
+         user_agent, device_type, browser, ip_address, location)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         ->execute([
             $actor['id'] ?? null,
             (string)($actor['username'] ?? 'system'),
@@ -163,6 +268,11 @@ function sk_audit($pdo, $actor, $targetLegacyId, $action, $oldValue, $newValue) 
             $action,
             $encode($oldValue),
             $encode($newValue),
+            $client['user_agent'],
+            $client['device_type'],
+            $client['browser'],
+            $client['ip_address'],
+            $client['location'],
         ]);
     $GLOBALS['SK_AUDIT_RECORD_WRITTEN'] = true;
 }
@@ -242,10 +352,10 @@ function sk_role_validate_payload($input, $allowLegacyViceChairperson = false, $
     }
     if (!in_array($basis, ['elected', 'appointed'], true)) throw new RuntimeException('Basis must be elected or appointed.');
     if (!preg_match('/^\d{4}$/', $year) || (int)$year < 2000 || (int)$year > 2100) {
-        throw new RuntimeException('Enter a valid election year.');
+        throw new RuntimeException('Enter a valid election or appointment year.');
     }
     $elected = sk_role_valid_date($input['dateElected'] ?? null, 'Date elected', true);
-    if (substr($elected, 0, 4) !== $year) throw new RuntimeException('Election year must match date elected.');
+    if (substr($elected, 0, 4) !== $year) throw new RuntimeException('The year must match the election or appointment date.');
     $start = sk_role_valid_date($input['termStart'] ?? null, 'Term start');
     $end = sk_role_valid_date($input['termEnd'] ?? null, 'Term end');
     if ($start !== null && $end !== null && $end <= $start) throw new RuntimeException('Term end must be after term start.');

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/google_auth.php';
 require_viewer();
 if (is_limited_viewer()) {
     $registrationNotice = 'KK youth registration is handled in person. Please visit the SK Office at the Barangay Hall in Barangay Sikat, Alfonso, Cavite. An SK official will assist you with registering and creating your account.';
@@ -30,6 +31,7 @@ if (is_limited_viewer()) {
     <?php
     exit;
 }
+$googleRegistrationReady = google_oauth_configured() && google_oauth_schema_ready();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -600,7 +602,7 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
                                             <i class="bi bi-x-circle"></i> Remove
                                         </button>
                                     </div>
-                                    <div class="form-text">JPEG, PNG, or WebP; up to 5 MB.</div>
+                                    <div class="form-text">JPEG, PNG, or WebP; up to 10 MB. The image is resized before saving.</div>
                                     <div class="mt-3 d-none" id="supportingDocumentsWrap">
                                         <label class="form-label" for="supportingDocuments">Private supporting documents (optional)</label>
                                         <input type="file" class="form-control" id="supportingDocuments" multiple
@@ -808,8 +810,23 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
                                 </div>
  
                                 <div class="col-md-4">
-                                    <label class="form-label" for="email">Email Address</label>
-                                    <input id="email" type="email" class="form-control" placeholder="example@email.com" maxlength="100">
+                                    <label class="form-label" for="email">
+                                        Google Account Email <span class="text-muted fw-normal">(optional for now)</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input id="email" type="email" class="form-control" placeholder="Verify now or leave blank" maxlength="254" autocomplete="email" readonly>
+                                        <button class="btn btn-outline-primary" type="button" id="verifyGoogleEmailBtn" <?= $googleRegistrationReady ? '' : 'disabled' ?>>
+                                            <i class="bi bi-google me-1"></i>Verify Google
+                                        </button>
+                                    </div>
+                                    <input id="googleRegistrationTicket" type="hidden">
+                                    <div class="small mt-1" id="googleRegistrationStatus" role="status">
+                                        <?php if ($googleRegistrationReady): ?>
+                                            Google verification is optional now. If the member links later, an SK Kagawad can request it and the Chairperson or Secretary must approve it.
+                                        <?php else: ?>
+                                            Google verification is unavailable. Leave this blank; an SK Kagawad can request a link later for Chairperson or Secretary approval.
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
  
                                 <div class="col-md-4">
@@ -1359,6 +1376,9 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
        HELPERS
        ===================================================== */
     function $(id) { return document.getElementById(id); }
+    var GOOGLE_REGISTRATION_READY = <?= json_encode($googleRegistrationReady) ?>;
+    var googleRegistrationPopup = null;
+    var googleRegistrationPopupWatcher = null;
     function esc(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -1620,6 +1640,9 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
  
         var em = $('email');
         if (em.value && !em.checkValidity()) bad(em, 'Enter a valid email address.');
+        if (!editingId && em.value.trim() && !$('googleRegistrationTicket').value) {
+            bad($('verifyGoogleEmailBtn'), 'Verify this Google account or leave the email blank to request a link later.');
+        }
  
         need('classification', 'Youth classification');
         need('classificationOther', 'Please specify the classification');
@@ -1800,6 +1823,14 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
     function resetUI() {
         setPhoto('');
         $('guardianConsent').checked = false;
+        $('googleRegistrationTicket').value = '';
+        $('email').readOnly = true;
+        $('verifyGoogleEmailBtn').disabled = false;
+        show('verifyGoogleEmailBtn', true);
+        $('googleRegistrationStatus').textContent = GOOGLE_REGISTRATION_READY
+            ? 'Google verification is optional now. If the member links later, an SK Kagawad can request it and the Chairperson or Secretary must approve it.'
+            : 'Google verification is unavailable. Leave this blank; an SK Kagawad can request a link later for Chairperson or Secretary approval.';
+        $('googleRegistrationStatus').className = 'small mt-1';
         clearAllErrors();
         $('photo').value = '';
         renderLegacyInterests([]);
@@ -1820,6 +1851,12 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
         show('cancelEditBtn', on);
         show('clearBtn', !on);
         show('supportingDocumentsWrap', on);
+        $('googleRegistrationTicket').value = '';
+        $('email').readOnly = !on;
+        show('verifyGoogleEmailBtn', !on);
+        $('googleRegistrationStatus').textContent = on
+            ? 'Changes to this email will be sent as a profile edit request for review.'
+            : 'Google verification is optional now. An SK Kagawad can request a link later for Chairperson or Secretary approval.';
         $('formMessage').innerHTML = on
             ? '<div class="alert alert-warning small"><i class="bi bi-pencil-square me-1"></i>Editing <strong>' + esc(fullName(m)) +
               '</strong> (' + esc(m.memberNo || '') + '). Changes will <strong>not</strong> replace the official record right away \u2013 ' +
@@ -1846,10 +1883,10 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
         });
     }
  
-    function showAccountCredentials(result, member) {
-        var message = 'Account created for ' + fullName(member) + '. Username: ' + result.username +
-            '. Temporary password (uppercase surname): ' + result.temporaryPassword +
-            '. Share these credentials securely; the member must change the password at first login.';
+    function showGoogleActivationNotice(member, googleAccountLinked) {
+        var message = 'Account created for ' + fullName(member) + (googleAccountLinked
+            ? '. Their verified Google account is linked and ready for sign-in.'
+            : '. No Google account was linked yet. An SK Kagawad can request one from the member profile for Chairperson or Secretary approval.');
         if (window.Swal && typeof window.Swal.fire === 'function') {
             window.Swal.fire({
                 icon: 'success',
@@ -1875,10 +1912,10 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
         rec.createdAt = nowISO();
         rec.history = [{ at: nowISO(), action: 'Registered', by: OFFICER, note: 'Profile created as Active.' }];
         try {
-            var result = DB.registerMember(rec, null);
+            var result = DB.registerMember(rec, null, $('googleRegistrationTicket').value);
             members.push(result.member);
             rec = result.member;
-            showAccountCredentials(result, rec);
+            showGoogleActivationNotice(rec, result.googleAccountLinked === true);
         } catch (error) {
             notify('danger', error.message || 'Could not register the member and create their account.');
             return;
@@ -2179,8 +2216,8 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
         if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) < 0) {
             setError(this, 'Please choose a JPEG, PNG, or WebP image.'); this.value = ''; return;
         }
-        if (f.size > 5 * 1024 * 1024) {
-            setError(this, 'Choose a profile photo smaller than 5 MB.'); this.value = ''; return;
+        if (f.size > 10 * 1024 * 1024) {
+            setError(this, 'This picture is too big. The maximum size is 10 MB.'); this.value = ''; return;
         }
         var reader = new FileReader();
         reader.onload = function () {
@@ -2304,6 +2341,73 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
     $('toggleAllBtn').addEventListener('click', function () { showAll = !showAll; renderRecent(); });
     $('confirmArchiveBtn').addEventListener('click', confirmArchive);
     $('archiveReason').addEventListener('change', function () { clearError(this); });
+    $('verifyGoogleEmailBtn').addEventListener('click', function () {
+        if (editingId || !GOOGLE_REGISTRATION_READY) return;
+        if (googleRegistrationPopup && !googleRegistrationPopup.closed) googleRegistrationPopup.close();
+
+        var popup = window.open('about:blank', 'kkGoogleRegistration',
+            'popup=yes,width=520,height=680,resizable=yes,scrollbars=yes');
+        if (!popup) {
+            $('googleRegistrationStatus').textContent = 'Allow pop-ups for this site, then try Google verification again.';
+            $('googleRegistrationStatus').className = 'small mt-1 text-danger';
+            return;
+        }
+
+        $('googleRegistrationTicket').value = '';
+        $('email').value = '';
+        $('verifyGoogleEmailBtn').disabled = true;
+        $('googleRegistrationStatus').textContent = 'Waiting for the member to verify their Google account...';
+        $('googleRegistrationStatus').className = 'small mt-1 text-muted';
+        googleRegistrationPopup = popup;
+
+        var request = document.createElement('form');
+        request.method = 'POST';
+        request.action = 'google-registration-start.php';
+        request.target = 'kkGoogleRegistration';
+        var csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrf';
+        csrf.value = window.SK_CSRF_TOKEN || '';
+        request.appendChild(csrf);
+        document.body.appendChild(request);
+        request.submit();
+        request.remove();
+
+        googleRegistrationPopupWatcher = window.setInterval(function () {
+            if (!googleRegistrationPopup || !googleRegistrationPopup.closed) return;
+            window.clearInterval(googleRegistrationPopupWatcher);
+            googleRegistrationPopupWatcher = null;
+            googleRegistrationPopup = null;
+            $('verifyGoogleEmailBtn').disabled = false;
+            if (!$('googleRegistrationTicket').value) {
+                $('googleRegistrationStatus').textContent = 'Google verification was closed before it finished.';
+                $('googleRegistrationStatus').className = 'small mt-1 text-danger';
+            }
+        }, 500);
+    });
+    window.addEventListener('message', function (event) {
+        if (event.origin !== window.location.origin || !googleRegistrationPopup
+            || event.source !== googleRegistrationPopup || !event.data
+            || event.data.type !== 'kk-google-registration') return;
+
+        if (googleRegistrationPopupWatcher) window.clearInterval(googleRegistrationPopupWatcher);
+        googleRegistrationPopupWatcher = null;
+        googleRegistrationPopup = null;
+        $('verifyGoogleEmailBtn').disabled = false;
+        if (event.data.ok === true && typeof event.data.email === 'string'
+            && typeof event.data.ticket === 'string' && event.data.ticket !== '') {
+            $('email').value = event.data.email;
+            $('googleRegistrationTicket').value = event.data.ticket;
+            $('email').readOnly = true;
+            $('googleRegistrationStatus').textContent = 'Google account verified. It will be linked when you save this profile.';
+            $('googleRegistrationStatus').className = 'small mt-1 text-success';
+            clearError($('verifyGoogleEmailBtn'));
+        } else {
+            $('googleRegistrationTicket').value = '';
+            $('googleRegistrationStatus').textContent = event.data.message || 'Google verification failed. Please try again.';
+            $('googleRegistrationStatus').className = 'small mt-1 text-danger';
+        }
+    });
     document.addEventListener('click', function (e) {
         var b = e.target.closest('[data-act]');
         if (!b) return;

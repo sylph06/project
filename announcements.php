@@ -1520,7 +1520,7 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
             DB.setItem(ANN_KEY, JSON.stringify(announcements));
             return true;
         } catch (e) {
-            toast("Browser storage is full. Use smaller images or delete old announcements.");
+            toast(e && e.message ? e.message : "Could not save the announcement. Reload the page and try again.");
             return false;
         }
     }
@@ -1890,6 +1890,8 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
     const MAX_FILE_SIZE = 5 * 1024 * 1024;       // 5 MB
 
     const images = { banner: "" };   // pictures (Base64) shown in the form
+    let imageRequest = 0;
+    let imageProcessing = false;
     let editingState = "new";                    // new / Draft / Unpublished / Published
     let onConfirm = null;                        // what the confirm window does when OK is clicked
 
@@ -1981,6 +1983,8 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
 
         input.addEventListener("change", function () {
             const file = input.files[0];
+            const request = ++imageRequest;
+            imageProcessing = false;
             imageError(kind, "");
             if (!file) return;
             const okType = ALLOWED_TYPES.indexOf(file.type) !== -1 && /\.(jpe?g|png|webp)$/i.test(file.name);
@@ -1994,16 +1998,23 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
                 input.value = "";
                 return;
             }
+            imageProcessing = true;
             resizeImage(file, maxSide, function (dataUrl) {
+                if (request !== imageRequest) return;
+                imageProcessing = false;
                 images[kind] = dataUrl;                          // choosing a new file replaces the old one
                 showImage(kind);
             }, function () {
+                if (request !== imageRequest) return;
+                imageProcessing = false;
                 imageError(kind, "This image could not be read. Please try a different file.");
                 input.value = "";
             });
         });
 
         $("remove" + cap + "Btn").addEventListener("click", function () {
+            imageRequest++;
+            imageProcessing = false;
             images[kind] = "";
             input.value = "";
             imageError(kind, "");
@@ -2031,6 +2042,8 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         $("announcementForm").reset();
         $("announcementForm").querySelectorAll(".is-invalid").forEach(function (el) { el.classList.remove("is-invalid"); });
         $("annId").value = "";
+        imageRequest++;
+        imageProcessing = false;
         images.banner = "";
         $("annBanner").value = "";
         imageError("banner", "");
@@ -2104,6 +2117,15 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
 
     // target = "Draft", "Published" or "Unpublished"
     function saveAnnouncement(target) {
+        if (imageProcessing) {
+            Core.toast("Please wait for the banner image to finish processing.");
+            return;
+        }
+        if ($("bannerError").textContent) {
+            Core.toast("Choose a supported banner image or remove it before saving.");
+            $("annBanner").focus();
+            return;
+        }
         if (!validate()) return;
         const data = {
             title: $("annTitle").value.trim(),
@@ -2123,7 +2145,7 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
             publishDate: $("annPublishDate").value
         };
         data.centers.unshift(data.category);
-        data.centers = CATEGORIES.filter(function (center) { return data.centers.indexOf(center) !== -1; });
+        data.centers = Core.categories.filter(function (center) { return data.centers.indexOf(center) !== -1; });
         if (target === "Published" && !data.publishDate) data.publishDate = Core.todayISO();
 
         const now = new Date().toISOString();

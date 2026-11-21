@@ -805,7 +805,7 @@
                             <select id="projectType" class="budget-select">
                                 <option value="Annual">Annual budget</option>
                                 <option value="Supplemental">Supplemental budget</option>
-                                <option value="Continuing">Continuing plan</option>
+                                <option value="Continuing">Continuing fund</option>
                             </select>
                         </div>
                         <div>
@@ -994,7 +994,7 @@ function formatPeso(value) {
 
 function budgetTypeLabel(value) {
     if (value === 'Supplemental') return 'Supplemental budget';
-    if (value === 'Continuing') return 'Continuing plan';
+    if (value === 'Continuing') return 'Continuing fund';
     return 'Annual budget';
 }
 

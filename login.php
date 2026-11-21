@@ -1,13 +1,37 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/google_auth.php';
 $nextPage = 'dashboard.php';
+$changePasswordUrl = 'change-password.php';
+$googleLoginUrl = 'google-login.php';
 if (($_GET['next'] ?? '') === 'announcements.php') {
     $nextPage = 'announcements.php?view=public';
+    $changePasswordUrl = 'change-password.php?next=announcements.php';
+    $googleLoginUrl .= '?next=announcements.php';
     $eventId = (string)($_GET['eventId'] ?? '');
     if (preg_match('/^[A-Za-z0-9_-]{1,60}$/', $eventId)) {
         $nextPage .= '&eventId=' . rawurlencode($eventId);
+        $changePasswordUrl .= '&eventId=' . rawurlencode($eventId);
+        $googleLoginUrl .= '&eventId=' . rawurlencode($eventId);
     }
 }
+$googleLoginAvailable = google_oauth_configured() && google_oauth_schema_ready();
+$googleErrorMessages = [
+    'not_configured' => 'Google sign-in is not configured yet. Contact the SK administrator.',
+    'setup_incomplete' => 'Google sign-in setup is incomplete. Contact the SK administrator.',
+    'invalid_state' => 'The sign-in request expired or could not be verified. Please try again.',
+    'google_cancelled' => 'Google sign-in was cancelled.',
+    'google_failed' => 'Google sign-in could not be completed. Please try again.',
+    'email_not_verified' => 'Your Google account must have a verified email address.',
+    'email_invalid' => 'This Google email cannot be used. Contact the SK office to correct your member profile.',
+    'member_not_found' => 'No KK member profile matches this Google email. Contact the SK office to correct your profile email.',
+    'email_ambiguous' => 'This email is assigned to more than one KK profile. Contact the SK office to correct the records.',
+    'member_inactive' => 'This KK profile is inactive. Contact the SK office.',
+    'member_account_missing' => 'There is no login account for this KK profile yet. Contact the SK office.',
+    'google_link_conflict' => 'This Google account is already linked to another member profile. Contact the SK office.',
+    'account_already_linked' => 'This member profile is linked to a different Google account. Contact the SK office.',
+];
+$googleError = $googleErrorMessages[(string)($_GET['google_error'] ?? '')] ?? '';
 $existingUser = current_user();
 if ($existingUser) {
     $destination = $existingUser['role'] === 'KK Member' && $nextPage === 'dashboard.php'
@@ -243,9 +267,9 @@ if ($existingUser) {
                     <div class="text-muted small">Sign in to your SK account or KK member portal</div>
                 </div>
 
-                <div class="alert alert-danger d-none py-2 small" id="loginError" role="alert">
+                <div class="alert alert-danger <?= $googleError === '' ? 'd-none' : '' ?> py-2 small" id="loginError" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                    <span id="loginErrorText"></span>
+                    <span id="loginErrorText"><?= e($googleError) ?></span>
                 </div>
 
                 <div class="alert alert-success d-none py-2 small" id="loginOk" role="alert">
@@ -295,6 +319,20 @@ if ($existingUser) {
                     </button>
                 </form>
 
+                <?php if ($googleLoginAvailable): ?>
+                    <div class="text-center text-secondary small my-3">KK members can also sign in with Google</div>
+                    <a href="<?= e($googleLoginUrl) ?>" class="btn btn-outline-primary w-100" id="googleLoginBtn" style="padding:.7rem .9rem;">
+                        <i class="bi bi-google me-2"></i>Continue with Google
+                    </a>
+                    <div class="text-center text-secondary small mt-2">
+                        Use the verified Google email recorded on your KK member profile. Members assigned an SK role keep this same Google login.
+                    </div>
+                <?php elseif (GOOGLE_KK_LOGIN_REQUIRED): ?>
+                    <div class="alert alert-warning small mt-3" role="status">
+                        Google sign-in is required for KK members but is not available yet. Contact the SK administrator.
+                    </div>
+                <?php endif; ?>
+
                 <div class="d-flex align-items-center gap-2 my-4 text-secondary small">
                     <hr class="flex-grow-1 m-0"><span>or</span><hr class="flex-grow-1 m-0">
                 </div>
@@ -306,7 +344,7 @@ if ($existingUser) {
                     No password needed. Public view is limited to SK Officials, Announcements, and Youth Registration.
                 </div>
                 <div class="text-center text-secondary small mt-2">
-                    KK members use the account credentials provided by the SK office to access their profile and digital ID.
+                    KK members sign in with the verified Google email on their profile. During the pilot, existing unlinked accounts may continue using their current credentials.
                 </div>
 
             </div>
@@ -324,8 +362,8 @@ if ($existingUser) {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Please contact the <b>SK Chairperson</b> or the <b>SK Secretary</b> at the Barangay Hall. After verifying your identity, they can look up your username or reset your password from your member profile.</p>
-                <p class="text-muted small mb-0">A password reset gives you a temporary password that you must change when you sign in. Usernames are not looked up publicly.</p>
+                <p class="mb-2">Please contact the <b>SK Chairperson</b> or the <b>SK Secretary</b> at the Barangay Hall. After verifying your identity, they can look up your username or reset an unlinked account password from your member profile.</p>
+                <p class="text-muted small mb-0">KK accounts linked to Google must use their verified Google email instead of a password reset. Usernames are not looked up publicly.</p>
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-login" data-bs-dismiss="modal">Okay</button>
@@ -488,7 +526,7 @@ if ($existingUser) {
             $("loginOk").classList.remove("d-none");
             $("loginBtnText").innerHTML = '<i class="bi bi-check-lg me-2"></i>Success';
             setTimeout(function () {
-                location.href = found.must_change_password ? "change-password.php" :
+                location.href = found.must_change_password ? <?= json_encode($changePasswordUrl) ?> :
                     (found.role === "KK Member" && NEXT_PAGE === "dashboard.php" ? "member-portal.php" : NEXT_PAGE);
             }, 900);
         });

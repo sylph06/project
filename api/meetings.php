@@ -215,9 +215,22 @@ try {
     $save = $pdo->prepare('INSERT INTO app_data (data_key, data_value, updated_by) VALUES (?, ?, ?)
                            ON DUPLICATE KEY UPDATE data_value = VALUES(data_value), updated_by = VALUES(updated_by)');
     $save->execute(['skMeetings', $encoded, $user['username']]);
-    $pdo->prepare('INSERT INTO audit_log (actor_user_id, actor, target_legacy_id, action, old_value, new_value)
-                   VALUES (?, ?, ?, ?, NULL, NULL)')
-        ->execute([$user['id'], $user['username'], 'meeting:' . $meetingId, $auditAction]);
+    $client = sk_audit_client_metadata();
+    $pdo->prepare('INSERT INTO audit_log
+        (actor_user_id, actor, target_legacy_id, action, old_value, new_value,
+         user_agent, device_type, browser, ip_address, location)
+        VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?)')
+        ->execute([
+            $user['id'],
+            $user['username'],
+            'meeting:' . $meetingId,
+            $auditAction,
+            $client['user_agent'],
+            $client['device_type'],
+            $client['browser'],
+            $client['ip_address'],
+            $client['location'],
+        ]);
     $GLOBALS['SK_AUDIT_RECORD_WRITTEN'] = true;
     $pdo->commit();
     out(['ok' => true, 'meeting' => $meeting]);

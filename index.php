@@ -691,7 +691,7 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
                                 ?>
                                 <tr>
                                     <td><?= e(trim((string)($project['name'] ?? '')) ?: 'Unnamed project') ?></td>
-                                    <td><?= e(['Annual' => 'Annual budget', 'Supplemental' => 'Supplemental budget', 'Continuing' => 'Continuing plan'][(string)($project['type'] ?? 'Annual')] ?? 'Annual budget') ?></td>
+                                    <td><?= e(['Annual' => 'Annual budget', 'Supplemental' => 'Supplemental budget', 'Continuing' => 'Continuing fund'][(string)($project['type'] ?? 'Annual')] ?? 'Annual budget') ?></td>
                                     <td><?= e((string)($project['cop'] ?? '') ?: 'Not set') ?></td>
                                     <td><?= e((string)($project['committee'] ?? '') ?: 'Not set') ?></td>
                                     <td class="text-end text-nowrap">₱<?= e(number_format($projectAmount, 2)) ?></td>

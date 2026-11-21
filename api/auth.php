@@ -3,6 +3,7 @@
    api/auth.php — login and password change
    ========================================================= */
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../google_auth.php';
 
 $action = $_GET['action'] ?? '';
 
@@ -65,6 +66,13 @@ if ($action === 'login') {
         }
         usleep(600000);
         out(['ok' => false, 'error' => 'Wrong username or password.', 'triesLeft' => 3 - $failures], 401);
+    }
+    $googleLoginStatus = google_auth_password_login_status(db(), $u);
+    if ($googleLoginStatus === 'setup_missing') {
+        out(['ok' => false, 'error' => 'Google sign-in is required for KK members, but its database setup is incomplete. Contact an administrator.'], 503);
+    }
+    if ($googleLoginStatus === 'google_required') {
+        out(['ok' => false, 'error' => 'This KK account must use Google sign-in. Please continue with Google.'], 403);
     }
     db()->prepare('DELETE FROM login_attempts_v2 WHERE ip = ? AND username_key = ?')->execute([$ip, $usernameKey]);
     session_regenerate_id(true);

@@ -744,6 +744,10 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                             <i class="bi bi-gear me-1"></i><?= is_public() ? 'Options' : 'Manage' ?>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            <?php if (can_manage_sk_roles()): ?>
+                                <li><button class="dropdown-item" type="button" data-act="google-link-approvals"><i class="bi bi-google me-2"></i>Google link approvals</button></li>
+                                <li><hr class="dropdown-divider"></li>
+                            <?php endif; ?>
                             <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="assignBtn"><i class="bi bi-person-badge me-2"></i>Assign SK member</button></li>
                             <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="manageCommitteesBtn"><i class="bi bi-diagram-3 me-2"></i>Manage committees</button></li>
                             <li class="admin-only"><button class="dropdown-item" type="button" id="scanKkIdBtn"><i class="bi bi-qr-code-scan me-2"></i>Scan KK ID</button></li>
@@ -907,15 +911,15 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                         </div>
                     </div>
 
-                    <div class="group-title">Election and Term</div>
+                    <div class="group-title">Election / Appointment and Term</div>
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold" for="roleYear">Election Year <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold" for="roleYear">Election / Appointment Year <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="roleYear" min="2000" max="2100" placeholder="e.g. 2026">
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold" for="roleElected">Date Elected <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold" for="roleElected">Date Elected / Appointed <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="roleElected">
                             <div class="invalid-feedback"></div>
                         </div>
@@ -994,7 +998,7 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="small text-muted">Linking connects one existing login to this KK member. It does not create an account or change its credentials.</p>
+                <p class="small text-muted">Linking connects one existing login to this KK member without changing its credentials. An SK Kagawad can later request a Google link; the Chairperson or Secretary must approve it before Google sign-in is enabled.</p>
                 <label class="form-label" for="linkAccountSelect">Unlinked account</label>
                 <select class="form-select" id="linkAccountSelect"></select>
                 <div class="small text-danger mt-2" id="linkAccountError"></div>
@@ -1012,12 +1016,12 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="createAccountTitle">Create Separate Member Login</h5>
+                <h5 class="modal-title fw-bold" id="createAccountTitle">Create Google-Activated Member Account</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="small text-muted">This is separate from assigning an SK role. Each KK member may have only one login.</p>
-                <label class="form-label" for="newAccountUsername">Username</label>
+                <p class="small text-muted">Create the member login now. An SK Kagawad can request a Google link later; the Chairperson or Secretary must approve it before Google sign-in is enabled.</p>
+                <label class="form-label" for="newAccountUsername">Internal account username</label>
                 <input class="form-control mb-3" id="newAccountUsername" maxlength="50" autocomplete="off">
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" id="guardianConsent">
@@ -1026,11 +1030,30 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                 <label class="form-label" for="consentVersion">Consent form version (if consent is recorded)</label>
                 <input class="form-control" id="consentVersion" maxlength="50" placeholder="Enter the actual form version">
                 <div class="small text-danger mt-2" id="createAccountError"></div>
-                <div class="alert alert-success d-none mt-3 mb-0" id="temporaryPasswordBox"></div>
+                <div class="alert alert-success d-none mt-3 mb-0" id="googleActivationBox"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="confirmCreateAccount">Create account</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= GOOGLE LINK APPROVALS ================= -->
+<div class="modal fade" id="googleLinkApprovalsModal" tabindex="-1" aria-labelledby="googleLinkApprovalsTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="googleLinkApprovalsTitle">Google Link Requests</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">A Kagawad can request a link after the member verifies their Google account. Approve only after confirming the member’s identity; Google sign-in stays disabled until approval.</p>
+                <div id="googleLinkApprovalsBody" aria-live="polite">Loading requests...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -1224,7 +1247,8 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
     function termLine(r) {
         if (!r.role) return '\u2014';
         var t = termLabel(r.role);
-        return (t ? 'Term ' + t : 'No term') + (r.role.electionYear ? ' \u2022 Elected ' + r.role.electionYear : '');
+        var basis = r.role.basis === 'appointed' ? 'Appointed' : 'Elected';
+        return (t ? 'Term ' + t : 'No term') + (r.role.electionYear ? ' \u2022 ' + basis + ' ' + r.role.electionYear : '');
     }
     function shortDesc(r) {
         if (r.isSK) return r.role.description || r.role.responsibilities || ROLES[r.position] || '';
@@ -1452,9 +1476,10 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
 
         var skPart = '';
         if (r.isSK) {
+            var appointment = ro.basis === 'appointed';
             skPart =
                 (ro.status === 'Archived' ? '<div class="alert alert-secondary small mt-3 mb-0">This SK term has ended, so the SK role is archived. Use <strong>Edit SK Role</strong> to record a new term.</div>' : '') +
-                sec('SK Information', kv('SK position', ro.position) + kv('SK status', ro.status) + kv('Election year', ro.electionYear) + kv('Date elected', fmtDate(ro.dateElected)) +
+                sec('SK Information', kv('SK position', ro.position) + kv('SK status', ro.status) + kv(appointment ? 'Appointment year' : 'Election year', ro.electionYear) + kv(appointment ? 'Date appointed' : 'Date elected', fmtDate(ro.dateElected)) +
                     kv('Term start', fmtDate(ro.termStart)) + kv('Term end', fmtDate(ro.termEnd)) + kv('Term', termLabel(ro))) +
                 '<div class="group-title">Short Description</div><div class="small">' + esc(ro.description || 'No description added.') + '</div>' +
                 '<div class="group-title">Responsibilities</div><div class="small">' + esc(ro.responsibilities || ROLES[ro.position] || 'No responsibilities recorded.') + '</div>';
@@ -1537,11 +1562,14 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                 '<li><button class="dropdown-item" type="button" id="btnCreateLogin" data-act="create-account" data-key="' + esc(key) + '"><i class="bi bi-person-plus me-2"></i>Create Login</button></li>' +
                 '<li><button class="dropdown-item" type="button" id="btnLinkAccount" data-act="link-account" data-key="' + esc(key) + '"><i class="bi bi-link-45deg me-2"></i>Link Existing Account</button></li>';
             if (r.kkStatus === 'Active') {
-                f += '<li><button class="dropdown-item" type="button" id="btnShowUsername" data-act="show-account-username" data-key="' + esc(key) + '"><i class="bi bi-eye me-2"></i>Show Username</button></li>' +
+                f += '<li><button class="dropdown-item" type="button" id="btnLinkGoogleAccount" data-act="link-google-account" data-key="' + esc(key) + '"><i class="bi bi-google me-2"></i>Request Google Link</button></li>' +
+                    '<li><button class="dropdown-item" type="button" id="btnShowUsername" data-act="show-account-username" data-key="' + esc(key) + '"><i class="bi bi-eye me-2"></i>Show Username</button></li>' +
                     '<li><hr class="dropdown-divider"></li>' +
                     '<li><button class="dropdown-item text-danger" type="button" id="btnResetPassword" data-act="reset-account" data-key="' + esc(key) + '"><i class="bi bi-arrow-repeat me-2"></i>Reset Password</button></li>';
             }
             f += '</ul></div>';
+        } else if (window.SK_CAN_REQUEST_GOOGLE_LINK && r.kkStatus === 'Active') {
+            f += '<button class="btn btn-outline-secondary" type="button" id="btnLinkGoogleAccount" data-act="link-google-account" data-key="' + esc(key) + '"><i class="bi bi-google me-1"></i>Request Google Link</button>';
         }
         f += '</div><button type="button" class="btn btn-outline-secondary kk-close-btn" data-bs-dismiss="modal">Close</button>';
         $('profileFooter').innerHTML = f;
@@ -1594,8 +1622,8 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
     var createAccountTarget = null;
     function openCreateAccount(legacyId) {
         $('createAccountError').textContent = '';
-        $('temporaryPasswordBox').classList.add('d-none');
-        $('temporaryPasswordBox').textContent = '';
+        $('googleActivationBox').classList.add('d-none');
+        $('googleActivationBox').textContent = '';
         $('newAccountUsername').value = '';
         $('guardianConsent').checked = false;
         $('consentVersion').value = 'v1';
@@ -1615,7 +1643,7 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
     function resetMemberAccount(legacyId) {
         var member = getRec(legacyId);
         if (!member || !window.SK_CAN_MANAGE_ROLES) return;
-        if (!window.confirm('Reset the login password for ' + member.name + '? A new temporary password will be shown once, and the member must change it at next sign-in.')) return;
+        if (!window.confirm('Reset the password for ' + member.name + '? This only works for an account that is not using Google sign-in. Google-linked KK members must continue with their verified Google account.')) return;
         try {
             var result = DB.resetMemberAccountByLegacyId(legacyId);
             window.alert('Temporary password (uppercase surname; show only once): ' + result.temporaryPassword +
@@ -1637,6 +1665,128 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
         }
     }
 
+    var googleMemberLinkPopup = null;
+    var googleMemberLinkPopupWatcher = null;
+    var googleMemberLinkTarget = null;
+    function openGoogleMemberLink(legacyId) {
+        if (!window.SK_CAN_REQUEST_GOOGLE_LINK) return;
+        if (googleMemberLinkPopup && !googleMemberLinkPopup.closed) googleMemberLinkPopup.close();
+        var popup = window.open('about:blank', 'kkGoogleMemberLink',
+            'popup=yes,width=520,height=680,resizable=yes,scrollbars=yes');
+        if (!popup) {
+            notify('warning', 'Allow pop-ups for this site, then try linking the Google account again.');
+            return;
+        }
+
+        googleMemberLinkTarget = String(legacyId);
+        googleMemberLinkPopup = popup;
+        var request = document.createElement('form');
+        request.method = 'POST';
+        request.action = 'google-registration-start.php';
+        request.target = 'kkGoogleMemberLink';
+        [
+            ['csrf', window.SK_CSRF_TOKEN || ''],
+            ['purpose', 'member_link'],
+            ['memberId', googleMemberLinkTarget]
+        ].forEach(function (item) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = item[0];
+            input.value = item[1];
+            request.appendChild(input);
+        });
+        document.body.appendChild(request);
+        request.submit();
+        request.remove();
+
+        googleMemberLinkPopupWatcher = window.setInterval(function () {
+            if (!googleMemberLinkPopup || !googleMemberLinkPopup.closed) return;
+            window.clearInterval(googleMemberLinkPopupWatcher);
+            googleMemberLinkPopupWatcher = null;
+            googleMemberLinkPopup = null;
+            googleMemberLinkTarget = null;
+        }, 500);
+    }
+
+    function renderGoogleLinkApprovals(requests) {
+        var host = $('googleLinkApprovalsBody');
+        if (!Array.isArray(requests) || requests.length === 0) {
+            host.innerHTML = '<div class="alert alert-light border mb-0">There are no Google link requests waiting for approval.</div>';
+            return;
+        }
+        host.innerHTML = '<div class="table-responsive"><table class="table align-middle">' +
+            '<thead><tr><th>Member</th><th>Verified Google email</th><th>Requested by</th><th>Requested</th><th class="text-end">Review</th></tr></thead><tbody>' +
+            requests.map(function (request) {
+                var requestedAt = String(request.requested_at || '').replace(' ', 'T');
+                return '<tr><td>' + esc(request.member_name || request.legacy_id) + '</td>' +
+                    '<td>' + esc(request.google_email) + '</td>' +
+                    '<td>' + esc(request.requested_by) + '</td>' +
+                    '<td>' + esc(fmtDate(requestedAt)) + '</td>' +
+                    '<td class="text-end text-nowrap">' +
+                    '<button type="button" class="btn btn-success btn-sm me-1" data-act="approve-google-link" data-request-id="' + esc(request.request_id) + '">Approve</button>' +
+                    '<button type="button" class="btn btn-outline-danger btn-sm" data-act="reject-google-link" data-request-id="' + esc(request.request_id) + '">Reject</button>' +
+                    '</td></tr>';
+            }).join('') + '</tbody></table></div>';
+    }
+
+    function loadGoogleLinkApprovals() {
+        $('googleLinkApprovalsBody').textContent = 'Loading requests...';
+        try {
+            var result = DB.listPendingGoogleMemberLinks();
+            renderGoogleLinkApprovals(result.requests);
+        } catch (error) {
+            $('googleLinkApprovalsBody').innerHTML = '<div class="alert alert-danger mb-0"></div>';
+            $('googleLinkApprovalsBody').firstElementChild.textContent =
+                error.message || 'Could not load Google link requests.';
+        }
+    }
+
+    function openGoogleLinkApprovals() {
+        if (!window.SK_CAN_MANAGE_ROLES) return;
+        modal('googleLinkApprovalsModal').show();
+        loadGoogleLinkApprovals();
+    }
+
+    function reviewGoogleMemberLink(requestId, approve) {
+        if (!window.SK_CAN_MANAGE_ROLES) return;
+        if (!approve && !window.confirm('Reject this Google account link request?')) return;
+        try {
+            if (approve) DB.approveGoogleMemberLink(requestId);
+            else DB.rejectGoogleMemberLink(requestId);
+            notify('success', approve
+                ? 'Google account link approved. The member can now sign in with Google.'
+                : 'Google account link request rejected.');
+            loadGoogleLinkApprovals();
+            if (approve) window.setTimeout(function () { window.location.reload(); }, 900);
+        } catch (error) {
+            notify('danger', error.message || 'Could not review this Google link request.');
+        }
+    }
+
+    window.addEventListener('message', function (event) {
+        if (event.origin !== window.location.origin || !googleMemberLinkPopup
+            || event.source !== googleMemberLinkPopup || !event.data
+            || event.data.type !== 'kk-google-registration'
+            || (event.data.ok === true && (event.data.purpose !== 'member_link'
+                || String(event.data.memberId) !== googleMemberLinkTarget))) return;
+
+        if (googleMemberLinkPopupWatcher) window.clearInterval(googleMemberLinkPopupWatcher);
+        googleMemberLinkPopupWatcher = null;
+        googleMemberLinkPopup = null;
+        var memberId = googleMemberLinkTarget;
+        googleMemberLinkTarget = null;
+        if (event.data.ok !== true || typeof event.data.ticket !== 'string' || event.data.ticket === '') {
+            notify('danger', event.data.message || 'Google verification failed.');
+            return;
+        }
+        try {
+            DB.requestMemberGoogleLink(memberId, event.data.ticket);
+            notify('success', 'Google link request sent. Google sign-in will work after the Chairperson or Secretary approves it.');
+        } catch (error) {
+            notify('danger', error.message || 'Could not submit the Google link request.');
+        }
+    });
+
     $('confirmCreateAccount').addEventListener('click', function () {
         var username = $('newAccountUsername').value.trim();
         if (!createAccountTarget || !username) {
@@ -1650,9 +1800,8 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                 $('guardianConsent').checked,
                 $('consentVersion').value.trim()
             );
-            $('temporaryPasswordBox').textContent = 'Temporary password (uppercase surname; show only once): ' + result.temporaryPassword +
-                '. The member must change it at first sign-in.';
-            $('temporaryPasswordBox').classList.remove('d-none');
+            $('googleActivationBox').textContent = 'Account created without a Google link. An SK Kagawad can request one from this profile; the Chairperson or Secretary must approve it.';
+            $('googleActivationBox').classList.remove('d-none');
             $('confirmCreateAccount').disabled = true;
             createAccountTarget = null;
         } catch (e) {
@@ -1846,12 +1995,13 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
         if (!pos) bad($('rolePosition'), 'Select an SK position.');
         if (!existing && st !== 'Active') bad($('roleStatus'), 'A new SK role must start as Active.');
         if (!basis) bad($('roleBasis'), 'Select elected or appointed.');
-        if (!yr) bad($('roleYear'), 'Election year is required.');
+        var basisLabel = basis === 'appointed' ? 'Appointment' : 'Election';
+        if (!yr) bad($('roleYear'), basisLabel + ' year is required.');
         else if (!/^\d{4}$/.test(yr) || +yr < 2000 || +yr > 2100) bad($('roleYear'), 'Enter a valid 4-digit year.');
-        if (!el) bad($('roleElected'), 'Date elected is required.');
+        if (!el) bad($('roleElected'), basisLabel + ' date is required.');
         if (el && ts && ts < el) bad($('roleStart'), 'Term cannot start before the date elected.');
         if (ts && te && te <= ts) bad($('roleEnd'), 'Term end must be after the term start.');
-        if (yr && el && /^\d{4}$/.test(yr) && yearOf(el) !== yr) bad($('roleYear'), 'Election year should match the year of the date elected (' + yearOf(el) + ').');
+        if (yr && el && /^\d{4}$/.test(yr) && yearOf(el) !== yr) bad($('roleYear'), basisLabel + ' year should match the date (' + yearOf(el) + ').');
         var ended = te && te < todayISO();
         var existingOccupiesSeat = existing && existing.position === pos && existing.status === 'Active'
             && (!existing.termStart || existing.termStart <= todayISO())
@@ -2016,6 +2166,10 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
             else if (act === 'remove') afterHide('profileModal', function () { removeRole(key); });
             else if (act === 'archive-role') afterHide('profileModal', function () { archiveRole(key); });
             else if (act === 'link-account') afterHide('profileModal', function () { openAccountLink(key); });
+            else if (act === 'link-google-account') openGoogleMemberLink(key);
+            else if (act === 'google-link-approvals') openGoogleLinkApprovals();
+            else if (act === 'approve-google-link') reviewGoogleMemberLink(b.dataset.requestId, true);
+            else if (act === 'reject-google-link') reviewGoogleMemberLink(b.dataset.requestId, false);
             else if (act === 'create-account') afterHide('profileModal', function () { openCreateAccount(key); });
             else if (act === 'reset-account') afterHide('profileModal', function () { resetMemberAccount(key); });
             else if (act === 'show-account-username') afterHide('profileModal', function () { showMemberAccountUsername(key); });

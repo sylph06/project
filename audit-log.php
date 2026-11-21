@@ -6,11 +6,32 @@ if (!can_view_background_history()) {
     exit('You do not have permission to view the audit log.');
 }
 
-function audit_log_display_value($value) {
-    if ($value === null) return '';
-    $decoded = json_decode((string)$value, true);
-    if (json_last_error() !== JSON_ERROR_NONE) return (string)$value;
-    return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+if (array_key_exists('detail', $_GET)) {
+    header('Content-Type: application/json; charset=utf-8');
+    $detailId = $_GET['detail'];
+    if (!is_string($detailId) || !ctype_digit($detailId) || (int)$detailId < 1) {
+        http_response_code(400);
+        echo json_encode(['error' => 'A valid audit entry ID is required.']);
+        exit;
+    }
+    try {
+        $statement = db()->prepare('SELECT id, actor_user_id, actor, target_legacy_id, action, old_value, new_value,
+                user_agent, device_type, browser, ip_address, location, created_at
+            FROM audit_log WHERE id = ? LIMIT 1');
+        $statement->execute([(int)$detailId]);
+        $detail = $statement->fetch();
+        if (!$detail) {
+            http_response_code(404);
+            echo json_encode(['error' => 'That audit entry was not found.']);
+            exit;
+        }
+        echo json_encode($detail, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    } catch (Throwable $error) {
+        error_log('Audit log detail could not load: ' . $error->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'The audit entry details could not be loaded.']);
+    }
+    exit;
 }
 
 $pageSize = 50;
@@ -50,12 +71,38 @@ $auditError = '';
         .table td, .table th { padding:12px; vertical-align:top; }
         .audit-action { font-weight:700; white-space:nowrap; }
         .audit-target { overflow-wrap:anywhere; }
-        .audit-details { min-width:190px; }
-        .audit-details summary { color:var(--bs-primary-text-emphasis); cursor:pointer; font-weight:700; }
-        .audit-values { display:grid; grid-template-columns:repeat(2,minmax(180px,1fr)); gap:10px; min-width:min(620px,70vw); margin-top:10px; }
-        .audit-values section { min-width:0; }
-        .audit-values h3 { font-size:12px; font-weight:800; margin-bottom:5px; }
-        .audit-values pre { max-height:220px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--bs-tertiary-bg); border:1px solid var(--line); border-radius:8px; padding:9px; font-size:12px; margin:0; }
+        .audit-device { min-width:150px; }
+        .audit-detail-dialog { max-width:1120px; }
+        .audit-detail-modal { border:0; border-radius:18px; overflow:hidden; box-shadow:0 24px 70px rgba(20,35,60,.22); }
+        .audit-detail-header { gap:16px; padding:22px 26px; background:linear-gradient(120deg,var(--bs-primary-bg-subtle),var(--bs-secondary-bg) 68%); border-bottom:1px solid var(--bs-border-color); }
+        .audit-detail-heading { display:flex; align-items:center; gap:15px; min-width:0; }
+        .audit-detail-icon { display:grid; place-items:center; width:48px; height:48px; flex:none; border-radius:14px; color:var(--bs-primary-text-emphasis); background:var(--bs-primary-bg-subtle); font-size:22px; }
+        .audit-detail-copy { min-width:0; }
+        .audit-detail-kicker { color:var(--bs-secondary-color); font-size:10px; font-weight:800; letter-spacing:.12em; }
+        .audit-detail-title { margin:2px 0 3px; font-size:20px; font-weight:800; }
+        .audit-detail-summary { color:var(--bs-secondary-color); font-size:13px; overflow-wrap:anywhere; }
+        .audit-detail-body { padding:22px 26px 26px; background:var(--bs-tertiary-bg); }
+        .audit-action-summary { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:15px 18px; margin-bottom:18px; background:var(--bs-secondary-bg); border:1px solid var(--bs-border-color); border-left:4px solid var(--bs-primary); border-radius:12px; }
+        .audit-summary-label { display:block; margin-bottom:4px; color:var(--bs-secondary-color); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+        .audit-summary-action { font-size:17px; font-weight:750; overflow-wrap:anywhere; }
+        .audit-record-badge { background:var(--bs-tertiary-bg); }
+        .audit-section { height:100%; padding:17px; background:var(--bs-secondary-bg); border:1px solid var(--bs-border-color); border-radius:14px; }
+        .audit-section-heading { display:flex; align-items:center; gap:9px; margin:0 0 15px; font-size:14px; font-weight:800; }
+        .audit-section-heading i { color:var(--bs-primary); font-size:16px; }
+        .audit-info-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 12px; }
+        .audit-info-item { min-width:0; }
+        .audit-info-label { display:block; margin-bottom:4px; color:var(--bs-secondary-color); font-size:10px; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }
+        .audit-info-value { color:var(--bs-body-color); font-size:13px; font-weight:600; overflow-wrap:anywhere; }
+        .audit-ua { margin-top:15px; padding-top:12px; border-top:1px solid var(--bs-border-color); }
+        .audit-ua summary { color:var(--bs-secondary-color); cursor:pointer; font-size:12px; font-weight:700; }
+        .audit-ua-value { margin:8px 0 0; color:var(--bs-secondary-color); font-size:11px; overflow-wrap:anywhere; }
+        .audit-changes { margin-top:18px; }
+        .audit-change-card { height:100%; padding:15px; background:var(--bs-secondary-bg); border:1px solid var(--bs-border-color); border-radius:14px; }
+        .audit-change-heading { display:flex; align-items:center; gap:8px; margin:0 0 11px; font-size:13px; font-weight:800; }
+        .audit-change-heading i { color:var(--bs-secondary-color); }
+        .audit-change-heading.is-after i { color:var(--bs-success-text-emphasis); }
+        .audit-value { max-height:36vh; min-height:100px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--bs-tertiary-bg); border:1px solid var(--bs-border-color); border-radius:9px; padding:12px; color:var(--bs-body-color); font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; margin:0; }
+        .audit-detail-note { margin:14px 2px 0; color:var(--bs-secondary-color); font-size:11px; }
         .audit-pagination { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; }
         .footer-note { text-align:center; color:var(--muted); font-size:13px; padding:20px; }
         @media(max-width:767px) {
@@ -63,8 +110,12 @@ $auditError = '';
             .header { padding:0 16px; }
             .audit-heading { align-items:flex-start; flex-direction:column; }
             .table-responsive { max-height:none; }
-            .audit-values { grid-template-columns:1fr; min-width:0; }
             .audit-pagination { align-items:flex-start; flex-direction:column; }
+            .audit-detail-header { padding:18px; }
+            .audit-detail-body { padding:16px; }
+            .audit-action-summary { align-items:flex-start; flex-direction:column; }
+            .audit-info-grid { grid-template-columns:1fr 1fr; }
+            .audit-value { max-height:32vh; }
         }
     </style>
     <?php include __DIR__ . '/init.php'; ?>
@@ -74,7 +125,7 @@ $auditError = '';
         $pageCount = max(1, (int)ceil($auditCount / $pageSize));
         $page = min($page, $pageCount);
         $offset = ($page - 1) * $pageSize;
-        $statement = db()->prepare('SELECT id, actor, target_legacy_id, action, old_value, new_value, created_at
+        $statement = db()->prepare('SELECT id, actor, target_legacy_id, action, device_type, browser, created_at
             FROM audit_log
             ORDER BY created_at DESC, id DESC
             LIMIT :limit OFFSET :offset');
@@ -117,7 +168,7 @@ $auditError = '';
     <div class="content">
         <section class="intro">
             <h1><i class="bi bi-journal-text me-2"></i>Audit Log</h1>
-            <p>Review recent changes and actions recorded by the system. Newest entries appear first.</p>
+            <p>Review recent actions and their recorded details, including device, browser, IP address, and approximate location when available. Newest entries appear first.</p>
         </section>
 
         <section class="audit-card" aria-labelledby="auditHeading">
@@ -138,12 +189,13 @@ $auditError = '';
                                 <th scope="col">Performed by</th>
                                 <th scope="col">Action</th>
                                 <th scope="col">Target</th>
-                                <th scope="col">Recorded changes</th>
+                                <th scope="col">Device / browser</th>
+                                <th scope="col">Details</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (!$auditRows): ?>
-                                <tr><td colspan="5" class="text-center text-muted py-5">No audit entries have been recorded yet.</td></tr>
+                                <tr><td colspan="6" class="text-center text-muted py-5">No audit entries have been recorded yet.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($auditRows as $row): ?>
                                     <tr>
@@ -151,25 +203,11 @@ $auditError = '';
                                         <td><?= e($row['actor']) ?></td>
                                         <td class="audit-action"><?= e(ucwords(str_replace('_', ' ', $row['action']))) ?></td>
                                         <td class="audit-target"><?= e($row['target_legacy_id'] ?? '—') ?></td>
-                                        <td class="audit-details">
-                                            <?php if ($row['old_value'] !== null || $row['new_value'] !== null): ?>
-                                                <details>
-                                                    <summary>View details</summary>
-                                                    <div class="audit-values">
-                                                        <section>
-                                                            <h3>Before</h3>
-                                                            <pre><?= e(audit_log_display_value($row['old_value'])) ?></pre>
-                                                        </section>
-                                                        <section>
-                                                            <h3>After</h3>
-                                                            <pre><?= e(audit_log_display_value($row['new_value'])) ?></pre>
-                                                        </section>
-                                                    </div>
-                                                </details>
-                                            <?php else: ?>
-                                                <span class="text-muted">No change details</span>
-                                            <?php endif; ?>
+                                        <td class="audit-device">
+                                            <div><?= e($row['device_type'] ?? 'Not recorded') ?></div>
+                                            <small class="text-muted"><?= e($row['browser'] ?? 'Not recorded') ?></small>
                                         </td>
+                                        <td><button class="btn btn-outline-primary btn-sm js-audit-detail" type="button" data-audit-id="<?= (int)$row['id'] ?>"><i class="bi bi-box-arrow-up-right me-1"></i>View details</button></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -192,6 +230,133 @@ $auditError = '';
         <div class="footer-note">KK Youth Profiling System &bull; SK Barangay Sikat, Alfonso, Cavite</div>
     </div>
 </main>
+<div class="modal fade" id="auditDetailModal" tabindex="-1" aria-labelledby="auditDetailTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable audit-detail-dialog">
+        <div class="modal-content audit-detail-modal">
+            <div class="modal-header audit-detail-header">
+                <div class="audit-detail-heading">
+                    <div class="audit-detail-icon"><i class="bi bi-journal-check"></i></div>
+                    <div class="audit-detail-copy">
+                        <div class="audit-detail-kicker">SYSTEM ACTIVITY</div>
+                        <h2 class="audit-detail-title" id="auditDetailTitle">Audit entry details</h2>
+                        <div class="audit-detail-summary" id="auditDetailSummary">Loading activity details…</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body audit-detail-body">
+                <section class="audit-action-summary" aria-label="Selected action">
+                    <div>
+                        <span class="audit-summary-label">Action performed</span>
+                        <div class="audit-summary-action" id="auditAction">Loading…</div>
+                    </div>
+                    <span class="badge rounded-pill border text-secondary audit-record-badge">Audit record</span>
+                </section>
+                <div class="row g-3">
+                    <div class="col-lg-5">
+                        <section class="audit-section">
+                            <h3 class="audit-section-heading"><i class="bi bi-person-lines-fill"></i>Activity details</h3>
+                            <div class="audit-info-grid">
+                                <div class="audit-info-item"><span class="audit-info-label">Performed by</span><div class="audit-info-value" id="auditActor">Loading…</div></div>
+                                <div class="audit-info-item"><span class="audit-info-label">Account ID</span><div class="audit-info-value" id="auditActorId">Loading…</div></div>
+                                <div class="audit-info-item"><span class="audit-info-label">Target</span><div class="audit-info-value" id="auditTarget">Loading…</div></div>
+                                <div class="audit-info-item"><span class="audit-info-label">Date &amp; time</span><div class="audit-info-value" id="auditDate">Loading…</div></div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="col-lg-7">
+                        <section class="audit-section">
+                            <h3 class="audit-section-heading"><i class="bi bi-pc-display"></i>Device &amp; network</h3>
+                            <div class="audit-info-grid">
+                                <div class="audit-info-item"><span class="audit-info-label">Device</span><div class="audit-info-value" id="auditDevice">Loading…</div></div>
+                                <div class="audit-info-item"><span class="audit-info-label">Browser</span><div class="audit-info-value" id="auditBrowser">Loading…</div></div>
+                                <div class="audit-info-item"><span class="audit-info-label">IP address</span><div class="audit-info-value" id="auditIp">Loading…</div></div>
+                                <div class="audit-info-item"><span class="audit-info-label">Approximate location</span><div class="audit-info-value" id="auditLocation">Loading…</div></div>
+                            </div>
+                            <details class="audit-ua">
+                                <summary>Show reported User-Agent</summary>
+                                <div class="audit-ua-value" id="auditUserAgent">Loading…</div>
+                            </details>
+                        </section>
+                    </div>
+                </div>
+                <section class="audit-changes" aria-labelledby="auditChangesHeading">
+                    <h3 class="audit-section-heading" id="auditChangesHeading"><i class="bi bi-arrow-left-right"></i>Recorded changes</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <section class="audit-change-card">
+                                <h4 class="audit-change-heading"><i class="bi bi-arrow-counterclockwise"></i>Before</h4>
+                                <pre class="audit-value" id="auditBefore"></pre>
+                            </section>
+                        </div>
+                        <div class="col-md-6">
+                            <section class="audit-change-card">
+                                <h4 class="audit-change-heading is-after"><i class="bi bi-check2-circle"></i>After</h4>
+                                <pre class="audit-value" id="auditAfter"></pre>
+                            </section>
+                        </div>
+                    </div>
+                    <p class="audit-detail-note mb-0">Location is approximate IP-based information, not precise GPS. User-Agent details are reported by the browser and can be spoofed.</p>
+                </section>
+                <div class="alert alert-danger mt-3 mb-0 d-none" id="auditDetailError" role="alert"></div>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script>
+(() => {
+    const modal = new bootstrap.Modal(document.getElementById('auditDetailModal'));
+    const setText = (id, value) => {
+        document.getElementById(id).textContent =
+            value === null || value === undefined || value === '' ? 'Not recorded' : String(value);
+    };
+    const formatValue = (value) => {
+        if (value === null || value === '') return 'No data recorded.';
+        try { return JSON.stringify(JSON.parse(value), null, 2); }
+        catch (_) { return value; }
+    };
+    const formatAction = (value) => String(value || 'Unknown action')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    document.querySelectorAll('.js-audit-detail').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const errorElement = document.getElementById('auditDetailError');
+            errorElement.textContent = '';
+            errorElement.classList.add('d-none');
+            ['auditDetailSummary', 'auditActor', 'auditActorId', 'auditAction', 'auditTarget', 'auditDate',
+                'auditDevice', 'auditBrowser', 'auditIp', 'auditLocation', 'auditUserAgent',
+                'auditBefore', 'auditAfter'].forEach((id) => {
+                document.getElementById(id).textContent = 'Loading…';
+            });
+            modal.show();
+            try {
+                const response = await fetch('audit-log.php?detail=' + encodeURIComponent(button.dataset.auditId), {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin'
+                });
+                const detail = await response.json();
+                if (!response.ok) throw new Error(detail.error || 'The audit details could not be loaded.');
+                setText('auditDetailSummary', detail.created_at);
+                setText('auditActor', detail.actor);
+                setText('auditActorId', detail.actor_user_id === null ? null : String(detail.actor_user_id));
+                setText('auditAction', formatAction(detail.action));
+                setText('auditTarget', detail.target_legacy_id);
+                setText('auditDate', detail.created_at);
+                setText('auditDevice', detail.device_type);
+                setText('auditBrowser', detail.browser);
+                setText('auditIp', detail.ip_address);
+                setText('auditLocation', detail.location);
+                setText('auditUserAgent', detail.user_agent);
+                document.getElementById('auditBefore').textContent = formatValue(detail.old_value);
+                document.getElementById('auditAfter').textContent = formatValue(detail.new_value);
+            } catch (error) {
+                errorElement.textContent = error.message || 'The audit details could not be loaded.';
+                errorElement.classList.remove('d-none');
+            }
+        });
+    });
+})();
+</script>
 </body>
 </html>

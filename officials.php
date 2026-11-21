@@ -150,9 +150,23 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
         .hero { background:#fff; border:1px solid var(--line); border-radius:8px; padding:24px; margin-bottom:24px; text-align:center; }
         .hero h1 { font-size:28px; font-weight:900; margin:0 0 6px; }
         .hero p { margin:0; color:var(--bs-secondary-color); }
-        .group-title { font-size:13px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--bs-secondary-color); margin:28px 0 14px; text-align:center; }
+        .officials-hierarchy {
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            grid-template-areas:
+                "chairperson chairperson"
+                "secretary treasurer"
+                "kagawads kagawads";
+            gap:24px 18px;
+        }
+        .official-group { min-width:0; }
+        .official-group-sk-chairperson { grid-area:chairperson; }
+        .official-group-sk-secretary { grid-area:secretary; }
+        .official-group-sk-treasurer { grid-area:treasurer; }
+        .official-group-sk-kagawad { grid-area:kagawads; }
+        .group-title { font-size:13px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--bs-secondary-color); margin:0 0 14px; text-align:center; }
         .cards { display:flex; flex-wrap:wrap; justify-content:center; gap:18px; }
-        .official { width:200px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:20px 14px; text-align:center; }
+        .official { width:min(200px,100%); background:#fff; border:1px solid var(--line); border-radius:8px; padding:20px 14px; text-align:center; }
         .official .pic { width:112px; height:112px; border-radius:50%; margin:0 auto 14px; object-fit:cover; border:3px solid var(--bs-primary-bg-subtle); display:block; }
         .official .ph { display:flex; align-items:center; justify-content:center; background:var(--bs-primary-bg-subtle); color:var(--bs-primary-text-emphasis); font-size:34px; font-weight:800; }
         .official .nm { font-weight:800; font-size:16px; line-height:1.25; }
@@ -171,6 +185,17 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
         html.dark-mode .footer-note { color:var(--bs-secondary-color); }
         html.dark-mode .hero,
         html.dark-mode .official { border-color:var(--bs-border-color); }
+        @media (max-width:575.98px) {
+            .officials-hierarchy {
+                grid-template-columns:minmax(0,1fr);
+                grid-template-areas:
+                    "chairperson"
+                    "secretary"
+                    "treasurer"
+                    "kagawads";
+                gap:20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -229,31 +254,36 @@ window.SK_MEMBER_PORTAL = <?= !empty($selfUser['legacy_id']) ? 'true' : 'false' 
         </div>
     <?php endif; ?>
 
-    <?php foreach ($groups as $pos => $list): ?>
-        <div class="group-title"><?= e($pos) ?><?= count($list) > 1 ? 's' : '' ?></div>
-        <div class="cards">
-            <?php foreach ($list as $o): ?>
-                <article class="official">
-                    <?php if ($o['photo']): ?>
-                        <img class="pic" src="<?= e($o['photo']) ?>" alt="Photo of <?= e($o['name']) ?>" loading="lazy">
-                    <?php else: ?>
-                        <div class="pic ph" aria-hidden="true"><?= e($o['initials']) ?></div>
-                    <?php endif; ?>
-                    <div class="nm"><?= e($o['name']) ?></div>
-                    <div class="pos"><?= e($o['position']) ?></div>
-                    <?php if ($o['bio'] !== ''): ?><p class="bio mb-0"><?= nl2br(e($o['bio'])) ?></p><?php endif; ?>
-                    <?php if ($o['monthlyHonorarium'] !== null): ?>
-                        <div class="honorarium">Monthly honorarium: ₱<?= e(number_format($o['monthlyHonorarium'], 2)) ?></div>
-                    <?php endif; ?>
-                    <?php if ($o['salnId'] !== ''): ?>
-                        <a class="saln-link" href="official_public_file.php?type=saln&amp;id=<?= e(rawurlencode($o['salnId'])) ?>" target="_blank" rel="noopener noreferrer">
-                            View public SALN<?= $o['salnYear'] !== '' ? ' (' . e($o['salnYear']) . ')' : '' ?>
-                        </a>
-                    <?php endif; ?>
-                </article>
-            <?php endforeach; ?>
-        </div>
-    <?php endforeach; ?>
+    <div class="officials-hierarchy">
+        <?php foreach ($groups as $pos => $list): ?>
+            <?php $groupClass = 'official-group-' . strtolower(str_replace(' ', '-', $pos)); ?>
+            <section class="official-group <?= e($groupClass) ?>">
+                <h2 class="group-title"><?= e($pos) ?><?= count($list) > 1 ? 's' : '' ?></h2>
+                <div class="cards">
+                    <?php foreach ($list as $o): ?>
+                        <article class="official">
+                            <?php if ($o['photo']): ?>
+                                <img class="pic" src="<?= e($o['photo']) ?>" alt="Photo of <?= e($o['name']) ?>" loading="lazy">
+                            <?php else: ?>
+                                <div class="pic ph" aria-hidden="true"><?= e($o['initials']) ?></div>
+                            <?php endif; ?>
+                            <div class="nm"><?= e($o['name']) ?></div>
+                            <div class="pos"><?= e($o['position']) ?></div>
+                            <?php if ($o['bio'] !== ''): ?><p class="bio mb-0"><?= nl2br(e($o['bio'])) ?></p><?php endif; ?>
+                            <?php if ($o['monthlyHonorarium'] !== null): ?>
+                                <div class="honorarium">Monthly honorarium: ₱<?= e(number_format($o['monthlyHonorarium'], 2)) ?></div>
+                            <?php endif; ?>
+                            <?php if ($o['salnId'] !== ''): ?>
+                                <a class="saln-link" href="official_public_file.php?type=saln&amp;id=<?= e(rawurlencode($o['salnId'])) ?>" target="_blank" rel="noopener noreferrer">
+                                    View public SALN<?= $o['salnYear'] !== '' ? ' (' . e($o['salnYear']) . ')' : '' ?>
+                                </a>
+                            <?php endif; ?>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endforeach; ?>
+    </div>
 
     <?php if ($selfUser && can_write_app_data()): ?>
         <section class="hero mt-4" id="myOfficialProfile">

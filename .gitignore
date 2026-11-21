@@ -3,11 +3,25 @@
 .env.*
 !.env.example
 
-# Local database snapshots
+# Local databases, dumps, and GeoIP data
 /local.session.sql
 *.sql.gz
+*.sqlite
+*.db
+*.dump
+*.mmdb
+
+# Local credentials, certificates, and private uploads
+*.pem
+*.key
+*.p12
+*.pfx
+/kk-private-files/
+/private-uploads/
+/uploads/private/
 
 # Runtime and temporary files
+/vendor/
 *.log
 error_log
 *.tmp

@@ -25,6 +25,19 @@ TECHNOLOGY AND DATA
   KK_DB_USER, and KK_DB_PASS environment variables with KK_APP_ENV=production.
   Production rejects the MySQL root account, empty passwords, and non-HTTPS
   requests. Local XAMPP development may use the development defaults.
+- Google sign-in requires KK_GOOGLE_CLIENT_ID, KK_GOOGLE_CLIENT_SECRET, and
+  KK_GOOGLE_REDIRECT_URI in the PHP/Apache environment, plus
+  migrations/20261118_google_account_links.sql and
+  migrations/20261120_google_account_link_approvals.sql applied to the database. The
+  application does not load .env files automatically; keep the client secret
+  out of source control. For local testing, the default callback is
+  http://localhost/project/google-callback.php.
+- Audit-log approximate location lookup is offline. Install Composer dependencies
+  and set KK_GEOIP_DB_PATH to a local GeoLite2 City .mmdb database outside the
+  public web root. No client IP is sent to an external service; without the
+  database, the audit entry still records the directly connected IP and shows
+  location as unavailable. Apply
+  migrations/20261121_audit_log_client_details.sql to an existing database.
 - Bootstrap provides the interface; SweetAlert2 provides alerts and
   confirmation dialogs.
 - The SK meeting editor uses local Summernote 0.9.1 (Bootstrap 5), jQuery
@@ -37,11 +50,15 @@ ACCESS AND ROLES
 ----------------
 - Public visitors can view the landing page, SK officials, and announcements.
 - KK Member accounts have a private portal for their own profile, participation,
-  profile photo, and digital KK ID; the existing member login is reused. Linked
-  accounts have a direct "My KK Portal" shortcut in the shared sidebar.
+  profile photo, and digital KK ID. A member can be profiled and receive an app
+  login before they have a Google account; an authorized SK official can link
+  Google later. Linked KK accounts use their verified Google identity. SK
+  officials keep username/password login unless they are promoted KK members.
 - Active SK accounts can use official management pages; write permissions
   depend on SK role. The SK Chairperson/Chairman and Secretary have additional
-  role-management permissions.
+  role-management permissions. Members promoted to an SK role keep their
+  existing linked Google account; standalone SK accounts keep username/password
+  login.
 - Public visitors are directed to register with an SK official in person.
 - APIs enforce permissions for data changes.
 
@@ -52,13 +69,15 @@ index.php
   activities, and public-safe budget transparency information.
 
 login.php / logout.php / change-password.php
-  Sign-in, sign-out, and temporary-password change flow. Login attempts are
-  rate-limited. New KK Member accounts receive their uppercase surname as a
-  temporary password and must change it at first sign-in. The SK Chairperson
-  or Secretary can retrieve an active member's username or reset their login
-  from the member profile after verifying identity. Username retrieval and
-  password resets are audited; reset credentials must be changed at first
-  sign-in. KK Member accounts go to their private member portal after login.
+  Sign-in, sign-out, and password-change flow. Login attempts are rate-limited.
+  KK members use Google sign-in after matching their verified Google email to
+  exactly one active member profile. During the pilot, existing unlinked KK
+  accounts may continue using passwords; linking an account switches that KK
+  account to Google sign-in. Assigning an SK role to a linked KK account
+  automatically grants SK permissions while keeping that same Google login.
+  Standalone SK accounts keep username/password login. Set
+  KK_GOOGLE_REQUIRE_KK=true only after correcting existing member emails to
+  require Google for every KK-linked account.
 
 dashboard.php
   Official overview of members, activities, budget, expenses, and upcoming
@@ -68,6 +87,13 @@ registration.php
   KK youth profiles and member archiving/restoration. Public visitors are
   directed to register with an SK official in person. Youth are eligible from
   age 15 through 30; members older than 30 are automatically archived.
+  Google verification during profiling is optional. If the member is not ready
+  to link Google, the SK official can create the profile and app login with no
+  email; an SK Kagawad, Chairperson, or Secretary can request a Google link
+  later from the member profile. The member verifies Google in a popup, and the
+  request stays pending until the Chairperson or Secretary approves it from
+  Member List > Manage > Google link approvals. Only then is Google sign-in
+  enabled and the verified email saved to the member profile.
   Program interests support multiple selections across the 10 Centers of
   Participation, including multiple custom interests within a center.
   SK officials submit profile edits as review requests; only the SK
@@ -90,11 +116,13 @@ members.php
   archived.
 
 member-portal.php
-  Private KK member portal using the existing linked account. Members can view
-  their own profile and activity tracking, update only their profile picture,
-  and show a digital ID. ID printing remains an SK staff action. The QR contains an opaque random
-  verification token, not personal details; only authorized SK staff can scan
-  it from the member directory.
+  Private KK member portal using the linked account. Members can view their
+  own profile, participation records, and a personal calendar heatmap based on
+  confirmed attendance linked to their KK profile; they can update only their
+  profile picture and show a digital ID. ID printing remains an SK staff action.
+  The QR contains
+  an opaque random verification token, not personal details; only authorized
+  SK staff can scan it from the member directory.
 
 officials.php
   Public listing of current SK officials, showing public-safe profile details
@@ -110,13 +138,14 @@ announcements.php
 
 participation.php
   Official view of event sign-ups and attendance, including walk-ins, linked
-  member details, filters, and summary counts.
+  member details, filters, and summary counts. Daily calendar heatmaps show
+  confirmed attendance by COP, age group, Purok, and overall activity.
 
 reports.php
   Printable reports for KK members, SK meeting attendance, event participation,
   programs, annual summary, and budget/expenses. Budgets are organized in
   fiscal-year folders and entered per project, with Annual, Supplemental, or
-  Continuing plan types, COP and committee links, project expenses, and print
+  Continuing fund types, COP and committee links, project expenses, and print
   reports. Expense records include supplier/recipient disclosure and internal
   receipt uploads. Meeting and event attendance are reported separately.
 
@@ -156,6 +185,16 @@ Important app_data keys include:
   and SALN documents; original SALNs remain private.
 - kk_member_id_tokens and kk_member_id_prints: opaque QR verification tokens and
   server-timestamped automatic/manual ID print records, respectively.
+- google_account_links: the unique Google subject linked to a KK login account.
+  Google email is matched against the member profile on every sign-in.
+- google_account_link_requests: verified Google-link requests awaiting
+  Chairperson or Secretary approval.
+- audit_log: recorded application actions, including browser-reported
+  User-Agent, inferred device/browser, the direct client IP, and optional
+  approximate offline GeoIP location. User-Agent values can be spoofed; IP
+  location is not precise GPS. Older events have no values for columns added by
+  migrations/20261120_audit_log_user_agent.sql and
+  migrations/20261121_audit_log_client_details.sql.
 - kkPendingRegistrations and kkEditRequests: submissions awaiting review and
   their review status. Profile edit requests may reference private supporting
   documents stored outside the public web directory.
@@ -179,9 +218,12 @@ EVENT SIGN-UP AND ATTENDANCE
   sign-ups. The event action opens the relevant roster for attendance updates.
 
 KK MEMBER PORTAL AND ID
-- Members sign in with their existing linked KK account; no separate portal
-  credentials are created. The portal API resolves the member ID from the
-  authenticated session and only returns that member's profile and tracking.
+- Members sign in with the Google account linked to their KK profile. During
+  the pilot, existing unlinked accounts may use their passwords until linked
+  or until KK_GOOGLE_REQUIRE_KK is enabled. Assigning an SK role changes the
+  same account's permissions and home page; it does not change its Google
+  login. The portal API resolves the member ID from the authenticated session
+  and only returns that member's profile and tracking.
 - Profile picture changes are limited to the signed-in member, validated as
   JPG/PNG/WebP images, and recorded in the audit log without storing the image
   in the audit entry. Other profile edits continue through the existing review
