@@ -339,6 +339,33 @@ footer{
     font-weight:900;
 }
 
+.ann-rescheduled{
+    position:absolute;
+    z-index:2;
+    top:3.2rem;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:.15rem;
+    width:max-content;
+    max-width:calc(100% - 1.5rem);
+    padding:.45rem .75rem;
+    border:1px solid rgba(255,255,255,.55);
+    border-radius:.75rem;
+    background:rgba(13,110,253,.94);
+    box-shadow:0 4px 12px rgba(0,0,0,.2);
+    color:#fff;
+    font-size:.74rem;
+    line-height:1.2;
+    text-align:center;
+}
+.ann-rescheduled-label{font-size:.62rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.ann-rescheduled-dates{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.35rem}
+.ann-rescheduled-old{opacity:.86;text-decoration-thickness:2px}
+.ann-rescheduled-new{font-weight:900}
+
 .ann-body{
     flex:1;
     padding:18px 18px 8px;
@@ -1496,6 +1523,8 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         a.cancelled = !!a.cancelled;
         a.publishState = ["Draft", "Published", "Unpublished"].indexOf(a.publishState) === -1 ? "Published" : a.publishState;
         a.publishDate = a.publishDate || "";
+        a.rescheduledFrom = typeof a.rescheduledFrom === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.rescheduledFrom)
+            ? a.rescheduledFrom : "";
         a.createdAt = a.createdAt || (a.date + "T00:00:00.000Z");
         a.updatedAt = a.updatedAt || a.createdAt;
         delete a.status;      // the status is now calculated automatically
@@ -1534,6 +1563,15 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
     function imageOrPlaceholder(a) {
         var src = a.banner || a.poster;
         return src ? imgTag(src, "Banner for " + a.title) : placeholder();
+    }
+    function rescheduledBanner(a) {
+        if (!a.rescheduledFrom || a.rescheduledFrom === a.date) return "";
+        var oldDate = formatDate(a.rescheduledFrom);
+        var newDate = formatDate(a.date);
+        return '<div class="ann-rescheduled" aria-label="Rescheduled from ' + escapeHtml(oldDate) + ' to ' + escapeHtml(newDate) + '">' +
+            '<span class="ann-rescheduled-label">Rescheduled</span>' +
+            '<span class="ann-rescheduled-dates"><del class="ann-rescheduled-old">' + escapeHtml(oldDate) + '</del>' +
+            '<i class="bi bi-arrow-right" aria-hidden="true"></i><strong class="ann-rescheduled-new">' + escapeHtml(newDate) + '</strong></span></div>';
     }
     function statusBadge(status, inline) {
         return '<span class="ann-status ' + (inline ? "inline " : "") + status.toLowerCase() + '">' + escapeHtml(status) + '</span>';
@@ -1574,6 +1612,7 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         return '<div class="col"><div class="ann-card' + (a.cancelled ? " is-cancelled" : "") + (OFFICIAL && pub !== "Published" ? " is-draft" : "") + '">' +
             '<div class="ann-banner">' + imageOrPlaceholder(a) +
                 statusBadge(status) +
+                rescheduledBanner(a) +
                 '<div class="ann-date-chip"><span class="m">' + month + '</span><span class="d">' + day + '</span></div>' +
                 '<span class="ann-tag cat">' + escapeHtml(a.category) + '</span>' +
                 (OFFICIAL ? '<span class="ann-tag pub ' + pub.toLowerCase() + '">' + pub + '</span>' : "") +
@@ -1633,7 +1672,9 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         var search = value("searchInput").trim().toLowerCase();
         var cat = value("categoryFilter"), date = value("dateFilter"), pub = value("publishFilter");
         var list = announcements.filter(canSee).filter(function (a) {
-            if (currentFilter !== "All" && getStatus(a) !== currentFilter) return false;
+            var status = getStatus(a);
+            if (currentFilter === "All" && status === "Completed") return false;
+            if (currentFilter !== "All" && status !== currentFilter) return false;
             if (cat && a.category !== cat) return false;
             if (date && a.date !== date) return false;
             if (pub && publishLabel(a) !== pub) return false;
@@ -1661,9 +1702,10 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
 
     function renderCounts() {
         var visible = announcements.filter(canSee);
+        var active = visible.filter(function (a) { return getStatus(a) !== "Completed"; });
         var c = { Upcoming: 0, Ongoing: 0, Completed: 0, Cancelled: 0 };
         visible.forEach(function (a) { c[getStatus(a)]++; });
-        setText("countAll", visible.length);
+        setText("countAll", active.length);
         setText("countUpcoming", c.Upcoming);
         setText("countOngoing", c.Ongoing);
         setText("countCompleted", c.Completed);
@@ -1689,11 +1731,22 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         var empty = $("emptyState");
         empty.classList.toggle("d-none", shown.length > 0);
         if (shown.length === 0) {
-            var none = announcements.filter(canSee).length === 0;
-            setText("emptyTitle", none ? "No announcements yet" : "No matching announcements");
-            setText("emptyText", none
-                ? (OFFICIAL ? "Click \u201cAdd Announcement\u201d to post the first one." : "Please check back soon for news and events.")
-                : "Try a different search or filter.");
+            var visible = announcements.filter(canSee);
+            var none = visible.length === 0;
+            var onlyCompleted = currentFilter === "All" && !none && !visible.some(function (a) {
+                return getStatus(a) !== "Completed";
+            });
+            var completedInArchives = visible.some(function (a) {
+                return getStatus(a) === "Completed" && isPublic(a);
+            });
+            setText("emptyTitle", onlyCompleted ? "No active announcements" : (none ? "No announcements yet" : "No matching announcements"));
+            setText("emptyText", onlyCompleted
+                ? (completedInArchives
+                    ? "Published completed events are in Archives. Use the Completed filter here to manage them."
+                    : "Use the Completed filter to review past announcements.")
+                : (none
+                    ? (OFFICIAL ? "Click \u201cAdd Announcement\u201d to post the first one." : "Please check back soon for news and events.")
+                    : "Try a different search or filter."));
         }
         renderUpcoming();
         renderCounts();
@@ -1722,7 +1775,7 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
 
     function renderDetails(a) {
         var status = getStatus(a);
-        var html = '<div class="detail-banner">' + imageOrPlaceholder(a) + '</div><div class="p-4">';
+        var html = '<div class="detail-banner">' + imageOrPlaceholder(a) + rescheduledBanner(a) + '</div><div class="p-4">';
         html += '<div class="d-flex flex-wrap align-items-center gap-2 mb-2">' + statusBadge(status, true) +
             '<span class="mini-badge">' + escapeHtml(a.category) + '</span>' +
             (OFFICIAL ? '<span class="mini-badge">' + publishLabel(a) + '</span>' : "") + '</div>';
@@ -2156,7 +2209,10 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         if (id) {
             const a = Core.find(id);
             if (!a) return;
+            const previousDate = a.date;
+            const previousRescheduledFrom = a.rescheduledFrom || "";
             Object.assign(a, data);
+            a.rescheduledFrom = data.date !== previousDate ? previousDate : previousRescheduledFrom;
             a.publishState = target;
             a.updatedAt = now;
             message = target === "Published" ? "Announcement saved." : "Announcement saved as " + target.toLowerCase() + ".";

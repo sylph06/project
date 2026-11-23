@@ -1545,7 +1545,7 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
             f += '<button type="button" class="btn btn-outline-secondary" id="btnLogPrint" data-act="log-manual-id" data-key="' + esc(key) + '"><i class="bi bi-journal-check me-1"></i>Log Manual Print</button>';
         }
         f += '</div><div class="kk-group kk-manage-group">';
-        if (window.SK_CAN_MANAGE_ROLES && r.kkStatus !== 'Archived') {
+        if (window.SK_CAN_EDIT_MEMBERS && r.kkStatus !== 'Archived') {
             f += '<button type="button" class="btn btn-outline-secondary" id="btnEditReg" data-act="kkedit" data-key="' + esc(key) + '"><i class="bi bi-pencil-square me-1"></i>Edit Member</button>';
         }
         if (window.SK_CAN_MANAGE_ROLES && (r.kkStatus !== 'Archived' || r.isSK)) {

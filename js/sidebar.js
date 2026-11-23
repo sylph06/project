@@ -51,6 +51,7 @@
         landing.push(['index.php#expenses',      'bi-receipt',      'Recorded expenses']);
         landing.push(['index.php#budget',        'bi-shield-check', 'Project transparency']);
         landing.push(['index.php#announcements', 'bi-megaphone',    'Announcements & activities']);
+        landing.push(['archives.php',            'bi-archive',      'Completed event archives']);
         landing.push(['index.php#join',          'bi-person-plus',  'How to join']);
         MENU = [{ title: null, items: landing }];
     }

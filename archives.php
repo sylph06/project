@@ -3,7 +3,7 @@ require_once __DIR__ . '/config.php';
 require_viewer();
 ?>
 <!DOCTYPE html>
-<html lang="en"<?= is_public() ? ' class="is-public"' : '' ?>>
+<html lang="en"<?= is_limited_viewer() ? ' class="is-public"' : '' ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,7 +67,33 @@ $archiveAnnouncements = json_decode($__data['skAnnouncements'] ?? '[]', true);
 $archiveAnnouncements = is_array($archiveAnnouncements) ? $archiveAnnouncements : [];
 $archiveMembersById = [];
 $archiveRows = [];
+$archiveLimitedViewer = is_limited_viewer();
 
+function archive_announcement_is_completed($announcement, $now, $today) {
+    if (!is_array($announcement)
+        || !empty($announcement['cancelled'])
+        || ($announcement['publishState'] ?? '') !== 'Published'
+        || (!empty($announcement['publishDate']) && $announcement['publishDate'] > $today)) {
+        return false;
+    }
+
+    $eventDate = (string)($announcement['date'] ?? '');
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $eventDate)
+        || !checkdate((int)substr($eventDate, 5, 2), (int)substr($eventDate, 8, 2), (int)substr($eventDate, 0, 4))) {
+        return false;
+    }
+
+    $endTime = (string)($announcement['endTime'] ?? '');
+    if (preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $endTime)) {
+        $eventEnd = strtotime($eventDate . ' ' . $endTime . ':00');
+    } else {
+        $eventEnd = strtotime($eventDate . ' 23:59:59');
+    }
+    return $eventEnd !== false && $eventEnd < $now;
+}
+
+$archiveNow = time();
+$archiveToday = date('Y-m-d', $archiveNow);
 foreach ($archiveMembers as $member) {
     if (!is_array($member) || empty($member['id'])) continue;
     $archiveMembersById[(string)$member['id']] = $member;
@@ -122,23 +148,33 @@ foreach ($archiveRoles as $role) {
 }
 
 foreach ($archiveAnnouncements as $announcement) {
-    if (!is_array($announcement) || empty($announcement['cancelled'])) continue;
+    if (!is_array($announcement)) continue;
+    $isCancelled = !empty($announcement['cancelled']);
+    $isCompleted = archive_announcement_is_completed($announcement, $archiveNow, $archiveToday);
+    if ($archiveLimitedViewer && !$isCompleted) continue;
+    if (!$isCancelled && !$isCompleted) continue;
     $title = trim((string)($announcement['title'] ?? ''));
     if ($title === '') $title = 'Untitled announcement';
+    $eventDate = (string)($announcement['date'] ?? '');
+    $category = trim((string)($announcement['category'] ?? ''));
+    $status = $isCompleted ? 'Completed' : 'Cancelled';
     $archiveRows[] = [
         'type' => 'announcement',
-        'typeLabel' => 'Cancelled event / announcement',
+        'typeLabel' => $isCompleted ? 'Completed event' : 'Cancelled event / announcement',
         'name' => $title,
         'announcementId' => (string)($announcement['id'] ?? ''),
-        'identifier' => (string)($announcement['date'] ?? ''),
-        'details' => trim((string)($announcement['category'] ?? 'Cancelled')) ?: 'Cancelled',
-        'date' => (string)($announcement['updatedAt'] ?? ''),
+        'announcementStatus' => $status,
+        'identifier' => $eventDate,
+        'details' => $isCompleted
+            ? trim('Completed event' . ($category !== '' ? ' · ' . $category : ''))
+            : ($category !== '' ? $category : 'Cancelled'),
+        'date' => $isCompleted ? $eventDate : (string)($announcement['updatedAt'] ?? ''),
         'source' => 'announcements.php',
         'sourceLabel' => 'Announcements',
         'search' => implode(' ', array_filter([
             $title,
-            $announcement['date'] ?? '',
-            $announcement['category'] ?? '',
+            $eventDate,
+            $category,
             $announcement['description'] ?? '',
             $announcement['details'] ?? '',
             $announcement['venue'] ?? '',
@@ -146,7 +182,7 @@ foreach ($archiveAnnouncements as $announcement) {
             $announcement['contact'] ?? '',
             $announcement['notes'] ?? '',
             is_array($announcement['centers'] ?? null) ? implode(' ', array_filter($announcement['centers'], 'is_scalar')) : '',
-            'cancelled',
+            strtolower($status),
         ], 'is_scalar')),
     ];
 }
@@ -161,7 +197,7 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
 <body>
 <div class="top-strip"></div>
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=16"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">
@@ -169,9 +205,9 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
             <div><div class="header-title">Archives</div><small>KK Youth Profiling System</small></div>
         </div>
         <div class="header-account-area">
-            <a href="<?= is_public() ? 'announcements.php' : 'request.php' ?>" class="header-notification" aria-label="<?= is_public() ? 'View announcements' : (int)$archiveAttentionCount . ' requests need review' ?>">
+            <a href="<?= $archiveLimitedViewer ? 'announcements.php' : 'request.php' ?>" class="header-notification" aria-label="<?= $archiveLimitedViewer ? 'View announcements' : (int)$archiveAttentionCount . ' requests need review' ?>">
                 <i class="bi bi-bell" aria-hidden="true"></i>
-                <?php if (!is_public() && $archiveAttentionCount > 0): ?><span class="header-notification-count"><?= (int)$archiveAttentionCount ?></span><?php endif; ?>
+                <?php if (!$archiveLimitedViewer && $archiveAttentionCount > 0): ?><span class="header-notification-count"><?= (int)$archiveAttentionCount ?></span><?php endif; ?>
             </a>
             <div class="header-avatar"><?= e(uinit()) ?></div>
             <div class="d-none d-md-block header-identity">
@@ -187,36 +223,46 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
     <div class="content">
         <section class="hero">
             <h1><i class="bi bi-archive me-2"></i>Archives</h1>
-            <p>Review archived KK members and SK roles, plus cancelled events and announcements. Use each record’s source page to restore or manage it.</p>
+            <p><?= $archiveLimitedViewer
+                ? 'Browse published events that have ended. They remain available in the announcements list under Completed.'
+                : 'Review archived KK members and SK roles, plus completed and cancelled events and announcements. Use each record’s source page to restore or manage it.' ?></p>
         </section>
 
         <div class="row g-3 mb-4">
-            <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter selected" data-filter="" aria-pressed="true"><div class="count"><?= count($archiveRows) ?></div><div class="label">Archived or cancelled records</div></button></div>
-            <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter" data-filter="member" aria-pressed="false"><div class="count"><?= $archiveCounts['member'] ?></div><div class="label">Archived KK members</div></button></div>
-            <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter" data-filter="role" aria-pressed="false"><div class="count"><?= $archiveCounts['role'] ?></div><div class="label">Ended / archived SK roles</div></button></div>
-            <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter" data-filter="announcement" aria-pressed="false"><div class="count"><?= $archiveCounts['announcement'] ?></div><div class="label">Cancelled events / announcements</div></button></div>
+            <?php if ($archiveLimitedViewer): ?>
+                <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter selected" data-filter="announcement" aria-pressed="true"><div class="count"><?= $archiveCounts['announcement'] ?></div><div class="label">Completed events</div></button></div>
+            <?php else: ?>
+                <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter selected" data-filter="" aria-pressed="true"><div class="count"><?= count($archiveRows) ?></div><div class="label">Archived records</div></button></div>
+                <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter" data-filter="member" aria-pressed="false"><div class="count"><?= $archiveCounts['member'] ?></div><div class="label">Archived KK members</div></button></div>
+                <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter" data-filter="role" aria-pressed="false"><div class="count"><?= $archiveCounts['role'] ?></div><div class="label">Ended / archived SK roles</div></button></div>
+                <div class="col-sm-6 col-lg-3"><button type="button" class="summary-card records-filter" data-filter="announcement" aria-pressed="false"><div class="count"><?= $archiveCounts['announcement'] ?></div><div class="label">Completed / cancelled announcements</div></button></div>
+            <?php endif; ?>
         </div>
 
         <section class="records-card">
-            <div class="records-heading"><i class="bi bi-clock-history me-2"></i>Archived records</div>
+            <div class="records-heading"><i class="bi bi-clock-history me-2"></i><?= $archiveLimitedViewer ? 'Completed events' : 'Archived records' ?></div>
             <div class="records-body">
                 <div class="row g-2 mb-3">
-                    <div class="col-md-7"><label class="visually-hidden" for="archiveSearch">Search archives</label><input id="archiveSearch" class="form-control" type="search" placeholder="Search name, ID, position, or reason"></div>
+                    <div class="col-md-7"><label class="visually-hidden" for="archiveSearch">Search archives</label><input id="archiveSearch" class="form-control" type="search" placeholder="<?= $archiveLimitedViewer ? 'Search event title, category, or date' : 'Search name, ID, position, or reason' ?>"></div>
                     <div class="col-md-5"><label class="visually-hidden" for="archiveType">Filter archive type</label>
                         <select id="archiveType" class="form-select">
-                            <option value="">All archived record types</option>
-                            <option value="member">KK members</option>
-                            <option value="role">SK roles</option>
-                            <option value="announcement">Cancelled events / announcements</option>
+                            <?php if ($archiveLimitedViewer): ?>
+                                <option value="announcement">Completed events</option>
+                            <?php else: ?>
+                                <option value="">All archived record types</option>
+                                <option value="member">KK members</option>
+                                <option value="role">SK roles</option>
+                                <option value="announcement">Completed / cancelled announcements</option>
+                            <?php endif; ?>
                         </select>
                     </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead><tr><th>Type</th><th>Record</th><th>Archived / cancelled</th><th>Reason / details</th><th>Manage</th></tr></thead>
+                        <thead><tr><th>Type</th><th>Record</th><th>Event / archive date</th><th>Reason / details</th><th>Manage</th></tr></thead>
                         <tbody id="archiveRows">
                         <?php if (!$archiveRows): ?>
-                            <tr id="archiveEmpty"><td colspan="5" class="text-center text-muted py-5">There are no archived or cancelled records.</td></tr>
+                            <tr id="archiveEmpty"><td colspan="5" class="text-center text-muted py-5"><?= $archiveLimitedViewer ? 'There are no completed events to archive yet.' : 'There are no archived records.' ?></td></tr>
                         <?php else: foreach ($archiveRows as $row): ?>
                             <tr data-type="<?= e($row['type']) ?>" data-search="<?= e($row['search']) ?>">
                                 <td><span class="badge text-bg-secondary"><?= e($row['typeLabel']) ?></span></td>
@@ -225,7 +271,7 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
                                 <td><?= e($row['details']) ?></td>
                                 <td class="text-nowrap">
                                     <?php if ($row['type'] === 'announcement' && !empty($row['announcementId'])): ?>
-                                        <button class="btn btn-sm btn-outline-primary" type="button" data-archive-announcement="<?= e($row['announcementId']) ?>">View details</button>
+                                        <button class="btn btn-sm btn-outline-primary" type="button" data-archive-announcement="<?= e($row['announcementId']) ?>" data-archive-status="<?= e($row['announcementStatus']) ?>">View details</button>
                                     <?php endif; ?>
                                     <a class="btn btn-sm btn-outline-primary" href="<?= e($row['source']) ?>"><?= e($row['sourceLabel']) ?> <i class="bi bi-arrow-up-right"></i></a>
                                 </td>
@@ -235,7 +281,9 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
                         </tbody>
                     </table>
                 </div>
-                <p class="small text-muted mt-3 mb-0">Only record types with an existing archived or cancelled state are listed here. Records such as sign-ups, attendance, and reports are not archived by the application.</p>
+                <p class="small text-muted mt-3 mb-0"><?= $archiveLimitedViewer
+                    ? 'Published events appear here automatically after they end and remain in the announcements list under Completed.'
+                    : 'Published events appear here automatically after they end. Completed events also remain in the announcements list under Completed. Sign-ups, attendance, and reports are not archived here.' ?></p>
             </div>
         </section>
         <div class="footer-note">KK Youth Profiling System &bull; SK Barangay Sikat, Alfonso, Cavite &bull; FY 2026&ndash;2027</div>
@@ -245,7 +293,7 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title h5 fw-bold" id="archiveAnnouncementTitle">Cancelled announcement details</h2>
+                <h2 class="modal-title h5 fw-bold" id="archiveAnnouncementTitle">Archived event details</h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="archiveAnnouncementDetails"></div>
@@ -270,19 +318,41 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
         console.error('Could not read archived announcement details.', error);
     }
 
-    function showAnnouncementDetails(id) {
+    function announcementArchiveStatus(record) {
+        if (!record) return '';
+        if (record.cancelled) return 'Cancelled';
+        if (record.publishState !== 'Published') return '';
+
+        var today = new Date();
+        var todayText = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') +
+            '-' + String(today.getDate()).padStart(2, '0');
+        if (record.publishDate && record.publishDate > todayText) return '';
+
+        var eventDate = String(record.date || '');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return '';
+        var endTime = String(record.endTime || '');
+        endTime = /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(endTime) ? endTime + ':00' : '23:59:59';
+        var eventEnd = new Date(eventDate + 'T' + endTime);
+        return !Number.isNaN(eventEnd.getTime()) && Date.now() > eventEnd.getTime() ? 'Completed' : '';
+    }
+
+    function showAnnouncementDetails(id, expectedStatus) {
         var announcement = announcementRecords.filter(function (record) {
-            return record && String(record.id) === String(id) && record.cancelled;
+            return record && String(record.id) === String(id)
+                && announcementArchiveStatus(record) === expectedStatus;
         })[0];
         if (!announcement) return;
 
+        var status = announcementArchiveStatus(announcement);
+        document.getElementById('archiveAnnouncementTitle').textContent = status === 'Completed'
+            ? 'Completed event details' : 'Cancelled announcement details';
         var details = document.getElementById('archiveAnnouncementDetails');
         details.replaceChildren();
         var banner = announcement.banner || announcement.poster || '';
         if (/^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/i.test(banner)) {
             var image = document.createElement('img');
             image.src = banner;
-            image.alt = 'Banner for ' + String(announcement.title || 'cancelled announcement');
+            image.alt = 'Banner for ' + String(announcement.title || 'archived announcement');
             image.className = 'img-fluid rounded mb-3';
             details.appendChild(image);
         }
@@ -293,10 +363,11 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
         details.appendChild(heading);
 
         var fields = [
-            ['Status', 'Cancelled'],
+            ['Status', status],
             ['Category', announcement.category],
             ['Centers of participation', Array.isArray(announcement.centers) ? announcement.centers.join(', ') : ''],
             ['Event date', announcement.date],
+            ['Previously scheduled date', announcement.rescheduledFrom],
             ['Start time', announcement.startTime],
             ['End time', announcement.endTime],
             ['Venue', announcement.venue],
@@ -329,7 +400,7 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
 
     document.addEventListener('click', function (event) {
         var button = event.target.closest('[data-archive-announcement]');
-        if (button) showAnnouncementDetails(button.dataset.archiveAnnouncement);
+        if (button) showAnnouncementDetails(button.dataset.archiveAnnouncement, button.dataset.archiveStatus);
     });
 
     function filter() {

@@ -132,7 +132,7 @@ $memberPortalUser = require_member_account();
     window.SK_MEMBER_PORTAL = true;
 </script>
 <script src="js/theme.js?v=3"></script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=16"></script>
 
 <div class="page-content">
     <header class="bg-white border-bottom sticky-top">

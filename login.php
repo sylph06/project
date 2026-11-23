@@ -66,7 +66,7 @@ if ($existingUser) {
         }
 
         .login-shell{
-            min-height:calc(100vh - 6px);
+            min-height:100vh;
         }
 
         /* ---------- LEFT: logo panel ---------- */
@@ -233,6 +233,25 @@ if ($existingUser) {
             font-weight:600;
         }
         .link-soft:hover{ text-decoration:underline; }
+
+        @media (max-width:575.98px){
+            .form-side{ padding:16px 12px; }
+            .login-card{ padding:24px 20px; }
+            .login-card .text-center.mb-4{ margin-bottom:1rem !important; }
+        }
+
+        @media (min-width:992px) and (max-height:820px){
+            .brand-side{ padding:24px; }
+            .logo-big{ width:180px; height:180px; }
+            .brand-inner h2{ margin-top:16px; }
+            .feature{ padding:8px 12px; margin-top:6px; }
+            .form-side{ padding:12px 20px; }
+            .login-card{ padding:20px 24px; }
+            .login-card .logo-small{ width:64px; height:64px; }
+            .login-card .text-center.mb-4{ margin-bottom:1rem !important; }
+            .login-card .mb-3{ margin-bottom:.5rem !important; }
+            .login-card .my-4{ margin-top:.75rem !important; margin-bottom:.75rem !important; }
+        }
     </style>
 </head>
 <body>
@@ -324,9 +343,6 @@ if ($existingUser) {
                     <a href="<?= e($googleLoginUrl) ?>" class="btn btn-outline-primary w-100" id="googleLoginBtn" style="padding:.7rem .9rem;">
                         <i class="bi bi-google me-2"></i>Continue with Google
                     </a>
-                    <div class="text-center text-secondary small mt-2">
-                        Use the verified Google email recorded on your KK member profile. Members assigned an SK role keep this same Google login.
-                    </div>
                 <?php elseif (GOOGLE_KK_LOGIN_REQUIRED): ?>
                     <div class="alert alert-warning small mt-3" role="status">
                         Google sign-in is required for KK members but is not available yet. Contact the SK administrator.
@@ -340,12 +356,6 @@ if ($existingUser) {
                 <a href="public.php" class="btn btn-outline-primary w-100" id="publicBtn" style="padding:.7rem .9rem;">
                     <i class="bi bi-globe2 me-2"></i>View as Public
                 </a>
-                <div class="text-center text-secondary small mt-2">
-                    No password needed. Public view is limited to SK Officials, Announcements, and Youth Registration.
-                </div>
-                <div class="text-center text-secondary small mt-2">
-                    KK members sign in with the verified Google email on their profile. During the pilot, existing unlinked accounts may continue using their current credentials.
-                </div>
 
             </div>
         </div>

@@ -51,14 +51,14 @@ $auditError = '';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
     <link href="css/sidebar.css?v=31" rel="stylesheet">
     <style>
-        :root { --line:var(--bs-border-color); --muted:var(--bs-secondary-color); }
+        :root { --line:var(--ui-line); --muted:var(--ui-muted); }
         * { box-sizing:border-box; }
-        body { margin:0; background:var(--bs-tertiary-bg); color:var(--bs-body-color); font-family:Arial,sans-serif; }
+        body { margin:0; background:var(--ui-paper); color:var(--bs-body-color); }
         .top-strip { height:7px; background:var(--bs-primary); }
-        .header { min-height:70px; background:var(--bs-body-bg); border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 26px; gap:14px; }
+        .header { min-height:70px; background:var(--ui-surface); border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 26px; gap:14px; }
         .header-title { font-size:20px; font-weight:800; }
         .content { padding:24px; max-width:1600px; margin:0 auto; }
-        .intro, .audit-card { background:var(--bs-body-bg); border:1px solid var(--line); border-radius:14px; }
+        .intro, .audit-card { background:var(--ui-surface); border:1px solid var(--line); border-radius:var(--ui-radius); box-shadow:var(--ui-shadow); }
         .intro { padding:20px; margin-bottom:16px; }
         .intro h1 { font-size:24px; font-weight:900; margin:0 0 5px; }
         .intro p { color:var(--muted); margin:0; }
@@ -73,36 +73,39 @@ $auditError = '';
         .audit-target { overflow-wrap:anywhere; }
         .audit-device { min-width:150px; }
         .audit-detail-dialog { max-width:1120px; }
-        .audit-detail-modal { border:0; border-radius:18px; overflow:hidden; box-shadow:0 24px 70px rgba(20,35,60,.22); }
-        .audit-detail-header { gap:16px; padding:22px 26px; background:linear-gradient(120deg,var(--bs-primary-bg-subtle),var(--bs-secondary-bg) 68%); border-bottom:1px solid var(--bs-border-color); }
+        .audit-detail-modal { border:1px solid var(--ui-line); border-radius:var(--ui-radius); overflow:hidden; box-shadow:var(--ui-shadow); }
+        .audit-detail-header { gap:16px; padding:20px 24px; background:var(--bs-primary); color:#fff; border-bottom:1px solid var(--bs-primary); }
         .audit-detail-heading { display:flex; align-items:center; gap:15px; min-width:0; }
-        .audit-detail-icon { display:grid; place-items:center; width:48px; height:48px; flex:none; border-radius:14px; color:var(--bs-primary-text-emphasis); background:var(--bs-primary-bg-subtle); font-size:22px; }
+        .audit-detail-icon { display:grid; place-items:center; width:46px; height:46px; flex:none; border:1px solid rgba(255,255,255,.28); border-radius:var(--ui-radius-sm); color:#fff; background:rgba(255,255,255,.14); font-size:21px; }
         .audit-detail-copy { min-width:0; }
-        .audit-detail-kicker { color:var(--bs-secondary-color); font-size:10px; font-weight:800; letter-spacing:.12em; }
-        .audit-detail-title { margin:2px 0 3px; font-size:20px; font-weight:800; }
-        .audit-detail-summary { color:var(--bs-secondary-color); font-size:13px; overflow-wrap:anywhere; }
-        .audit-detail-body { padding:22px 26px 26px; background:var(--bs-tertiary-bg); }
-        .audit-action-summary { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:15px 18px; margin-bottom:18px; background:var(--bs-secondary-bg); border:1px solid var(--bs-border-color); border-left:4px solid var(--bs-primary); border-radius:12px; }
-        .audit-summary-label { display:block; margin-bottom:4px; color:var(--bs-secondary-color); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+        .audit-detail-kicker { color:rgba(255,255,255,.78); font-size:10px; font-weight:800; letter-spacing:.1em; }
+        .audit-detail-title { margin:2px 0 3px; color:#fff; font-size:19px; font-weight:750; }
+        .audit-detail-summary { color:rgba(255,255,255,.86); font-size:13px; overflow-wrap:anywhere; }
+        .audit-detail-body { padding:22px 24px 24px; background:var(--ui-paper); }
+        .audit-action-summary { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:15px 18px; margin-bottom:18px; background:var(--bs-primary-bg-subtle); border:1px solid var(--bs-primary-border-subtle); border-left:4px solid var(--bs-primary); border-radius:var(--ui-radius-sm); }
+        .audit-summary-label { display:block; margin-bottom:4px; color:var(--ui-muted); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
         .audit-summary-action { font-size:17px; font-weight:750; overflow-wrap:anywhere; }
-        .audit-record-badge { background:var(--bs-tertiary-bg); }
-        .audit-section { height:100%; padding:17px; background:var(--bs-secondary-bg); border:1px solid var(--bs-border-color); border-radius:14px; }
+        .audit-record-badge { color:var(--bs-primary-text-emphasis)!important; background:var(--bs-primary-bg-subtle); border-color:var(--bs-primary-border-subtle)!important; }
+        .audit-section { height:100%; padding:17px; background:var(--ui-surface); border:1px solid var(--ui-line); border-radius:var(--ui-radius); }
         .audit-section-heading { display:flex; align-items:center; gap:9px; margin:0 0 15px; font-size:14px; font-weight:800; }
-        .audit-section-heading i { color:var(--bs-primary); font-size:16px; }
+        .audit-section-heading i { color:var(--ui-brand); font-size:16px; }
         .audit-info-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 12px; }
         .audit-info-item { min-width:0; }
-        .audit-info-label { display:block; margin-bottom:4px; color:var(--bs-secondary-color); font-size:10px; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }
+        .audit-info-label { display:block; margin-bottom:4px; color:var(--ui-muted); font-size:10px; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }
         .audit-info-value { color:var(--bs-body-color); font-size:13px; font-weight:600; overflow-wrap:anywhere; }
-        .audit-ua { margin-top:15px; padding-top:12px; border-top:1px solid var(--bs-border-color); }
-        .audit-ua summary { color:var(--bs-secondary-color); cursor:pointer; font-size:12px; font-weight:700; }
-        .audit-ua-value { margin:8px 0 0; color:var(--bs-secondary-color); font-size:11px; overflow-wrap:anywhere; }
+        .audit-ua { margin-top:15px; padding-top:12px; border-top:1px solid var(--ui-line); }
+        .audit-ua summary { color:var(--ui-muted); cursor:pointer; font-size:12px; font-weight:700; }
+        .audit-ua-value { margin:8px 0 0; color:var(--ui-muted); font-size:11px; overflow-wrap:anywhere; }
         .audit-changes { margin-top:18px; }
-        .audit-change-card { height:100%; padding:15px; background:var(--bs-secondary-bg); border:1px solid var(--bs-border-color); border-radius:14px; }
-        .audit-change-heading { display:flex; align-items:center; gap:8px; margin:0 0 11px; font-size:13px; font-weight:800; }
-        .audit-change-heading i { color:var(--bs-secondary-color); }
-        .audit-change-heading.is-after i { color:var(--bs-success-text-emphasis); }
-        .audit-value { max-height:36vh; min-height:100px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--bs-tertiary-bg); border:1px solid var(--bs-border-color); border-radius:9px; padding:12px; color:var(--bs-body-color); font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; margin:0; }
-        .audit-detail-note { margin:14px 2px 0; color:var(--bs-secondary-color); font-size:11px; }
+        .audit-change-card { height:100%; padding:15px; background:var(--ui-surface); border:1px solid var(--ui-line); border-radius:var(--ui-radius); }
+        .audit-change-table-wrap { padding:0; overflow:hidden; }
+        .audit-change-table-wrap .table-responsive { max-height:none; min-height:0; }
+        .audit-change-table { min-width:600px; margin:0; font-size:13px; }
+        .audit-change-table th { padding:11px 14px; color:var(--ui-muted); font-size:10px; font-weight:800; letter-spacing:.06em; white-space:nowrap; }
+        .audit-change-table td { min-width:150px; padding:11px 14px; vertical-align:top; white-space:pre-wrap; overflow-wrap:anywhere; }
+        .audit-change-table .audit-change-label { min-width:170px; background:var(--ui-surface); color:var(--bs-body-color); font-weight:700; }
+        .audit-changes-empty { padding:14px 16px; color:var(--ui-muted); font-size:13px; }
+        .audit-detail-note { margin:14px 2px 0; color:var(--ui-muted); font-size:11px; }
         .audit-pagination { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; }
         .footer-note { text-align:center; color:var(--muted); font-size:13px; padding:20px; }
         @media(max-width:767px) {
@@ -115,7 +118,6 @@ $auditError = '';
             .audit-detail-body { padding:16px; }
             .audit-action-summary { align-items:flex-start; flex-direction:column; }
             .audit-info-grid { grid-template-columns:1fr 1fr; }
-            .audit-value { max-height:32vh; }
         }
     </style>
     <?php include __DIR__ . '/init.php'; ?>
@@ -242,12 +244,12 @@ $auditError = '';
                         <div class="audit-detail-summary" id="auditDetailSummary">Loading activity details…</div>
                     </div>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body audit-detail-body">
                 <section class="audit-action-summary" aria-label="Selected action">
                     <div>
-                        <span class="audit-summary-label">Action performed</span>
+                        <span class="audit-summary-label">What happened</span>
                         <div class="audit-summary-action" id="auditAction">Loading…</div>
                     </div>
                     <span class="badge rounded-pill border text-secondary audit-record-badge">Audit record</span>
@@ -281,20 +283,17 @@ $auditError = '';
                     </div>
                 </div>
                 <section class="audit-changes" aria-labelledby="auditChangesHeading">
-                    <h3 class="audit-section-heading" id="auditChangesHeading"><i class="bi bi-arrow-left-right"></i>Recorded changes</h3>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <section class="audit-change-card">
-                                <h4 class="audit-change-heading"><i class="bi bi-arrow-counterclockwise"></i>Before</h4>
-                                <pre class="audit-value" id="auditBefore"></pre>
-                            </section>
+                    <h3 class="audit-section-heading" id="auditChangesHeading"><i class="bi bi-arrow-left-right"></i>What changed?</h3>
+                    <div class="audit-change-card audit-change-table-wrap">
+                        <div class="table-responsive">
+                            <table class="table align-middle audit-change-table" id="auditChangesTable">
+                                <thead>
+                                    <tr><th scope="col">Information</th><th scope="col">Before</th><th scope="col">After</th></tr>
+                                </thead>
+                                <tbody id="auditChanges"></tbody>
+                            </table>
                         </div>
-                        <div class="col-md-6">
-                            <section class="audit-change-card">
-                                <h4 class="audit-change-heading is-after"><i class="bi bi-check2-circle"></i>After</h4>
-                                <pre class="audit-value" id="auditAfter"></pre>
-                            </section>
-                        </div>
+                        <div class="audit-changes-empty d-none" id="auditChangesEmpty" role="status"></div>
                     </div>
                     <p class="audit-detail-note mb-0">Location is approximate IP-based information, not precise GPS. User-Agent details are reported by the browser and can be spoofed.</p>
                 </section>
@@ -311,24 +310,288 @@ $auditError = '';
         document.getElementById(id).textContent =
             value === null || value === undefined || value === '' ? 'Not recorded' : String(value);
     };
-    const formatValue = (value) => {
-        if (value === null || value === '') return 'No data recorded.';
-        try { return JSON.stringify(JSON.parse(value), null, 2); }
+    const auditActionNames = {
+        page_view: 'Viewed a page',
+        logout: 'Logged out',
+        backup_downloaded: 'Downloaded a system backup',
+        backup_restored: 'Restored a system backup',
+        google_account_linked: 'Linked a Google account',
+        google_login: 'Signed in with Google',
+        google_account_link_requested: 'Requested a Google account link',
+        google_account_link_approved: 'Approved a Google account link',
+        google_account_link_rejected: 'Rejected a Google account link',
+        account_linked: 'Linked a member account',
+        account_created: 'Created a member login account',
+        account_username_retrieved: 'Retrieved a member username',
+        account_password_reset: 'Reset a member password',
+        account_deactivated: 'Deactivated an account',
+        role_assigned: 'Assigned an SK role',
+        role_updated: 'Updated an SK role',
+        role_ended: 'Ended an SK role',
+        role_archived: 'Archived an SK role',
+        transparency_budget_updated: 'Updated the annual budget',
+        transparency_expenses_updated: 'Updated expense records',
+        member_profile_photo_changed: 'Changed a member profile photo',
+        official_profile_updated: 'Updated an official profile',
+        official_file_viewed: 'Viewed a protected file',
+        expense_receipt_uploaded: 'Uploaded or replaced an expense receipt',
+        meeting_attendance_marked: 'Recorded meeting attendance',
+        meeting_attendance_corrected: 'Corrected meeting attendance',
+        meeting_attendance_deleted: 'Deleted meeting attendance',
+        meeting_minutes_approved: 'Approved meeting minutes',
+        meeting_minutes_reopened: 'Reopened meeting minutes',
+        member_registered: 'Registered a KK member',
+        member_restored: 'Restored a KK member record',
+        committee_renamed: 'Renamed a committee',
+        api_login: 'Signed in',
+        api_password: 'Changed a password',
+        api_event_register: 'Registered for an event',
+        api_event_attendance: 'Updated event attendance',
+        api_event_walkin: 'Recorded walk-in event attendance',
+        api_meeting_minutes_save: 'Saved meeting minutes',
+        api_meeting_minutes_approve: 'Approved meeting minutes',
+        api_meeting_minutes_reopen: 'Reopened meeting minutes',
+        api_meeting_attendance_save: 'Updated meeting attendance',
+        api_meeting_attendance_delete: 'Deleted meeting attendance',
+        api_role_assign: 'Assigned an SK role',
+        api_role_update: 'Updated an SK role',
+        api_role_end: 'Ended an SK role',
+        api_role_archive: 'Archived an SK role',
+        api_role_archive_expired: 'Archived expired SK roles',
+        api_committee_save: 'Updated a committee',
+        api_committee_chairs_save: 'Updated committee chairpersons',
+        api_account_link: 'Linked a member account',
+        api_account_link_google_request: 'Requested a Google account link',
+        api_account_link_google_approve: 'Approved a Google account link',
+        api_account_link_google_reject: 'Rejected a Google account link',
+        api_account_create: 'Created a member login account',
+        api_account_reset: 'Reset an account password',
+        api_account_reset_member: 'Reset a member password',
+        api_account_username_member: 'Retrieved a member username',
+        api_account_deactivate: 'Deactivated an account',
+        api_member_add: 'Added a KK member',
+        api_member_update: 'Updated a KK member record',
+        api_member_delete: 'Deleted a KK member record',
+        api_member_restore: 'Restored a KK member record',
+        api_member_register: 'Registered a KK member',
+        api_member_data_save: 'Updated member information',
+        api_member_portal_data: 'Updated member profile information',
+        api_member_portal_photo: 'Changed a member profile photo',
+        api_kk_id_print: 'Printed a KK ID',
+        api_kk_id_prints: 'Printed KK IDs',
+        api_kk_id_scan: 'Scanned a KK ID',
+        api_set: 'Updated application data',
+        api_remove: 'Removed application data',
+        api_profile_files: 'Updated profile files',
+        api_receipt_upload: 'Uploaded an expense receipt',
+    };
+    const auditFieldNames = {
+        api_action: 'System action',
+        resource_key: 'Data section',
+        kkId: 'KK member ID',
+        memberNo: 'Member number',
+        accountId: 'Account ID',
+        account_id: 'Account ID',
+        position: 'SK position',
+        basis: 'Role basis',
+        monthlyHonorarium: 'Monthly honorarium',
+        termStart: 'Term start',
+        termEnd: 'Term end',
+        fy: 'Fiscal year',
+        expenseIndex: 'Expense number',
+        replacedReceipt: 'Existing receipt replaced',
+        photoUpdated: 'Profile photo updated',
+        salnUpdated: 'SALN files updated',
+        salnYear: 'SALN year',
+        guardian_consent: 'Guardian consent recorded',
+        google_account_linked: 'Google account linked',
+        google_sign_in_required: 'Google sign-in required',
+        email_verified: 'Email verified',
+        is_active: 'Account active',
+        must_change_password: 'Password change required',
+        safety_backup_id: 'Safety backup ID',
+        projectId: 'Project ID',
+        backup_id: 'Backup ID',
+    };
+    const missingValue = Symbol('missing audit value');
+    const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+    const parseAuditValue = (value) => {
+        if (value === null || value === '') return missingValue;
+        try { return JSON.parse(value); }
         catch (_) { return value; }
     };
-    const formatAction = (value) => String(value || 'Unknown action')
-        .replace(/_/g, ' ')
+    const valuesEqual = (left, right) => {
+        if (left === right) return true;
+        if (left === missingValue || right === missingValue || left === null || right === null) return false;
+        if (Array.isArray(left) || Array.isArray(right)) {
+            return Array.isArray(left) && Array.isArray(right) && left.length === right.length
+                && left.every((item, index) => valuesEqual(item, right[index]));
+        }
+        if (isRecord(left) || isRecord(right)) {
+            if (!isRecord(left) || !isRecord(right)) return false;
+            const leftKeys = Object.keys(left).sort();
+            const rightKeys = Object.keys(right).sort();
+            return leftKeys.length === rightKeys.length
+                && leftKeys.every((key, index) => key === rightKeys[index] && valuesEqual(left[key], right[key]));
+        }
+        return false;
+    };
+    const humanizeField = (field) => auditFieldNames[field] || String(field)
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/[_-]+/g, ' ')
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    const formatAuditValue = (value) => {
+        if (value === missingValue) return 'Not present';
+        if (value === null) return 'Not recorded';
+        if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+        if (typeof value === 'string') return value.trim() === '' ? 'Empty' : value;
+        if (typeof value === 'number') return String(value);
+        if (Array.isArray(value)) {
+            if (value.length === 0) return 'None';
+            if (value.every((item) => item === null || ['string', 'number', 'boolean'].includes(typeof item))) {
+                return value.map(formatAuditValue).join(', ');
+            }
+            return value.length + (value.length === 1 ? ' record' : ' records');
+        }
+        if (isRecord(value)) {
+            const count = Object.keys(value).length;
+            return count + (count === 1 ? ' detail' : ' details');
+        }
+        return String(value);
+    };
+    const auditItemIdentity = (item) => {
+        if (!isRecord(item)) return null;
+        for (const key of ['id', 'kkId', 'projectId', 'memberNo', 'accountId', 'account_id', 'requestId', 'request_id']) {
+            if (item[key] !== undefined && item[key] !== null && item[key] !== '') {
+                return key + ':' + String(item[key]);
+            }
+        }
+        return null;
+    };
+    const collectAuditChanges = (before, after) => {
+        const changes = [];
+        let truncated = false;
+        const maxChanges = 100;
+        const walk = (oldValue, newValue, path) => {
+            if (valuesEqual(oldValue, newValue)) return;
+            if (changes.length >= maxChanges) {
+                truncated = true;
+                return;
+            }
+            if (path.length < 8
+                && (isRecord(oldValue) || oldValue === missingValue)
+                && (isRecord(newValue) || newValue === missingValue)) {
+                const oldRecord = isRecord(oldValue) ? oldValue : {};
+                const newRecord = isRecord(newValue) ? newValue : {};
+                const keys = [...new Set([...Object.keys(oldRecord), ...Object.keys(newRecord)])];
+                if (keys.length > 0) {
+                    keys.forEach((key) => walk(
+                        Object.prototype.hasOwnProperty.call(oldRecord, key) ? oldRecord[key] : missingValue,
+                        Object.prototype.hasOwnProperty.call(newRecord, key) ? newRecord[key] : missingValue,
+                        [...path, key]
+                    ));
+                    return;
+                }
+            }
+            const oldArray = Array.isArray(oldValue) ? oldValue : null;
+            const newArray = Array.isArray(newValue) ? newValue : null;
+            if (path.length < 8 && (oldArray || newArray)
+                && (oldValue === missingValue || oldArray) && (newValue === missingValue || newArray)) {
+                const oldItems = oldArray || [];
+                const newItems = newArray || [];
+                const oldPrimitiveList = oldItems.every((item) => item === null || ['string', 'number', 'boolean'].includes(typeof item));
+                const newPrimitiveList = newItems.every((item) => item === null || ['string', 'number', 'boolean'].includes(typeof item));
+                if (oldPrimitiveList && newPrimitiveList) {
+                    changes.push({ path, before: oldValue, after: newValue });
+                    return;
+                }
+                const allIdentified = [...oldItems, ...newItems].every((item) => auditItemIdentity(item) !== null);
+                if (allIdentified) {
+                    const oldById = new Map(oldItems.map((item) => [auditItemIdentity(item), item]));
+                    const newById = new Map(newItems.map((item) => [auditItemIdentity(item), item]));
+                    const identities = [...new Set([...oldById.keys(), ...newById.keys()])];
+                    identities.forEach((identity) => walk(
+                        oldById.has(identity) ? oldById.get(identity) : missingValue,
+                        newById.has(identity) ? newById.get(identity) : missingValue,
+                        [...path, 'Record ' + identity.split(':').slice(1).join(':')]
+                    ));
+                    return;
+                }
+                for (let index = 0; index < Math.max(oldItems.length, newItems.length); index++) {
+                    walk(
+                        index < oldItems.length ? oldItems[index] : missingValue,
+                        index < newItems.length ? newItems[index] : missingValue,
+                        [...path, 'Record ' + (index + 1)]
+                    );
+                }
+                return;
+            }
+            changes.push({ path, before: oldValue, after: newValue });
+        };
+        walk(before, after, []);
+        return { changes, truncated };
+    };
+    const setAuditChangesMessage = (message) => {
+        document.getElementById('auditChangesTable').classList.add('d-none');
+        const empty = document.getElementById('auditChangesEmpty');
+        empty.textContent = message;
+        empty.classList.remove('d-none');
+    };
+    const renderAuditChanges = (oldRaw, newRaw) => {
+        const before = parseAuditValue(oldRaw);
+        const after = parseAuditValue(newRaw);
+        const body = document.getElementById('auditChanges');
+        const empty = document.getElementById('auditChangesEmpty');
+        body.replaceChildren();
+        const { changes, truncated } = collectAuditChanges(before, after);
+        if (changes.length === 0) {
+            setAuditChangesMessage(before === missingValue && after === missingValue
+                ? 'This action was recorded without before-and-after field details.'
+                : 'No differences were found in the recorded fields.');
+            return;
+        }
+        document.getElementById('auditChangesTable').classList.remove('d-none');
+        empty.classList.add('d-none');
+        changes.forEach((change) => {
+            const row = document.createElement('tr');
+            const label = document.createElement('th');
+            label.scope = 'row';
+            label.className = 'audit-change-label';
+            label.textContent = change.path.map((part) => /^\d+$/.test(part) ? 'Record ' + (Number(part) + 1)
+                : part.startsWith('Record ') ? part : humanizeField(part)).join(' › ') || 'Details';
+            const beforeCell = document.createElement('td');
+            beforeCell.textContent = formatAuditValue(change.before);
+            const afterCell = document.createElement('td');
+            afterCell.textContent = formatAuditValue(change.after);
+            row.append(label, beforeCell, afterCell);
+            body.append(row);
+        });
+        if (truncated) {
+            const row = document.createElement('tr');
+            const note = document.createElement('td');
+            note.colSpan = 3;
+            note.className = 'text-muted small';
+            note.textContent = 'Additional changes were recorded but are not shown here.';
+            row.append(note);
+            body.append(row);
+        }
+    };
+    const formatAction = (value) => {
+        const action = String(value || '');
+        if (auditActionNames[action]) return auditActionNames[action];
+        const readable = action.replace(/^api_/, '').replace(/_/g, ' ');
+        return readable ? readable.replace(/\b\w/g, (letter) => letter.toUpperCase()) : 'Unknown action';
+    };
     document.querySelectorAll('.js-audit-detail').forEach((button) => {
         button.addEventListener('click', async () => {
             const errorElement = document.getElementById('auditDetailError');
             errorElement.textContent = '';
             errorElement.classList.add('d-none');
             ['auditDetailSummary', 'auditActor', 'auditActorId', 'auditAction', 'auditTarget', 'auditDate',
-                'auditDevice', 'auditBrowser', 'auditIp', 'auditLocation', 'auditUserAgent',
-                'auditBefore', 'auditAfter'].forEach((id) => {
+                'auditDevice', 'auditBrowser', 'auditIp', 'auditLocation', 'auditUserAgent'].forEach((id) => {
                 document.getElementById(id).textContent = 'Loading…';
             });
+            setAuditChangesMessage('Loading recorded changes…');
             modal.show();
             try {
                 const response = await fetch('audit-log.php?detail=' + encodeURIComponent(button.dataset.auditId), {
@@ -348,11 +611,11 @@ $auditError = '';
                 setText('auditIp', detail.ip_address);
                 setText('auditLocation', detail.location);
                 setText('auditUserAgent', detail.user_agent);
-                document.getElementById('auditBefore').textContent = formatValue(detail.old_value);
-                document.getElementById('auditAfter').textContent = formatValue(detail.new_value);
+                renderAuditChanges(detail.old_value, detail.new_value);
             } catch (error) {
                 errorElement.textContent = error.message || 'The audit details could not be loaded.';
                 errorElement.classList.remove('d-none');
+                setAuditChangesMessage('Change details could not be loaded.');
             }
         });
     });

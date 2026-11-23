@@ -4,270 +4,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KK Youth Profiling System | Participation Tracking</title>
+    <title>KK Youth Profiling System | Participation</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=31" rel="stylesheet">
+    <link href="css/sidebar.css?v=32" rel="stylesheet">
 
     <style>
-        :root {
-            --kk-primary:var(--bs-primary);
-            --black:var(--bs-body-color);
-            --cream:var(--bs-tertiary-bg);
-            --line:var(--bs-border-color);
-            --muted:var(--bs-secondary-color);
+        :root{--kk-primary:var(--bs-primary);--line:var(--bs-border-color)}
+        *{box-sizing:border-box}
+        body{margin:0}
+
+        /* ===== Calm, high-contrast blue theme ===== */
+        .participation-page{
+            --p-canvas:#eff5ff;--p-card:#ffffff;--p-border:#dce8f7;--p-grid:#e5edf8;
+            --p-text:#1b3150;--muted:#5c6e86;
+            --p-blue:#2457d6;--p-blue-soft:#e7f0ff;--p-track:#e3ebf7;--p-on-blue:#ffffff;
+            --h0:#eff5ff;--h1:#d9e8ff;--h2:#a9ccff;--h3:#6fa7fb;--h4:#3d82ed;--h5:#1f5ecb;
+            --hc0:#4b5b7a;--hc1:#0f1f3d;--hc2:#0f1f3d;--hc3:#ffffff;--hc4:#ffffff;--hc5:#ffffff;
+            background:linear-gradient(180deg,#edf4ff 0%,#f7faff 50%,#edf4ff 100%) fixed!important;color:var(--p-text);font-size:15px;line-height:1.45;
+            font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
         }
-
-        * { box-sizing:border-box; }
-
-        body {
-            margin:0;
-            font-family:Arial,sans-serif;
-            background:var(--cream);
-            color:var(--bs-body-color);
+        html[data-bs-theme="dark"] .participation-page{
+            --p-canvas:#141a29;--p-grid:#33415c;--p-card:#1e2738;--p-border:#3a4863;
+            --p-text:#eef3ff;--muted:#b4c0da;
+            --p-blue:#8db2ff;--p-blue-soft:#2a3a58;--p-track:#33425f;--p-on-blue:#0b1a33;
+            --h0:#2a3750;--h1:#34508a;--h2:#3f6bc4;--h3:#5b8df0;--h4:#8db2ff;--h5:#bcd3ff;
+            --hc0:#b4c0da;--hc1:#eef3ff;--hc2:#eef3ff;--hc3:#0b1a33;--hc4:#0b1a33;--hc5:#0b1a33;
         }
+        html[data-bs-theme="dark"] .participation-page{background:var(--p-canvas)!important}
+        .top-strip{height:5px;background:#1f63d4}
+        .header{height:72px;background:var(--p-card);border-bottom:1px solid var(--p-border);display:flex;justify-content:space-between;align-items:center;padding:0 30px}
+        .header-title{font-weight:800;font-size:1.3rem;color:var(--p-text)}
+        .header small{color:var(--muted);font-size:.9rem}
+        body.participation-page>main.page-content>.content{width:100%;max-width:1600px;margin:0 auto;padding:24px clamp(16px,2.6vw,40px)!important}
 
-        .top-strip {
-            height:7px;
-            background:var(--bs-primary);
+        /* ===== Cards ===== */
+        .card-box{height:100%;overflow:hidden;background:var(--p-card);border:1px solid var(--p-border);border-radius:18px;box-shadow:0 10px 30px rgba(35,91,170,.10)}
+        .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:18px 22px 0}
+        .card-head h2{margin:0;font-size:1.05rem;font-weight:700;color:var(--p-text);line-height:1.2}
+        .card-sub{margin:.25rem 0 0;font-size:.85rem;color:var(--muted)}
+        .card-pad{padding:16px 22px 22px}
+
+        .participation-hero{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:12px;width:100%;height:100%;min-height:320px;padding:24px;overflow:hidden;border:0;border-radius:16px;background:#1f63d4;color:#fff;box-shadow:0 10px 26px rgba(21,83,185,.2)}
+        .participation-hero::before,.participation-hero::after{position:absolute;z-index:0;border:22px solid rgba(255,255,255,.08);border-radius:50%;content:"";pointer-events:none}
+        .participation-hero::before{top:-168px;right:-62px;width:255px;height:255px}
+        .participation-hero::after{right:-70px;bottom:-182px;width:260px;height:260px}
+        .participation-hero-copy{position:relative;z-index:1}
+        .participation-hero-kicker{display:block;margin-bottom:10px;color:rgba(255,255,255,.7);font-size:.73rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+        .participation-hero h1{margin:0;color:#fff;font-size:clamp(1.35rem,1.8vw,1.7rem);font-weight:750;line-height:1.2}
+        .participation-hero p{max-width:320px;margin:10px 0 0;color:rgba(255,255,255,.82);font-size:.9rem}
+        .participation-hero-metrics{position:relative;z-index:1;width:100%;margin-top:auto}
+        .participation-hero-metric{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,.24)}
+        .participation-hero-metric-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:.88rem}
+        .participation-hero-metric-label{color:rgba(255,255,255,.86);font-size:.76rem;font-weight:650;line-height:1.2}
+        .participation-hero-metric-value{color:#fff;font-size:1rem;font-weight:850;font-variant-numeric:tabular-nums}
+        .participation-hero-icon{position:absolute;z-index:0;right:20px;bottom:18px;color:rgba(255,255,255,.16);font-size:4rem;line-height:1}
+        .participation-hero .btn{position:relative;z-index:1}
+        .member-engagement-card{height:100%;min-width:0}
+        .member-engagement-card .card-head{align-items:flex-end;flex-wrap:wrap;padding:16px 18px 0}
+        .member-engagement-card .card-pad{padding:10px 18px 16px}
+        .member-engagement-heading{display:flex;align-items:center;gap:8px}
+        .member-engagement-heading i{color:var(--p-blue)}
+        .member-engagement-search{width:min(270px,100%)}
+        .member-engagement-search .form-control{min-height:38px;border-radius:8px}
+        .member-engagement-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 8px}
+        .member-engagement-tab{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid var(--p-border);border-radius:999px;background:var(--p-card);color:var(--p-text);font-size:.78rem;font-weight:650;white-space:nowrap}
+        .member-engagement-tab.active{border-color:var(--p-blue);background:var(--p-blue);color:var(--p-on-blue)}
+        .member-engagement-tab-count{font-weight:800}
+        .member-engagement-table-wrap{max-height:360px;overflow:auto}
+        .member-engagement-table{min-width:760px;margin:0;font-size:.82rem}
+        .member-engagement-table thead th{position:sticky;top:0;z-index:1;padding:8px;background:var(--p-card);color:var(--muted);font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+        .member-engagement-table td{padding:8px;vertical-align:middle}
+        .member-engagement-name{display:block;color:var(--p-text);font-weight:700}
+        .member-engagement-id{display:block;color:var(--muted);font-size:.72rem}
+        .member-engagement-rate{display:flex;align-items:center;gap:8px;min-width:120px}
+        .member-engagement-progress{flex:1;height:7px;overflow:hidden;border-radius:999px;background:var(--p-track)}
+        .member-engagement-progress span{display:block;height:100%;border-radius:inherit;background:var(--p-blue)}
+        .member-engagement-rate strong{min-width:34px;color:var(--p-text);font-size:.75rem;text-align:right}
+        .member-engagement-status{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.72rem;font-weight:700;white-space:nowrap}
+        .member-engagement-status.regular{background:#e2eee7;color:#416d53}
+        .member-engagement-status.occasional{background:#f4eedf;color:#876b34}
+        .member-engagement-status.none{background:var(--p-blue-soft);color:var(--muted)}
+        .member-engagement-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;color:var(--muted);font-size:.76rem}
+        .member-engagement-note{display:block;margin-top:6px;color:var(--muted);font-size:.72rem}
+        .participation-overview-card .card-head{padding:16px 18px 0}
+        .participation-overview-card .card-pad{padding:12px 18px 18px}
+
+        .chart-box{position:relative;height:290px}
+        .chart-empty{position:absolute;inset:0;display:grid;place-items:center;padding:1rem;color:var(--muted);font-size:.9rem;text-align:center}
+
+        /* ===== Filters ===== */
+        .filter-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;padding:16px 20px;background:var(--p-card);border:1px solid var(--p-border);border-radius:16px;box-shadow:0 10px 30px rgba(35,91,170,.08)}
+        .filter-bar .form-label{font-size:.82rem;font-weight:700;margin-bottom:.25rem;color:var(--muted)}
+        .filter-bar .form-control,.filter-bar .form-select{min-height:42px;border-radius:8px;border:1px solid var(--p-border);color:var(--p-text);background-color:var(--p-card)}
+        .filter-title{display:flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.05rem;color:var(--p-text);padding-bottom:.55rem}
+        .participation-page .form-control:focus,.participation-page .form-select:focus{border-color:var(--p-blue);box-shadow:0 0 0 .2rem rgba(11,79,194,.2)}
+
+        /* ===== Heatmap ===== */
+        .heat-scroll{max-width:100%;overflow:auto;border:1px solid var(--p-border);border-radius:10px}
+        .heat-grid{display:grid;gap:4px;min-width:max-content;padding:8px;font-size:.88rem;text-align:center}
+        .heat-grid .heat-corner,.heat-grid .heat-col-head,.heat-grid .heat-row-head,.heat-grid .heat-cell,.heat-grid .heat-total{display:flex;min-height:44px;align-items:center;justify-content:center;padding:.4rem .6rem}
+        .heat-grid .heat-corner,.heat-grid .heat-col-head{position:sticky;top:0;z-index:2;background:var(--p-card);color:var(--muted);font-weight:700;font-size:.82rem;white-space:nowrap}
+        .heat-grid .heat-corner,.heat-grid .heat-row-head{position:sticky;left:0;z-index:3;justify-content:flex-start;background:var(--p-card);text-align:left}
+        .heat-grid .heat-row-head{min-width:150px;border-right:1px solid var(--p-border);font-weight:700;color:var(--p-text)}
+        .heat-grid .heat-col-head span{display:block;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+        .heat-grid .heat-cell{min-width:60px;border-radius:8px;font-weight:800;font-size:.95rem}
+        .heat-grid button.heat-cell{width:100%;border:0;font-family:inherit;font-size:.95rem;font-weight:800;cursor:pointer}
+        .heat-grid .heat-cell.is-selected{outline:2px solid var(--p-blue);outline-offset:1px}
+        .heat-grid button.heat-cell:focus-visible{outline:2px solid var(--p-blue);outline-offset:1px}
+        .heat-grid .heat-total{font-weight:800;color:var(--p-text)}
+        .heat-l0{background:var(--h0);color:var(--hc0)}.heat-l1{background:var(--h1);color:var(--hc1)}.heat-l2{background:var(--h2);color:var(--hc2)}
+        .heat-l3{background:var(--h3);color:var(--hc3)}.heat-l4{background:var(--h4);color:var(--hc4)}.heat-l5{background:var(--h5);color:var(--hc5)}
+        .heat-scale{display:flex;align-items:center;gap:.6rem;margin-top:.9rem;color:var(--muted);font-size:.82rem}
+        .heat-scale-blocks{display:inline-flex;gap:3px}
+        .heat-scale-blocks span{width:22px;height:12px;border-radius:3px;background:var(--h0)}
+        .heat-scale-blocks span:nth-child(2){background:var(--h1)}.heat-scale-blocks span:nth-child(3){background:var(--h2)}
+        .heat-scale-blocks span:nth-child(4){background:var(--h3)}.heat-scale-blocks span:nth-child(5){background:var(--h5)}
+
+        /* ===== Tables ===== */
+        .participation-page .table{font-size:.92rem;--bs-table-bg:transparent;--bs-table-color:var(--p-text);--bs-table-border-color:var(--p-border);color:var(--p-text)}
+        .participation-page .table th{background:var(--p-blue-soft);color:var(--p-blue);font-size:.82rem;font-weight:800;white-space:nowrap}
+        .participation-page .table td{vertical-align:middle}
+        .participation-page .table .text-muted{color:var(--muted)!important}
+        .participation-page .table tbody tr:hover>*{background-color:var(--p-blue-soft)}
+        .record-wrap{max-height:62vh;overflow:auto;border:1px solid var(--p-border);border-radius:10px}
+        .record-table thead th{position:sticky;top:0;z-index:2}
+        .record-count{display:flex;align-items:center;min-height:42px;padding:.45rem .8rem;border-radius:8px;background:var(--p-blue-soft);color:var(--p-blue);font-size:.9rem;font-weight:800}
+        .attendance-record-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:62vh;overflow:auto;padding:2px}
+        .participation-records-panel{border:1px solid var(--p-border);border-radius:16px;overflow:hidden}
+        .participation-records-panel .card-head{align-items:center;padding:16px 18px 8px;border-bottom:0}
+        .participation-records-panel .card-head h2{padding-left:0;border-left:0;font-size:1.05rem}
+        .participation-records-header-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--p-blue-soft);color:var(--p-blue);flex:none}
+        .participation-records-panel .card-pad{padding:10px 18px 18px}
+        .participation-records-toolbar{display:flex;align-items:flex-end;gap:10px;margin-bottom:10px}
+        .participation-records-toolbar .search-wrap{flex:1 1 280px}
+        .participation-records-toolbar .status-wrap{width:210px}
+        .participation-records-toolbar .record-count{min-height:40px}
+        .participation-records-panel .attendance-record-grid{grid-template-columns:1fr;max-height:330px;gap:0;border-top:1px solid var(--p-border)}
+        .participation-records-panel .attendance-record-card{border:0;border-bottom:1px solid var(--p-border);border-radius:0;padding:11px 4px;box-shadow:none}
+        .participation-records-panel .attendance-record-card:first-child{border-top:0}
+        .participation-records-panel .attendance-record-card:hover{transform:none;box-shadow:none;background:rgba(var(--heat-rgb),.035)}
+        .participation-records-panel .attendance-date-chip{width:48px;height:48px}
+        .records-kpi{padding:0;border:1px solid var(--p-border);background:var(--p-card);width:100%;text-align:left}
+        .records-kpi .kpi-body{padding:20px 22px}
+        .records-kpi-open{display:flex;align-items:center;justify-content:space-between;width:100%;color:var(--p-blue);font-size:.82rem;font-weight:800}
+        .participation-records-modal .modal-dialog{max-width:min(980px,calc(100vw - 2rem))}
+        .participation-records-modal .modal-content{border:1px solid var(--p-border);border-radius:16px;background:var(--p-card)}
+        .participation-records-modal .modal-header{border-bottom:1px solid var(--p-border)}
+        .participation-records-modal .modal-body{padding:18px}
+        .participation-records-modal .attendance-record-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:65vh;gap:10px}
+        .participation-records-modal .attendance-record-card{border:1px solid var(--p-border);border-radius:12px;padding:12px}
+        .member-roster-table{width:100%;border-collapse:separate;border-spacing:0 6px}
+        .member-roster-table th{padding:8px 10px;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;border:0}
+        .member-roster-table td{padding:10px;border-top:1px solid var(--p-border);border-bottom:1px solid var(--p-border);background:var(--p-card);vertical-align:middle}
+        .member-roster-table td:first-child{border-left:1px solid var(--p-border);border-radius:10px 0 0 10px}
+        .member-roster-table td:last-child{border-right:1px solid var(--p-border);border-radius:0 10px 10px 0;text-align:right}
+        .member-roster-name{display:block;font-weight:800;color:var(--p-text)}
+        .member-roster-no{display:block;font-size:.78rem;color:var(--muted)}
+        .member-roster-purok{color:var(--p-blue);font-weight:800}
+        .roster-action-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) minmax(190px,260px);align-items:end;gap:12px;margin:12px 0}
+        .roster-main-table-wrap{max-height:55vh;overflow:auto;border:1px solid var(--p-border);border-radius:10px}
+        .roster-main-table thead th{position:sticky;top:0;z-index:2}
+        .roster-main-table td:last-child{text-align:left}
+        .roster-main-table td{min-width:120px}
+        .roster-main-table td:first-child{min-width:210px}
+        .roster-main-table td:nth-child(2){min-width:110px}
+        .roster-main-table td:nth-child(3){white-space:nowrap}
+        .attendance-status-select.is-staged{border-color:var(--p-blue);box-shadow:0 0 0 .15rem rgba(11,79,194,.13)}
+        .roster-save-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+        .roster-save-hint{color:var(--muted);font-size:.82rem}
+        .all-activities-summary{display:flex;align-items:center;gap:14px;padding:22px;border:1px solid var(--p-border);border-radius:10px;background:var(--p-blue-soft)}
+        .all-activities-summary-icon{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:13px;background:var(--p-blue);color:var(--p-on-blue);font-size:1.25rem}
+        .all-activities-summary-copy{flex:1}
+        .all-activities-summary-label{display:block;color:var(--p-text);font-size:.95rem;font-weight:800}
+        .all-activities-summary-note{display:block;margin-top:3px;color:var(--muted);font-size:.82rem}
+        .all-activities-summary-value{color:var(--p-blue);font-size:2rem;font-weight:900;line-height:1}
+        .roster-section{margin-top:10px}
+        .roster-section-title{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+        .roster-section-title h3{margin:0;font-size:.95rem;font-weight:800;color:var(--p-text)}
+        .roster-count{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:20px;background:var(--p-blue-soft);color:var(--p-blue);font-size:.78rem;font-weight:800}
+        .attendance-status-select{min-width:130px}
+        .attendance-overview-layout{display:grid;grid-template-columns:1fr;gap:14px}
+        .attendance-doughnut{height:270px}
+        .attendance-overview-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;min-width:0}
+        .attendance-overview-item{display:grid;grid-template-columns:12px minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0;color:var(--muted);font-size:.88rem}
+        .attendance-overview-item>span:nth-child(2){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .attendance-overview-dot{width:12px;height:12px;border-radius:4px}
+        .attendance-overview-item strong{color:var(--p-text);white-space:nowrap}
+        .member-roster-table .btn{white-space:nowrap}
+        @media(max-width:767.98px){
+            .member-roster-table{min-width:620px}
+            .participation-hero{min-height:360px}
+            .member-engagement-footer{align-items:flex-start;flex-direction:column}
+
+            .attendance-doughnut{height:230px}
+            .roster-action-toolbar{grid-template-columns:1fr}
+            .roster-save-bar{align-items:stretch;flex-direction:column}
         }
-
-        .header {
-            height:70px;
-            background:var(--bs-body-bg);
-            border-bottom:1px solid var(--line);
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:0 30px;
+        @media(max-width:767.98px){
+            .participation-records-modal .attendance-record-grid{grid-template-columns:1fr}
         }
-
-        .header-title {
-            font-weight:bold;
-            font-size:20px;
+        @media(max-width:767.98px){
+            .participation-records-toolbar{flex-wrap:wrap}
+            .participation-records-toolbar .search-wrap,.participation-records-toolbar .status-wrap{width:100%;flex-basis:100%}
         }
+        .attendance-record-card{display:flex;align-items:center;gap:12px;min-width:0;padding:12px;border:1px solid var(--p-border);border-radius:12px;background:var(--p-card);text-decoration:none;color:var(--p-text)}
+        .attendance-record-card:hover,.attendance-record-card:focus-visible{border-color:var(--p-blue);outline:none}
+        .attendance-date-chip{display:flex;flex:none;flex-direction:column;align-items:center;justify-content:center;width:52px;height:52px;border-radius:10px;background:var(--p-blue-soft);color:var(--p-blue);font-size:.68rem;font-weight:800;text-transform:uppercase;line-height:1.1}
+        .attendance-date-chip strong{font-size:1.1rem;margin-top:2px}
+        .attendance-record-info{min-width:0;flex:1}
+        .attendance-record-name{display:block;overflow:hidden;color:var(--p-text);font-size:.92rem;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
+        .attendance-record-event{display:block;overflow:hidden;color:var(--muted);font-size:.78rem;text-overflow:ellipsis;white-space:nowrap}
+        .attendance-record-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px;color:var(--muted);font-size:.72rem}
+        .attendance-record-status{flex:none}
+        .attendance-record-arrow{flex:none;color:var(--p-blue)}
+        @media(max-width:991.98px){.attendance-record-grid{grid-template-columns:1fr}}
+        .participation-page label.form-label{color:var(--muted)}
+        .footer-note{text-align:center;color:var(--muted);font-size:.85rem;padding:24px}
 
-        .header small {
-            color:var(--muted);
-            font-size:14px;
+        @media(max-width:767.98px){
+            .header{padding:0 14px}
+            body.participation-page>main.page-content>.content{padding:14px!important}
         }
-
-        .user-area {
-            display:flex;
-            align-items:center;
-            gap:10px;
-        }
-
-        .avatar {
-            width:38px;
-            height:38px;
-            background:var(--bs-primary);
-            border-radius:50%;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            font-weight:bold;
-        }
-
-        .content {
-            padding:30px;
-        }
-
-        .hero {
-            background:var(--bs-primary);
-            border-radius:16px;
-            padding:28px;
-            margin-bottom:25px;
-        }
-
-        .hero h1 {
-            font-size:32px;
-            font-weight:800;
-        }
-
-        .hero p {
-            color:var(--bs-primary-text-emphasis);
-            font-size:16px;
-            margin:0;
-        }
-
-        .card-box {
-            background:var(--bs-body-bg);
-            border:1px solid var(--line);
-            border-radius:14px;
-            margin-bottom:22px;
-            overflow:hidden;
-        }
-
-        .card-header {
-            padding:17px 20px;
-            border-bottom:1px solid var(--line);
-            font-weight:bold;
-        }
-
-        .card-body {
-            padding:20px;
-        }
-
-        .stat {
-            background:var(--bs-body-bg);
-            border:1px solid var(--line);
-            border-radius:13px;
-            padding:20px;
-        }
-
-        .stat i {
-            display:flex;
-            width:42px;
-            height:42px;
-            background:var(--bs-primary);
-            border-radius:9px;
-            align-items:center;
-            justify-content:center;
-            font-size:23px;
-            margin-bottom:12px;
-        }
-
-        .number {
-            font-size:29px;
-            font-weight:800;
-        }
-
-        .label {
-            color:var(--muted);
-            font-size:14px;
-        }
-
-        .table {
-            font-size:14px;
-        }
-
-        .table th {
-            background:var(--bs-primary-text-emphasis);
-            color:white;
-            font-size:13px;
-            padding:13px;
-        }
-
-        .table td {
-            padding:13px;
-            vertical-align:middle;
-        }
-
-        .progress {
-            height:8px;
-            background:var(--bs-border-color);
-        }
-
-        .progress-bar {
-            background:var(--bs-primary);
-        }
-
-        .heatmap-card-header {
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:14px;
-        }
-
-        .heatmap-category-filter {
-            width:auto;
-            min-width:190px;
-            max-width:280px;
-            font-size:13px;
-        }
-
-        .footer-note {
-            text-align:center;
-            color:var(--muted);
-            font-size:13px;
-            padding:25px;
-        }
-
-        @media(max-width:991px) {
-            .content { padding:18px; }
-        }
-
-        @media(max-width:575px) {
-            .heatmap-card-header { align-items:flex-start; flex-direction:column; }
-            .heatmap-category-filter { width:100%; max-width:none; }
-        }
-
-        .filter-bar { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; padding:14px 18px; }
-        .filter-bar .form-label { font-size:12px; color:var(--muted); margin-bottom:3px; }
-        .filter-bar .grow { flex:1 1 200px; min-width:160px; }
-        .filter-bar .fixed { flex:0 0 150px; }
-        .stat .sub { font-size:12px; color:var(--muted); margin-top:2px; min-height:16px; }
-        .view-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-        .view-controls .form-select { width:auto; min-width:150px; font-size:13px; }
-        .heatmap-scroll { overflow-x:auto; }
-        /* ---- v2 visual refresh ---- */
-        .card-box { border-radius:16px; box-shadow:0 1px 2px rgba(16,24,40,.05); }
-        .card-header { background:transparent; font-size:15px; padding:16px 20px; }
-        .stat { border-radius:16px; box-shadow:0 1px 2px rgba(16,24,40,.05); height:100%; }
-        .stat i { background:var(--bs-primary-bg-subtle); color:var(--bs-primary); width:44px; height:44px; border-radius:12px; font-size:21px; }
-        .stat .number { font-size:32px; line-height:1.1; letter-spacing:-.5px; }
-        .stat .label { font-weight:600; color:var(--bs-body-color); }
-        .stat .progress { height:6px; margin-top:10px; }
-        .filter-bar .form-select, .filter-bar .form-control, .filter-bar .btn { height:40px; }
-        .filter-bar { align-items:flex-end; }
-        .table th { background:var(--bs-tertiary-bg); color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-size:11.5px; font-weight:600; border-bottom:1px solid var(--line); }
-        .table td { border-color:var(--line); }
-        .table tbody tr:hover td { background:var(--bs-tertiary-bg); }
-
-        .pc-head { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
-        .pc-chip { display:inline-flex; align-items:center; gap:6px; background:var(--bs-primary-bg-subtle); color:var(--bs-primary-text-emphasis); border-radius:999px; padding:3px 6px 3px 12px; font-size:13px; font-weight:600; }
-        .pc-chip button { border:0; background:transparent; color:inherit; line-height:1; padding:2px 6px; border-radius:999px; }
-        .pc-chip button:hover { background:rgba(0,0,0,.08); }
-
-        .pc-cal-wrap { overflow-x:auto; padding-bottom:4px; }
-        .pc-cal { min-width:calc(var(--weeks) * 15px + 34px); display:grid; grid-template-columns:30px 1fr; column-gap:6px; row-gap:6px; }
-        .pc-months { grid-column:2; display:grid; grid-template-columns:repeat(var(--weeks), 1fr); font-size:11px; color:var(--muted); height:14px; }
-        .pc-months span { white-space:nowrap; }
-        .pc-dow { display:grid; grid-template-rows:repeat(7, 1fr); font-size:11px; color:var(--muted); }
-        .pc-dow span { display:flex; align-items:center; }
-        .pc-grid { display:grid; grid-template-columns:repeat(var(--weeks), 1fr); grid-template-rows:repeat(7, auto); grid-auto-flow:column; gap:3px; }
-        .pc-cell { aspect-ratio:1; border-radius:4px; background:var(--bs-secondary-bg); min-width:10px; }
-        .pc-cell.pc-pad { background:transparent; }
-        .pc-cell[data-l="1"], .pc-key i[data-l="1"] { background:color-mix(in srgb, var(--bs-primary) 28%, var(--bs-body-bg)); }
-        .pc-cell[data-l="2"], .pc-key i[data-l="2"] { background:color-mix(in srgb, var(--bs-primary) 50%, var(--bs-body-bg)); }
-        .pc-cell[data-l="3"], .pc-key i[data-l="3"] { background:color-mix(in srgb, var(--bs-primary) 75%, var(--bs-body-bg)); }
-        .pc-cell[data-l="4"], .pc-key i[data-l="4"] { background:var(--bs-primary); }
-        .pc-cell:not(.pc-pad):hover { outline:2px solid var(--bs-primary-text-emphasis); outline-offset:1px; }
-        .pc-key { display:flex; align-items:center; gap:4px; justify-content:flex-end; font-size:12px; color:var(--muted); margin-top:10px; }
-        .pc-key i { width:14px; height:14px; border-radius:3px; background:var(--bs-secondary-bg); display:inline-block; }
-
-        .pc-seg .btn { font-size:13px; }
-        .pc-matrix-wrap { overflow-x:auto; }
-        .pc-matrix { border-collapse:separate; border-spacing:3px; width:100%; }
-        .pc-matrix th { font-weight:600; font-size:12px; color:var(--muted); text-align:center; padding:2px 4px; vertical-align:bottom; }
-        .pc-matrix th.pc-rowh { text-align:left; color:var(--bs-body-color); font-size:13px; white-space:nowrap; padding-right:14px; }
-        .pc-matrix th .pc-coltitle { display:block; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0 auto; }
-        .pc-matrix th small { display:block; font-weight:400; font-size:11px; }
-        .pc-matrix td.pc-m { height:38px; min-width:46px; border-radius:7px; text-align:center; font-size:12px; font-weight:600; background:var(--bs-secondary-bg); color:var(--bs-body-color); }
-        .pc-matrix td.pc-m[data-l="1"] { background:color-mix(in srgb, var(--bs-primary) 28%, var(--bs-body-bg)); }
-        .pc-matrix td.pc-m[data-l="2"] { background:color-mix(in srgb, var(--bs-primary) 50%, var(--bs-body-bg)); }
-        .pc-matrix td.pc-m[data-l="3"] { background:color-mix(in srgb, var(--bs-primary) 75%, var(--bs-body-bg)); color:#fff; }
-        .pc-matrix td.pc-m[data-l="4"] { background:var(--bs-primary); color:#fff; }
-        .pc-matrix td.pc-total { text-align:right; font-weight:700; font-size:13px; padding-left:12px; font-variant-numeric:tabular-nums; }
-        .pc-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
-        .pc-fchip { border:1px solid var(--line); background:var(--bs-body-bg); color:var(--bs-body-color); border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; }
-        .pc-fchip b { font-weight:700; margin-left:6px; opacity:.75; }
-        .pc-fchip:hover { background:var(--bs-tertiary-bg); }
-        .pc-fchip.active { background:var(--bs-primary); border-color:var(--bs-primary); color:#fff; }
-        .pc-rate { display:flex; align-items:center; gap:10px; min-width:130px; }
-        .pc-rate .progress { flex:1; height:6px; }
-        .pc-rate span { font-size:13px; font-weight:600; width:38px; text-align:right; font-variant-numeric:tabular-nums; }
-        .pc-bar { display:grid; grid-template-columns:minmax(120px, 240px) 1fr 36px; gap:14px; align-items:center; width:100%; text-align:left; background:transparent; border:0; border-radius:10px; padding:7px 10px; color:inherit; }
-        .pc-bar:hover { background:var(--bs-tertiary-bg); }
-        .pc-bar[aria-pressed="true"] { background:var(--bs-primary-bg-subtle); }
-        .pc-bar-label { font-size:14px; font-weight:500; }
-        .pc-bar-track { height:10px; background:var(--bs-secondary-bg); border-radius:999px; overflow:hidden; }
-        .pc-bar-fill { display:block; height:100%; background:var(--bs-primary); border-radius:999px; min-width:0; }
-        .pc-bar-count { text-align:right; font-weight:700; font-size:14px; font-variant-numeric:tabular-nums; }
-        .pc-bar.pc-zero .pc-bar-label, .pc-bar.pc-zero .pc-bar-count { color:var(--muted); font-weight:400; }
-        @media(max-width:575px) { .pc-bar { grid-template-columns:1fr 36px; } .pc-bar-track { grid-column:1 / -1; grid-row:2; } }
     </style>
 <?php include __DIR__ . '/init.php'; ?>
 <?php
@@ -296,46 +255,27 @@ $participationWalkins = json_decode($__data['skEventAttendance'] ?? '[]', true);
 $participationWalkins = is_array($participationWalkins) ? $participationWalkins : [];
 $participationMembersById = [];
 foreach ($participationMembers as $member) {
-    if (is_array($member) && isset($member['id'])) {
-        $participationMembersById[(string)$member['id']] = $member;
-    }
+    if (is_array($member) && isset($member['id'])) $participationMembersById[(string)$member['id']] = $member;
 }
 $participationEventsById = [];
 foreach ($participationAnnouncements as $event) {
-    if (is_array($event) && isset($event['id'])) {
-        $participationEventsById[(string)$event['id']] = $event;
-    }
+    if (is_array($event) && isset($event['id'])) $participationEventsById[(string)$event['id']] = $event;
 }
-$participationQuickEvent = null;
-$participationToday = date('Y-m-d');
-foreach ($participationEventsById as $quickEvent) {
-    $quickDate = (string)($quickEvent['date'] ?? '');
-    if ($quickDate === '' || $quickDate > $participationToday) continue;
-    if ($participationQuickEvent === null || $quickDate > (string)$participationQuickEvent['date']) $participationQuickEvent = $quickEvent;
+function participation_full_name($member) {
+    return trim(implode(' ', array_filter([
+        $member['firstName'] ?? '', $member['middleName'] ?? '', $member['lastName'] ?? '', $member['suffix'] ?? '',
+    ], function ($part) { return trim((string)$part) !== ''; })));
 }
-$participationRows = [];
 $participationHeatmapRows = [];
 $participationEventOptions = [];
-$participationLinkedMembers = [];
 $participationAttendedSignupMemberEvents = [];
 $participationWalkinMemberEvents = [];
-$participationAttendedCount = 0;
+$participationRemovedWalkins = array_values(array_filter($participationWalkins, function ($record) {
+    return is_array($record) && !participation_walkin_is_active($record);
+}));
 $participationActiveMembers = 0;
 foreach ($participationMembers as $member) {
     if (is_array($member) && ($member['status'] ?? '') === 'Active') $participationActiveMembers++;
-}
-$participationRoster = [];
-foreach ($participationMembers as $member) {
-    if (!is_array($member) || ($member['status'] ?? '') !== 'Active') continue;
-    $participationRoster[] = [
-        'id' => (string)($member['id'] ?? ''),
-        'memberNo' => (string)($member['memberNo'] ?? $member['id'] ?? ''),
-        'name' => trim(implode(' ', array_filter([
-            $member['firstName'] ?? '', $member['middleName'] ?? '',
-            $member['lastName'] ?? '', $member['suffix'] ?? '',
-        ], function ($part) { return trim((string)$part) !== ''; }))),
-        'purok' => trim((string)($member['purok'] ?? '')),
-    ];
 }
 foreach ($participationRegistrations as $signup) {
     if (!is_array($signup)) continue;
@@ -343,23 +283,16 @@ foreach ($participationRegistrations as $signup) {
     $event = $participationEventsById[$eventId] ?? [];
     $eventTitle = trim((string)($signup['eventTitle'] ?? $event['title'] ?? 'Unknown event'));
     if ($eventTitle === '') $eventTitle = 'Unknown event';
+    $activityCategory = trim((string)($event['category'] ?? ''));
+    if ($activityCategory === '') $activityCategory = 'Uncategorized';
     $eventDate = (string)($event['date'] ?? '');
     $memberId = isset($signup['memberId']) ? (string)$signup['memberId'] : '';
     $member = $memberId !== '' ? ($participationMembersById[$memberId] ?? null) : null;
-    $name = $member
-        ? trim(implode(' ', array_filter([
-            $member['firstName'] ?? '', $member['middleName'] ?? '',
-            $member['lastName'] ?? '', $member['suffix'] ?? '',
-        ], function ($part) { return trim((string)$part) !== ''; })))
-        : trim((string)($signup['name'] ?? ''));
+    $name = $member ? participation_full_name($member) : trim((string)($signup['name'] ?? ''));
     if ($name === '') $name = 'Unnamed participant';
-    $status = in_array($signup['attendanceStatus'] ?? '', ['Attended', 'Did not attend'], true)
-        ? $signup['attendanceStatus']
-        : 'Not recorded';
+    $status = in_array($signup['attendanceStatus'] ?? '', ['Attended', 'Did not attend'], true) ? $signup['attendanceStatus'] : 'Not recorded';
     if ($status === 'Attended') {
-        $participationAttendedCount++;
         if ($member) {
-            $participationLinkedMembers[$memberId] = true;
             $participationAttendedSignupMemberEvents[$eventId . ':' . $memberId] = true;
         }
     }
@@ -368,98 +301,117 @@ foreach ($participationRegistrations as $signup) {
     $memberPurok = $member ? trim((string)($member['purok'] ?? '')) : '';
     $purok = $memberPurok !== '' ? $memberPurok : trim((string)($signup['purok'] ?? ''));
     if ($purok === '') $purok = 'Not recorded';
-    $participationRows[] = [
-        'memberId' => $member ? (string)($member['memberNo'] ?? $memberId) : 'Not linked',
-        'memberName' => $name,
-        'memberStatus' => $member['status'] ?? 'Unlinked signup',
-        'eventId' => $eventId,
-        'eventAvailable' => isset($participationEventsById[$eventId]),
-        'eventTitle' => $eventTitle,
-        'eventDate' => $eventDate,
-        'submittedAt' => substr((string)($signup['submittedAt'] ?? ''), 0, 10),
-        'attendanceStatus' => $status,
-        'age' => $age,
-        'ageGroup' => $ageGroup,
-        'purok' => $purok,
-    ];
     $participationHeatmapRows[] = [
+        'source' => 'signup',
+        'recordId' => (string)($signup['id'] ?? ''),
         'memberKey' => $member ? $memberId : 'signup:' . (string)($signup['id'] ?? $signup['name'] ?? 'unlinked'),
         'memberId' => $member ? $memberId : '',
-        'eventTitle' => $eventTitle,
-        'eventId' => $eventId,
-        'eventDate' => $eventDate,
+        'memberNo' => $member ? (string)($member['memberNo'] ?? $memberId) : '',
+        'memberName' => $member ? $name : '',
+        'eventTitle' => $eventTitle, 'eventId' => $eventId, 'eventDate' => $eventDate,
         'centers' => participation_event_centers($event, $participationCopCategories),
-        'attendanceStatus' => $status,
-        'ageGroup' => $ageGroup,
-        'purok' => $purok,
+        'activityCategory' => $activityCategory, 'attendanceStatus' => $status,
+        'ageGroup' => $ageGroup, 'purok' => $purok,
     ];
     if ($eventId !== '') $participationEventOptions[$eventId] = $eventTitle;
 }
 foreach ($participationWalkins as $walkin) {
-    if (!is_array($walkin)) continue;
+    if (!participation_walkin_is_active($walkin)) continue;
     $eventId = (string)($walkin['eventId'] ?? '');
     $memberId = (string)($walkin['memberId'] ?? '');
-    if (!participation_walkin_should_count(
-        $eventId,
-        $memberId,
-        $participationAttendedSignupMemberEvents,
-        $participationWalkinMemberEvents
-    )) continue;
+    if (!participation_walkin_should_count($eventId, $memberId, $participationAttendedSignupMemberEvents, $participationWalkinMemberEvents)) continue;
     if ($memberId !== '') $participationWalkinMemberEvents[$eventId . ':' . $memberId] = true;
     $member = $memberId !== '' ? ($participationMembersById[$memberId] ?? null) : null;
     $event = $participationEventsById[$eventId] ?? [];
     $eventTitle = trim((string)($walkin['eventTitle'] ?? $event['title'] ?? 'Unknown event'));
     if ($eventTitle === '') $eventTitle = 'Unknown event';
-    $name = $member
-        ? trim(implode(' ', array_filter([
-            $member['firstName'] ?? '', $member['middleName'] ?? '',
-            $member['lastName'] ?? '', $member['suffix'] ?? '',
-        ], function ($part) { return trim((string)$part) !== ''; })))
-        : 'KK member';
-    if ($member) $participationLinkedMembers[$memberId] = true;
+    $activityCategory = trim((string)($event['category'] ?? ''));
+    if ($activityCategory === '') $activityCategory = 'Uncategorized';
+    $name = $member ? participation_full_name($member) : 'KK member';
     $eventDate = (string)($event['date'] ?? '');
     $age = participation_age_at_event($member, $eventDate);
     $ageGroup = participation_age_group($age);
     $purok = trim((string)($member['purok'] ?? ''));
     if ($purok === '') $purok = 'Not recorded';
-    $participationAttendedCount++;
-    $participationRows[] = [
-        'memberId' => $member ? (string)($member['memberNo'] ?? $memberId) : 'Unknown member',
-        'memberName' => $name !== '' ? $name : 'Unnamed member',
-        'memberStatus' => $member['status'] ?? 'Member record unavailable',
-        'eventId' => $eventId,
-        'eventAvailable' => isset($participationEventsById[$eventId]),
-        'eventTitle' => $eventTitle,
-        'eventDate' => $eventDate,
-        'submittedAt' => 'Walk-in',
-        'attendanceStatus' => 'Attended',
-        'age' => $age,
-        'ageGroup' => $ageGroup,
-        'purok' => $purok,
-    ];
     $participationHeatmapRows[] = [
+        'source' => 'walkin',
+        'recordId' => (string)($walkin['id'] ?? ''),
         'memberKey' => $member ? $memberId : 'walkin:' . (string)($walkin['id'] ?? $walkin['name'] ?? 'unlinked'),
         'memberId' => $member ? $memberId : '',
-        'eventTitle' => $eventTitle,
-        'eventId' => $eventId,
-        'eventDate' => $eventDate,
+        'memberNo' => $member ? (string)($member['memberNo'] ?? $memberId) : '',
+        'memberName' => $member ? $name : '',
+        'eventTitle' => $eventTitle, 'eventId' => $eventId, 'eventDate' => $eventDate,
         'centers' => participation_event_centers($event, $participationCopCategories),
-        'attendanceStatus' => 'Attended',
-        'ageGroup' => $ageGroup,
-        'purok' => $purok,
+        'activityCategory' => $activityCategory, 'attendanceStatus' => 'Attended',
+        'ageGroup' => $ageGroup, 'purok' => $purok,
     ];
     if ($eventId !== '') $participationEventOptions[$eventId] = $eventTitle;
 }
-usort($participationRows, function ($a, $b) {
-    return strcmp($b['eventDate'], $a['eventDate'])
-        ?: strcmp($a['eventTitle'], $b['eventTitle'])
-        ?: strcmp($a['memberName'], $b['memberName']);
-});
+foreach ($participationRemovedWalkins as $walkin) {
+    $eventId = (string)($walkin['eventId'] ?? '');
+    $event = $participationEventsById[$eventId] ?? [];
+    $eventTitle = trim((string)($walkin['eventTitle'] ?? $event['title'] ?? ''));
+    if ($eventId !== '' && $eventTitle !== '') $participationEventOptions[$eventId] = $eventTitle;
+}
+$today = date('Y-m-d');
+$currentTime = date('H:i');
+foreach ($participationEventsById as $eventId => $event) {
+    $eventDate = (string)($event['date'] ?? '');
+    if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $eventDate, $dateParts) ||
+        !checkdate((int)$dateParts[2], (int)$dateParts[3], (int)$dateParts[1]) ||
+        !empty($event['cancelled'])) continue;
+    if (is_public() && (
+        ($event['publishState'] ?? '') !== 'Published' ||
+        (!empty($event['publishDate']) && (string)$event['publishDate'] > $today)
+    )) continue;
+    $endTime = (string)($event['endTime'] ?? '23:59');
+    if (!preg_match('/^\d{2}:\d{2}$/', $endTime)) $endTime = '23:59';
+    if ($eventDate > $today || ($eventDate === $today && $endTime >= $currentTime)) continue;
+    $eventTitle = trim((string)($event['title'] ?? ''));
+    if ($eventTitle !== '') $participationEventOptions[(string)$eventId] = $eventTitle;
+}
 asort($participationEventOptions, SORT_NATURAL | SORT_FLAG_CASE);
+$participationRosterMembers = array_values(array_filter($participationMembers, function ($member) {
+    if (!is_array($member)) return false;
+    if (($member['status'] ?? '') === 'Active') return true;
+    if (is_public()) return false;
+    foreach ($participationRemovedWalkins as $walkin) {
+        if ((string)($walkin['memberId'] ?? '') === (string)($member['id'] ?? '')) return true;
+    }
+    return false;
+}));
+usort($participationRosterMembers, function ($a, $b) {
+    return strcmp(participation_full_name($a), participation_full_name($b));
+});
+$participationEventAnalytics = [];
+foreach ($participationEventsById as $eventId => $event) {
+    $memberAgeGroups = [];
+    if (!is_public()) {
+        foreach ($participationRosterMembers as $member) {
+            if (($member['status'] ?? '') !== 'Active' || !isset($member['id'])) continue;
+            $memberAgeGroups[(string)$member['id']] = participation_age_group(
+                participation_age_at_event($member, (string)($event['date'] ?? ''))
+            );
+        }
+    }
+    $participationEventAnalytics[$eventId] = [
+        'title' => (string)($event['title'] ?? ''),
+        'date' => (string)($event['date'] ?? ''),
+        'endTime' => (string)($event['endTime'] ?? ''),
+        'cancelled' => !empty($event['cancelled']),
+        'published' => !is_public() || (
+            ($event['publishState'] ?? '') === 'Published' &&
+            (empty($event['publishDate']) || (string)$event['publishDate'] <= date('Y-m-d'))
+        ),
+        'category' => (string)($event['category'] ?? ''),
+        'centers' => participation_event_centers($event, $participationCopCategories),
+        'memberAgeGroups' => $memberAgeGroups,
+    ];
+}
 ?>
 </head>
 
-<body>
+<body class="participation-page">
 
 <div class="top-strip"></div>
 
@@ -469,615 +421,1196 @@ asort($participationEventOptions, SORT_NATURAL | SORT_FLAG_CASE);
 <main class="main page-content">
 
 <header class="header">
-
     <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-sm sidebar-toggle d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Open menu"><i class="bi bi-list fs-5"></i></button>
+        <button class="btn btn-sm sidebar-toggle d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Open menu"><i class="bi bi-list fs-5"></i></button>
         <div>
-        <div class="header-title">Participation Tracking</div>
-        <small>KK Youth Profiling System</small>
-    </div></div>
-
+            <div class="header-title">Participation</div>
+            <small>Youth involvement in SK activities and programs</small>
+        </div>
+    </div>
     <div class="header-account-area">
-
-        <a href="announcements.php" class="header-notification" aria-label="Notifications">
-            <i class="bi bi-bell"></i>
-        </a>
-
+        <a href="announcements.php" class="header-notification" aria-label="Notifications"><i class="bi bi-bell"></i></a>
         <div class="header-avatar"><?= e(uinit()) ?></div>
-
         <div class="d-none d-md-block header-identity">
             <div class="header-identity-name"><?= e(uname()) ?></div>
             <div class="header-identity-role"><?= e(strtoupper(urole())) ?></div>
         </div>
-
         <a href="<?= is_public() ? 'login.php' : 'logout.php' ?>" class="btn btn-sm header-logout">
-            <i class="bi bi-box-arrow-right me-1"></i>
-            <?= is_public() ? 'Official Login' : 'Logout' ?>
+            <i class="bi bi-box-arrow-right me-1"></i><?= is_public() ? 'Official Login' : 'Logout' ?>
         </a>
-
     </div>
-
 </header>
 
 <div class="content">
 
+    <!-- 1. FILTERS (isang lugar lang, para sa buong page) -->
+    <div class="filter-bar mb-3">
+        <div class="filter-title"><i class="bi bi-funnel"></i>Filters</div>
+        <div style="min-width:220px;flex:1 1 220px">
+            <label class="form-label" for="participationActivityFilter">Activity</label>
+            <select class="form-select" id="participationActivityFilter">
+                <option value="">All activities</option>
+                <?php foreach ($participationEventOptions as $eventId => $eventTitle): ?>
+                    <option value="<?= e($eventId) ?>"><?= e($eventTitle) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div><label class="form-label" for="participationDateFrom">From</label><input type="date" class="form-control" id="participationDateFrom"></div>
+        <div><label class="form-label" for="participationDateTo">To</label><input type="date" class="form-control" id="participationDateTo"></div>
+        <div><button class="btn btn-primary" type="button" id="clearParticipationFilters" style="min-height:40px;border-radius:10px"><i class="bi bi-arrow-counterclockwise me-1"></i>Clear</button></div>
+        <div id="participationFilterError" class="small text-danger w-100" role="alert" aria-live="polite"></div>
+    </div>
+
+    <div class="row g-3 mb-3 align-items-stretch">
+        <div class="col-12 <?= is_public() ? '' : 'col-xl-3' ?> d-flex">
+            <section class="participation-hero">
+                <div class="participation-hero-copy">
+                    <span class="participation-hero-kicker">Youth programs</span>
+                    <h1>Youth Participation</h1>
+                    <p>Track involvement and attendance across SK activities.</p>
+                </div>
+                <div class="participation-hero-metrics" aria-label="Participation summary">
+                    <div class="participation-hero-metric">
+                        <span class="participation-hero-metric-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
+                        <span class="participation-hero-metric-label">Active KK Members</span>
+                        <strong class="participation-hero-metric-value" id="heroActiveMembers"><?= (int)$participationActiveMembers ?></strong>
+                    </div>
+                    <div class="participation-hero-metric">
+                        <span class="participation-hero-metric-icon"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+                        <span class="participation-hero-metric-label">Confirmed Attendance</span>
+                        <strong class="participation-hero-metric-value" id="heroConfirmedAttendance">0</strong>
+                    </div>
+                    <div class="participation-hero-metric">
+                        <span class="participation-hero-metric-icon"><i class="bi bi-calendar-event" aria-hidden="true"></i></span>
+                        <span class="participation-hero-metric-label">Activities tracked</span>
+                        <strong class="participation-hero-metric-value" id="heroActivitiesTracked">0</strong>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#participationRecordsModal">
+                    <i class="bi bi-clipboard-check me-1"></i>Open records
+                </button>
+                <i class="bi bi-people-fill participation-hero-icon" aria-hidden="true"></i>
+            </section>
+        </div>
+        <?php if (!is_public()): ?>
+        <div class="col-12 col-xl-9">
+            <section class="card-box member-engagement-card" id="memberEngagementCard">
+                <div class="card-head">
+                    <div>
+                        <h2 class="member-engagement-heading"><i class="bi bi-people-fill" aria-hidden="true"></i>Member engagement</h2>
+                        <p class="card-sub" id="memberEngagementScope">Based on completed activities and selected filters</p>
+                    </div>
+                    <div class="member-engagement-search">
+                        <label class="visually-hidden" for="memberEngagementSearch">Search members</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="search" class="form-control" id="memberEngagementSearch" placeholder="Search name, ID, or Purok">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-pad">
+                    <div class="member-engagement-tabs" id="memberEngagementTabs" role="group" aria-label="Filter members by engagement">
+                        <button type="button" class="member-engagement-tab active" data-engagement-filter="all" aria-pressed="true">All <span class="member-engagement-tab-count" id="engagementCountAll">0</span></button>
+                        <button type="button" class="member-engagement-tab" data-engagement-filter="Regular" aria-pressed="false">Regular <span class="member-engagement-tab-count" id="engagementCountRegular">0</span></button>
+                        <button type="button" class="member-engagement-tab" data-engagement-filter="Occasional" aria-pressed="false">Occasional <span class="member-engagement-tab-count" id="engagementCountOccasional">0</span></button>
+                        <button type="button" class="member-engagement-tab" data-engagement-filter="Not yet attended" aria-pressed="false">Not yet attended <span class="member-engagement-tab-count" id="engagementCountNone">0</span></button>
+                    </div>
+                    <div class="member-engagement-table-wrap">
+                        <table class="table table-sm table-hover member-engagement-table">
+                            <thead><tr><th>Member</th><th>Purok</th><th>Attended</th><th>Rate</th><th>Last attended</th><th>Status</th></tr></thead>
+                            <tbody id="memberEngagementRows"></tbody>
+                        </table>
+                        <div class="text-center text-muted py-4" id="memberEngagementEmpty" hidden>No members match these filters.</div>
+                    </div>
+                    <div class="member-engagement-footer">
+                        <span id="memberEngagementResultCount">Showing 0 members</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="memberEngagementToggle" hidden>Show all</button>
+                    </div>
+                    <small class="member-engagement-note">Regular = attended at least half of completed activities. Occasional = attended some. Not yet attended = none.</small>
+                </div>
+            </section>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Participation heatmap and doughnut chart -->
     <div class="row g-3 mb-3">
-
-        <div class="col-6 col-lg-3">
-            <div class="stat">
-                <i class="bi bi-people"></i>
-                <div class="number"><?= $participationActiveMembers ?></div>
-                <div class="label">Active KK members</div>
-                <div class="sub">&nbsp;</div>
-            </div>
-        </div>
-
-        <div class="col-6 col-lg-3">
-            <div class="stat">
-                <i class="bi bi-percent"></i>
-                <div class="number" id="participationRate">0%</div>
-                <div class="label">Participation rate</div>
-                <div class="progress" role="progressbar" aria-label="Participation rate"><div class="progress-bar" id="participationRateBar" style="width:0%"></div></div>
-                <div class="sub mt-2" id="participationRateNote"></div>
-            </div>
-        </div>
-
-        <div class="col-6 col-lg-3">
-            <div class="stat">
-                <i class="bi bi-trophy"></i>
-                <div class="number" id="confirmedAttendanceCount"><?= $participationAttendedCount ?></div>
-                <div class="label">Total attendances</div>
-                <div class="sub" id="attendanceNote"></div>
-            </div>
-        </div>
-
-        <div class="col-6 col-lg-3">
-            <div class="stat">
-                <i class="bi bi-calendar-event"></i>
-                <div class="number" id="programCount"><?= count($participationEventOptions) ?></div>
-                <div class="label">Activities with records</div>
-                <div class="sub">&nbsp;</div>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="card-box">
-        <div class="filter-bar">
-            <div class="grow">
-                <label class="form-label" for="participationActivityFilter">Activity</label>
-                <select class="form-select" id="participationActivityFilter">
-                    <option value="">All activities</option>
-                    <?php foreach ($participationEventOptions as $eventId => $eventTitle): ?>
-                        <option value="<?= e($eventId) ?>"><?= e($eventTitle) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="fixed">
-                <label class="form-label" for="participationDateFrom">From</label>
-                <input type="date" class="form-control" id="participationDateFrom">
-            </div>
-            <div class="fixed">
-                <label class="form-label" for="participationDateTo">To</label>
-                <input type="date" class="form-control" id="participationDateTo">
-            </div>
-            <button class="btn btn-outline-primary" type="button" id="clearParticipationFilters">
-                <i class="bi bi-x-circle me-1"></i>Clear
-            </button>
-            <?php if (!is_public()): ?>
-            <a class="btn btn-primary ms-lg-auto" style="height:40px;display:inline-flex;align-items:center"
-               href="<?= $participationQuickEvent ? 'announcements.php?eventId=' . rawurlencode((string)$participationQuickEvent['id']) . '&amp;showRoster=1' : 'announcements.php' ?>"
-               title="<?= e($participationQuickEvent ? 'Latest activity: ' . ($participationQuickEvent['title'] ?? '') : 'Open announcements and events') ?>">
-                <i class="bi bi-clipboard-check me-2"></i>Record attendance
-            </a>
-            <?php endif; ?>
-        </div>
-        <div id="participationFilterError" class="small text-danger px-3 pb-2" role="alert" aria-live="polite"></div>
-    </div>
-
-    <?php if (!is_public()): ?>
-    <div class="card-box">
-        <div class="card-header pc-head">
-            <span><i class="bi bi-person-lines-fill me-2"></i>Member engagement</span>
-            <label class="visually-hidden" for="engageSearch">Search members</label>
-            <input type="search" class="form-control" id="engageSearch" placeholder="Search name, ID or Purok" style="max-width:260px">
-        </div>
-        <div class="card-body">
-            <div class="pc-chips" id="engageChips" role="group" aria-label="Filter members by engagement"></div>
-            <div class="table-responsive">
-                <table class="table mb-0">
-                    <thead><tr><th>Member</th><th>Purok</th><th>Attended</th><th>Rate</th><th>Last attended</th><th>Status</th></tr></thead>
-                    <tbody id="engageBody"></tbody>
-                </table>
-            </div>
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
-                <span class="small text-muted" id="engageNote"></span>
-                <button type="button" class="btn btn-sm btn-outline-primary" id="engageMore" hidden></button>
-            </div>
-            <p class="small text-muted mt-2 mb-0">Regular = attended 50% or more of the activities. Occasional = attended some. Not yet attended = none. Based on the activity and date filters above.</p>
-        </div>
-    </div>
-    <script type="application/json" id="participationRosterData"><?= json_encode($participationRoster, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
-    <?php endif; ?>
-
-    <div class="card-box">
-        <div class="card-header pc-head">
-            <span><i class="bi bi-grid-3x3-gap me-2"></i>Participation heatmap</span>
-            <div class="d-flex flex-wrap align-items-center gap-2">
-                <div class="btn-group pc-seg" role="group" aria-label="Rows">
-                    <button type="button" class="btn btn-outline-primary active" data-view="cop">Center of Participation</button>
-                    <button type="button" class="btn btn-outline-primary" data-view="age">Age group</button>
-                    <button type="button" class="btn btn-outline-primary" data-view="purok">Purok</button>
+        <div class="col-12 col-xl-7">
+            <section class="card-box">
+                <div class="card-head align-items-center flex-wrap">
+                    <h2 class="d-flex align-items-center gap-2"><i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i>Participation heatmap</h2>
+                    <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+                        <div class="btn-group btn-group-sm" id="heatDimGroup" role="group" aria-label="Group heatmap rows by">
+                            <button type="button" class="btn btn-outline-primary" data-dim="center">Center</button>
+                            <button type="button" class="btn btn-outline-primary" data-dim="ageGroup">Age</button>
+                            <button type="button" class="btn btn-outline-primary active" data-dim="purok">Purok</button>
+                            <button type="button" class="btn btn-outline-primary" data-dim="attendance">Attendance</button>
+                        </div>
+                        <div class="btn-group btn-group-sm" id="heatModeGroup" role="group" aria-label="Heatmap columns">
+                            <button type="button" class="btn btn-outline-primary active" data-mode="month">By month</button>
+                            <button type="button" class="btn btn-outline-primary" data-mode="activity">By activity</button>
+                        </div>
+                        <select class="form-select form-select-sm w-auto" id="heatYear" aria-label="Heatmap year"></select>
+                    </div>
                 </div>
-                <div class="btn-group pc-seg" role="group" aria-label="Columns">
-                    <button type="button" class="btn btn-outline-secondary active" data-col="month">By month</button>
-                    <button type="button" class="btn btn-outline-secondary" data-col="event">By activity</button>
+                <div class="card-pad">
+                    <p class="card-sub mb-3" id="heatCaption">Darker means more attendance.</p>
+                    <div class="heat-scroll" tabindex="0" role="region" aria-label="Participation heatmap, scroll horizontally to see all columns">
+                        <div class="heat-grid" id="purokHeatmap" aria-live="polite"></div>
+                    </div>
+                    <div class="heat-scale justify-content-end"><span>Less</span><span class="heat-scale-blocks" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span><span>More</span></div>
                 </div>
-                <label class="visually-hidden" for="heatmapYearFilter">Year</label>
-                <select class="form-select" id="heatmapYearFilter" style="width:auto;min-width:86px"></select>
-            </div>
+            </section>
         </div>
-        <div class="card-body">
-            <div class="small text-muted mb-3" id="heatmapSummary" aria-live="polite"></div>
-            <div class="pc-matrix-wrap"><div id="heatmapMatrix"></div></div>
-            <div class="pc-key" aria-label="Attendance intensity legend"><span>Less</span><i></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i><span>More</span></div>
+        <div class="col-12 col-xl-5">
+            <section class="card-box participation-overview-card">
+                <div class="card-head"><div><h2>Attendance Overview</h2><p class="card-sub" id="attendanceOverviewSubtitle">Select a heatmap cell to filter this chart.</p></div></div>
+                <div class="card-pad">
+                    <div class="attendance-overview-layout">
+                        <div class="chart-box attendance-doughnut">
+                            <canvas id="attendanceOverviewChart" role="img" aria-label="Doughnut chart of participation by selected heatmap dimension"></canvas>
+                            <div class="chart-empty" id="attendanceOverviewChartEmpty" hidden></div>
+                        </div>
+                        <div class="attendance-overview-legend" id="attendanceOverviewLegend" aria-live="polite"></div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
-    <script type="application/json" id="participationHeatmapData"><?= json_encode($participationHeatmapRows, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
 
-    <div class="card-box">
+    <script type="application/json" id="participationAnalyticsData"><?= json_encode($participationHeatmapRows, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
+    <script type="application/json" id="participationRosterMembers"><?= json_encode(array_map(function ($member) {
+        return [
+            'id' => (string)($member['id'] ?? ''),
+            'memberNo' => (string)($member['memberNo'] ?? $member['id'] ?? ''),
+            'name' => participation_full_name($member),
+            'purok' => trim((string)($member['purok'] ?? '')) ?: 'Not recorded',
+            'status' => (string)($member['status'] ?? ''),
+        ];
+    }, $participationRosterMembers), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
+    <script type="application/json" id="participationRemovedWalkins"><?= json_encode(is_public() ? [] : $participationRemovedWalkins, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
+    <script type="application/json" id="participationEventAnalytics"><?= json_encode($participationEventAnalytics, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
 
-        <div class="card-header">
-            <i class="bi bi-person-check me-2"></i>
-            Youth Participation Records
-        </div>
 
-        <div class="card-body">
-
-            <div class="row g-2 mb-4">
-
-                <div class="col-md-5">
-                    <input type="text"
-                           id="search"
-                           class="form-control"
-                           placeholder="Search member, age, Purok or event...">
-                </div>
-
-                <div class="col-md-4">
-                    <label class="visually-hidden" for="attendanceStatusFilter">Attendance status</label>
-                    <select class="form-select" id="attendanceStatusFilter">
-                        <option value="">All attendance statuses</option>
-                        <option value="Attended">Attended</option>
-                        <option value="Did not attend">Did not attend</option>
-                        <option value="Not recorded">Not recorded</option>
-                    </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-center justify-content-between gap-2">
-                    <span class="small text-muted" id="participationRecordCount" aria-live="polite"></span>
-                    <?php if (!is_public()): ?>
-                    <button class="btn btn-sm btn-outline-primary text-nowrap" type="button" id="exportCsv">
-                        <i class="bi bi-download me-1"></i>Export CSV
-                    </button>
-                    <?php endif; ?>
-                </div>
-
-            </div>
-
-            <div class="table-responsive">
-
-                <table class="table">
-
-                    <thead>
-
-                        <tr>
-                            <th>Member ID</th>
-                            <th>Full Name</th>
-                            <th>Program / Event</th>
-                            <th>Registration / record</th>
-                            <th>Age</th>
-                            <th>Purok</th>
-                            <th>Attendance</th>
-                            <th>Member Status</th>
-                            <?php if (!is_public()): ?><th>Action</th><?php endif; ?>
-                        </tr>
-
-                    </thead>
-
-                    <tbody id="participationTable">
-                        <?php foreach ($participationRows as $row): ?>
-                            <tr data-event-id="<?= e($row['eventId']) ?>" data-event-date="<?= e($row['eventDate']) ?>" data-attendance-status="<?= e($row['attendanceStatus']) ?>">
-                                <td><?= e($row['memberId']) ?></td>
-                                <td><strong><?= e($row['memberName']) ?></strong></td>
-                                <td><?= e($row['eventTitle']) ?><?php if ($row['eventDate'] !== ''): ?><div class="small text-muted"><?= e($row['eventDate']) ?></div><?php endif; ?></td>
-                                <td><?= e($row['submittedAt'] ?: '—') ?></td>
-                                <td><?= $row['age'] === null ? '—' : e($row['age']) ?></td>
-                                <td><?= e($row['purok']) ?></td>
-                                <td>
-                                    <?php
-                                    $attendanceBadge = $row['attendanceStatus'] === 'Attended'
-                                        ? 'bg-success-subtle text-success-emphasis'
-                                        : ($row['attendanceStatus'] === 'Did not attend' ? 'bg-secondary-subtle text-secondary-emphasis' : 'bg-warning-subtle text-warning-emphasis');
-                                    ?>
-                                    <span class="badge <?= $attendanceBadge ?>"><?= e($row['attendanceStatus']) ?></span>
-                                </td>
-                                <td><?= e($row['memberStatus']) ?></td>
-                                <?php if (!is_public()): ?>
-                                    <td>
-                                        <?php if ($row['eventId'] !== '' && $row['eventAvailable']): ?>
-                                            <a class="btn btn-sm btn-outline-primary" href="announcements.php?eventId=<?= rawurlencode($row['eventId']) ?>&amp;showRoster=1" aria-label="<?= e('Manage attendance for ' . $row['eventTitle']) ?>">
-                                                <i class="bi bi-clipboard-check me-1"></i>Manage attendance
-                                            </a>
-                                        <?php else: ?>
-                                            <span class="text-muted">Unavailable</span>
-                                        <?php endif; ?>
-                                    </td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                        <tr id="participationNoRows" class="<?= $participationRows ? 'd-none' : '' ?>">
-                            <td colspan="<?= is_public() ? 8 : 9 ?>" class="text-center text-muted py-4">No participation records match these filters.</td>
-                        </tr>
-                    </tbody>
-
-                </table>
-
-            </div>
-            <p class="small text-muted px-3 pb-3 mb-0">
-                Counts attended records only. Walk-ins are included and nobody is counted twice for the same activity.
-            </p>
-        </div>
-
-    </div>
-
-    <div class="footer-note">
-        KK Youth Profiling System • SK Barangay Sikat, Alfonso, Cavite • FY 2026–2027
-    </div>
-
+    <div class="footer-note">KK Youth Profiling System • SK Barangay Sikat, Alfonso, Cavite • FY 2026–2027</div>
 </div>
 
 </main>
 
+<div class="modal fade participation-records-modal" id="participationRecordsModal" tabindex="-1" aria-labelledby="participationRecordsModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="participation-records-header-icon"><i class="bi bi-calendar-check"></i></span>
+                    <div><h2 class="modal-title fs-5 fw-bold" id="participationRecordsModalTitle">Youth Participation Records</h2><p class="card-sub mb-0">Each activity has its own roster. Recorded attendance keeps its status; members without a record stay Not yet attended.</p></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="filter-bar records-filter-bar mb-3">
+                    <div class="filter-title"><i class="bi bi-funnel"></i>Filters</div>
+                    <div style="min-width:220px;flex:1 1 220px">
+                        <label class="form-label" for="recordActivityFilter">Activity</label>
+                        <select class="form-select" id="recordActivityFilter">
+                            <option value="">All activities</option>
+                            <?php foreach ($participationEventOptions as $eventId => $eventTitle): ?>
+                                <option value="<?= e($eventId) ?>"><?= e($eventTitle) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div><label class="form-label" for="recordDateFromFilter">From</label><input type="date" class="form-control" id="recordDateFromFilter"></div>
+                    <div><label class="form-label" for="recordDateToFilter">To</label><input type="date" class="form-control" id="recordDateToFilter"></div>
+                    <div><button class="btn btn-primary" type="button" id="recordsClearFilters" style="min-height:40px;border-radius:10px"><i class="bi bi-arrow-counterclockwise me-1"></i>Clear</button></div>
+                    <div id="recordsFilterError" class="small text-danger w-100" role="alert" aria-live="polite"></div>
+                </div>
+                <div class="all-activities-summary mb-3" id="allActivitiesSummary" hidden>
+                    <span class="all-activities-summary-icon"><i class="bi bi-percent"></i></span>
+                    <span class="all-activities-summary-copy">
+                        <span class="all-activities-summary-label">Attendance rate</span>
+                        <span class="all-activities-summary-note" id="allActivitiesSummaryNote">Across completed activities</span>
+                    </span>
+                    <strong class="all-activities-summary-value" id="allActivitiesAttendanceRate">—</strong>
+                </div>
+                <div class="roster-action-toolbar" id="rosterActionToolbar" hidden>
+                    <div class="search-wrap">
+                        <label class="form-label small fw-bold mb-1" for="memberRosterSearch">Find member</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="search" id="memberRosterSearch" class="form-control" placeholder="Search name or KK number...">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-bold mb-1" for="rosterAttendanceFilter">Attendance status</label>
+                        <select class="form-select" id="rosterAttendanceFilter">
+                            <option value="">All statuses</option>
+                            <option value="Attended">Attended</option>
+                            <option value="Not yet attended">Not yet attended</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="small text-muted mb-3" id="rosterActivitySummary">Choose an activity to manage attendance.</p>
+                <div class="roster-main-table-wrap" id="rosterMainTableWrap" hidden>
+                    <table class="member-roster-table roster-main-table">
+                        <thead><tr><th>Member</th><th>Purok</th><th>Activity date</th><th>Attendance status</th></tr></thead>
+                        <tbody id="rosterMemberRows"></tbody>
+                    </table>
+                </div>
+                <div class="roster-save-bar" id="rosterSaveBar" hidden>
+                    <span class="roster-save-hint" id="rosterSaveHint">Set attendee statuses, then save your changes.</span>
+                    <?php if (!is_public()): ?><button type="button" class="btn btn-primary" id="saveRosterAttendance" disabled><i class="bi bi-save2 me-1"></i>Save Attendance</button><?php endif; ?>
+                </div>
+                <section class="roster-section" id="removedRosterSection" hidden>
+                    <div class="roster-section-title"><h3>Removed</h3><span class="roster-count" id="removedSectionCount">0</span></div>
+                    <div class="table-responsive"><table class="member-roster-table"><thead><tr><th>Member</th><th>Purok</th><th>Removed</th><?php if (!is_public()): ?><th class="text-end">Manage</th><?php endif; ?></tr></thead><tbody id="removedMemberRows"></tbody></table></div>
+                </section>
+                <div class="text-center text-muted py-4" id="emptyRosterMessage" hidden>No active KK members found.</div>
+            </div>
+        </div>
+    </div>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
-
 const copCategories = <?= json_encode($participationCopCategories, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-const copRows = JSON.parse(document.getElementById('participationHeatmapData').textContent || '[]');
-const activeMembers = <?= (int)$participationActiveMembers ?>;
-const ageGroups = ['15-17', '18-20', '21-24', '25-30', 'Outside ages 15-30', 'Unknown'];
-const defaultHeatmapYear = <?= json_encode(date('Y')) ?>;
+const participationData = JSON.parse(document.getElementById('participationAnalyticsData').textContent || '[]');
+const participationRosterMembers = JSON.parse(document.getElementById('participationRosterMembers').textContent || '[]');
+const participationRemovedWalkins = JSON.parse(document.getElementById('participationRemovedWalkins').textContent || '[]');
+const participationEventAnalytics = JSON.parse(document.getElementById('participationEventAnalytics').textContent || '{}');
+const ageGroups = ['15-17', '18-20', '21-24', '25-30'];
 const activityFilter = document.getElementById('participationActivityFilter');
 const dateFromFilter = document.getElementById('participationDateFrom');
 const dateToFilter = document.getElementById('participationDateTo');
-const heatmapYearFilter = document.getElementById('heatmapYearFilter');
 const filterError = document.getElementById('participationFilterError');
-let view = 'cop';
-let colMode = 'month';
+const memberRosterActivity = document.getElementById('recordActivityFilter');
+const recordDateFromFilter = document.getElementById('recordDateFromFilter');
+const recordDateToFilter = document.getElementById('recordDateToFilter');
+const recordsFilterError = document.getElementById('recordsFilterError');
+const memberRosterSearch = document.getElementById('memberRosterSearch');
+const rosterAttendanceFilter = document.getElementById('rosterAttendanceFilter');
+const rosterSaveButton = document.getElementById('saveRosterAttendance');
+const charts = {};
+const pendingRosterChanges = new Map();
+let memberEngagementFilter = 'all';
+let memberEngagementExpanded = false;
+const overviewPalette = ['#3b82f6', '#7c5ce6', '#ff7a59', '#22b8cf', '#f5a524', '#10b981', '#ec4899', '#64748b', '#8b5cf6', '#06b6d4', '#84cc16'];
+const activeKkMembers = <?= (int)$participationActiveMembers ?>;
+const isPublicView = <?= is_public() ? 'true' : 'false' ?>;
+if (typeof Chart !== 'undefined') { Chart.defaults.font.size = 13; Chart.defaults.font.weight = '600'; }
 
-function isValidIsoDate(value) {
-    const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) return false;
-    const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
-    return date.getUTCFullYear() === Number(match[1]) &&
-        date.getUTCMonth() === Number(match[2]) - 1 &&
-        date.getUTCDate() === Number(match[3]);
-}
-
-function normalizePurok(value) {
-    return String(value || '').trim().replace(/\s+/g, ' ') || 'Not recorded';
-}
-
-function escapeCopHtml(value) {
-    return String(value).replace(/[&<>"']/g, function (character) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character];
+function esc(value) {
+    return String(value).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c];
     });
 }
-
-function getFilteredRows() {
+function isValidIsoDate(value) {
+    const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return false;
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3];
+}
+function percent(part, whole) { return whole > 0 ? Math.min(100, Math.round(part / whole * 100)) : 0; }
+function syncRecordFilterValues() {
+    memberRosterActivity.value = activityFilter.value;
+    recordDateFromFilter.value = dateFromFilter.value;
+    recordDateToFilter.value = dateToFilter.value;
+}
+function syncRecordFilterError() {
+    recordsFilterError.textContent = filterError.textContent;
+}
+function normalizedGroup(value, fallback) {
+    const label = String(value || '').trim().replace(/\s+/g, ' ');
+    return label || fallback;
+}
+function eventKey(row) {
+    return String(row.eventId || (String(row.eventTitle || 'Unknown event') + '|' + String(row.eventDate || '')));
+}
+function attendanceKey(row) {
+    return String(row.memberKey || row.memberId || row.memberName || 'unknown') + '|' + eventKey(row);
+}
+function distinctAttendances(rows) {
+    const seen = new Set();
+    return rows.filter(function (row) {
+        if (row.attendanceStatus !== 'Attended') return false;
+        const key = attendanceKey(row);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+function completedActivityAttendanceSummary() {
+    const now = new Date();
+    const completedEventIds = Object.keys(participationEventAnalytics).filter(function (id) {
+        const event = participationEventAnalytics[id] || {};
+        if (!event.date || event.cancelled || event.published === false || !isValidIsoDate(event.date)) return false;
+        if ((dateFromFilter.value && event.date < dateFromFilter.value) ||
+            (dateToFilter.value && event.date > dateToFilter.value)) return false;
+        const endTime = event.endTime && /^\d{2}:\d{2}$/.test(event.endTime) ? event.endTime : '23:59';
+        const eventEnd = new Date(event.date + 'T' + endTime + ':00');
+        return !Number.isNaN(eventEnd.getTime()) && eventEnd < now;
+    });
+    const activeMemberIds = new Set(participationRosterMembers.filter(function (member) {
+        return member.status === 'Active';
+    }).map(function (member) { return String(member.id || ''); }));
+    const completedEventSet = new Set(completedEventIds);
+    const attended = distinctAttendances(participationData.filter(function (row) {
+        return completedEventSet.has(String(row.eventId || '')) && activeMemberIds.has(String(row.memberId || ''));
+    }));
+    const possibleAttendances = activeMemberIds.size * completedEventIds.length;
+    return {
+        rate: possibleAttendances > 0 ? percent(attended.length, possibleAttendances) : null,
+        completedActivityCount: completedEventIds.length,
+        activeMemberCount: activeMemberIds.size
+    };
+}
+function renderParticipationHeroMetrics() {
     const from = dateFromFilter.value;
     const to = dateToFilter.value;
+    const selectedActivity = activityFilter.value;
+    const now = new Date();
+    const trackedEvents = Object.keys(participationEventAnalytics).filter(function (eventId) {
+        const activity = participationEventAnalytics[eventId] || {};
+        if (!activity.date || activity.cancelled || activity.published === false || !isValidIsoDate(activity.date)) return false;
+        if (selectedActivity && String(eventId) !== selectedActivity) return false;
+        if ((from && activity.date < from) || (to && activity.date > to)) return false;
+        return true;
+    });
+    const completedEventIds = new Set(trackedEvents.filter(function (eventId) {
+        const activity = participationEventAnalytics[eventId] || {};
+        const endTime = activity.endTime && /^\d{2}:\d{2}$/.test(activity.endTime) ? activity.endTime : '23:59';
+        const eventEnd = new Date(activity.date + 'T' + endTime + ':00');
+        return !Number.isNaN(eventEnd.getTime()) && eventEnd < now;
+    }));
+    const activeMemberIds = new Set(participationRosterMembers.filter(function (member) {
+        return member.status === 'Active';
+    }).map(function (member) { return String(member.id || ''); }));
+    const confirmedAttendance = distinctAttendances(participationData.filter(function (record) {
+        return completedEventIds.has(String(record.eventId || '')) &&
+            activeMemberIds.has(String(record.memberId || ''));
+    })).length;
+
+    document.getElementById('heroConfirmedAttendance').textContent = confirmedAttendance.toLocaleString('en-PH');
+    document.getElementById('heroActivitiesTracked').textContent = trackedEvents.length.toLocaleString('en-PH');
+}
+function attendanceStatusRows(rows) {
+    const statusByKey = new Map();
+    const eventIds = new Set();
+    rows.forEach(function (row) {
+        const key = attendanceKey(row);
+        eventIds.add(String(row.eventId || ''));
+        const status = row.attendanceStatus === 'Attended' || row.source === 'walkin'
+            ? 'Attended'
+            : (row.attendanceStatus === 'Did not attend' ? 'Did not attend' : 'Not recorded');
+        if (!statusByKey.has(key) || status === 'Attended') {
+            statusByKey.set(key, Object.assign({}, row, { attendanceStatus: status }));
+        }
+    });
+
+    const now = new Date();
+    eventIds.forEach(function (eventId) {
+        const event = participationEventAnalytics[eventId] || {};
+        if (!event.date || event.cancelled) return;
+        const endTime = event.endTime && /^\d{2}:\d{2}$/.test(event.endTime) ? event.endTime : '23:59';
+        const eventEnd = new Date(event.date + 'T' + endTime + ':00');
+        if (Number.isNaN(eventEnd.getTime()) || eventEnd > now) return;
+        participationRosterMembers.forEach(function (member) {
+            if (member.status !== 'Active') return;
+            const key = attendanceKey({ eventId: eventId, memberKey: String(member.id || '') });
+            const existing = statusByKey.get(key);
+            if (existing && existing.attendanceStatus === 'Attended') return;
+            statusByKey.set(key, Object.assign({}, existing || {
+                eventId: eventId,
+                eventTitle: event.title || '',
+                eventDate: event.date,
+                memberKey: String(member.id || ''),
+                memberId: String(member.id || ''),
+                memberNo: String(member.memberNo || member.id || ''),
+                memberName: member.name || '',
+                purok: member.purok || 'Not recorded',
+                ageGroup: (event.memberAgeGroups || {})[String(member.id || '')] || '',
+                centers: Array.isArray(event.centers) ? event.centers : [],
+                activityCategory: event.category || 'Uncategorized',
+            }, { attendanceStatus: 'Did not attend' }));
+        });
+    });
+    return Array.from(statusByKey.values());
+}
+/* opts.dates / opts.activity = false para i-skip ang filter na iyon */
+function getRows(opts) {
+    opts = opts || {};
+    const useDates = opts.dates !== false, useActivity = opts.activity !== false;
+    const from = dateFromFilter.value, to = dateToFilter.value;
     if (from && to && from > to) {
         filterError.textContent = 'The start date must be on or before the end date.';
         return [];
     }
     filterError.textContent = '';
     const eventId = activityFilter.value;
-    return copRows.filter(function (row) {
-        if (eventId && String(row.eventId || '') !== eventId) return false;
-        if (from || to) {
+    return participationData.filter(function (row) {
+        if (useActivity && eventId && String(row.eventId || '') !== eventId) return false;
+        if (useDates && (from || to)) {
             if (!isValidIsoDate(row.eventDate)) return false;
             if ((from && row.eventDate < from) || (to && row.eventDate > to)) return false;
         }
         return true;
     });
 }
-
-function monthName(m) { return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]; }
-
-function rowGroups(row) {
-    if (view === 'cop') return Array.isArray(row.centers) ? row.centers : [];
-    if (view === 'age') return [ageGroups.indexOf(row.ageGroup) === -1 ? 'Unknown' : row.ageGroup];
-    return [normalizePurok(row.purok)];
+function groupsForRow(row, dimension) {
+    if (dimension === 'attendance') {
+        const status = row.attendanceStatus === 'Attended' || row.source === 'walkin'
+            ? 'Attended'
+            : (row.attendanceStatus === 'Did not attend' ? 'Did not attend' : 'Not recorded');
+        return [status];
+    }
+    if (dimension === 'center') {
+        const centers = Array.isArray(row.centers) ? row.centers : [];
+        return centers.length ? centers.map(function (v) { return normalizedGroup(v, 'Not categorized'); }) : ['Not categorized'];
+    }
+    if (dimension === 'ageGroup') {
+        const g = normalizedGroup(row.ageGroup, '');
+        return ageGroups.indexOf(g) === -1 ? [] : [g];
+    }
+    const purok = normalizedGroup(row.purok, 'Not recorded');
+    const match = purok.match(/^purok\s*(\d+)$/i);
+    return [match ? 'Purok ' + match[1] : purok];
 }
-function groupKey(label) { return view === 'purok' ? label.toLocaleLowerCase() : label; }
-
-function inYear(row, year) {
-    return isValidIsoDate(row.eventDate) && Number(row.eventDate.slice(0, 4)) === year;
+function chartTheme() {
+    const s = getComputedStyle(document.body);
+    return {
+        text: s.getPropertyValue('--bs-body-color').trim() || '#20324d',
+        muted: s.getPropertyValue('--muted').trim() || '#5c6e86',
+        grid: s.getPropertyValue('--p-grid').trim() || '#e8e6f8',
+        surface: s.getPropertyValue('--p-card').trim() || '#fff'
+    };
+}
+function replaceChart(canvasId, config, hasData) {
+    const canvas = document.getElementById(canvasId);
+    const empty = document.getElementById(canvasId + 'Empty');
+    if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+    if (!hasData) {
+        canvas.hidden = true; empty.hidden = false;
+        empty.textContent = 'No confirmed attendance matches these filters.';
+        return;
+    }
+    if (typeof Chart === 'undefined') {
+        canvas.hidden = true; empty.hidden = false;
+        empty.textContent = 'Charts could not load because Chart.js is unavailable.';
+        return;
+    }
+    canvas.hidden = false; empty.hidden = true;
+    charts[canvasId] = new Chart(canvas, config);
 }
 
-function renderMatrix(rows) {
-    const year = Number(heatmapYearFilter.value);
-    const attended = rows.filter(function (row) { return row.attendanceStatus === 'Attended' && inYear(row, year); });
+function renderAttendanceOverview(rows) {
+    const theme = chartTheme();
+    const statusLabels = ['Attended', 'Did not attend', 'Not recorded'];
+    const statusColors = ['#16a34a', '#ef4444', '#94a3b8'];
+    const labels = heatDimensionGroups[heatState.dim] || statusLabels;
+    const selection = heatSelection && heatSelection.dim === heatState.dim &&
+        heatSelection.mode === heatState.mode && heatSelection.year === heatState.year
+        ? heatSelection : null;
+    const chartRows = (heatState.dim === 'attendance' ? attendanceStatusRows(rows) : distinctAttendances(rows)).filter(function (row) {
+        if (!selection) return true;
+        const hasGroup = groupsForRow(row, selection.dim).indexOf(selection.group) !== -1;
+        const hasColumn = selection.mode === 'month'
+            ? String(row.eventDate || '').slice(5, 7) === selection.columnKey
+            : eventKey(row) === selection.columnKey;
+        return hasGroup && hasColumn;
+    });
+    const counts = labels.map(function (label) {
+        const members = new Set();
+        chartRows.forEach(function (row) {
+            if (groupsForRow(row, heatState.dim).indexOf(label) !== -1) members.add(attendanceKey(row));
+        });
+        return members.size;
+    });
+    const colors = heatState.dim === 'attendance'
+        ? statusColors
+        : labels.map(function (_label, index) { return overviewPalette[index % overviewPalette.length]; });
+    const total = counts.reduce(function (sum, count) { return sum + count; }, 0);
+    const allActivitiesMode = !activityFilter.value;
+    const scope = selection
+        ? selection.group + ' · ' + selection.columnLabel + ' · ' + selection.year
+        : 'All heatmap data · ' + heatState.year;
+    document.getElementById('attendanceOverviewSubtitle').textContent =
+        allActivitiesMode ? scope + ' · percentage distribution' : scope + ' · ' + total.toLocaleString('en-PH') + ' records';
+    document.getElementById('attendanceOverviewLegend').innerHTML = labels.map(function (label, index) {
+        const value = allActivitiesMode
+            ? (total > 0 ? (counts[index] / total * 100).toFixed(1) + '%' : '0%')
+            : counts[index].toLocaleString('en-PH');
+        return '<div class="attendance-overview-item"><span class="attendance-overview-dot" style="background:' + colors[index] +
+            '"></span><span title="' + esc(label) + '">' + esc(label) + '</span><strong>' +
+            value + '</strong></div>';
+    }).join('');
+    document.getElementById('attendanceOverviewChart').setAttribute(
+        'aria-label',
+        'Doughnut chart showing ' + heatDimTitles[heatState.dim] + (allActivitiesMode ? ' percentage distribution' : ' counts')
+    );
+    replaceChart('attendanceOverviewChart', {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{ data: counts, backgroundColor: colors, borderColor: theme.surface, borderWidth: 3, hoverOffset: 6 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: function (context) {
+                    const value = Number(context.raw);
+                    return ' ' + context.label + ': ' + (allActivitiesMode && total > 0
+                        ? (value / total * 100).toFixed(1) + '%'
+                        : value.toLocaleString('en-PH'));
+                } } }
+            }
+        },
+        plugins: [{
+            id: 'doughnutCenterTotal',
+            afterDraw: function (chart) {
+                const area = chart.chartArea;
+                if (!area) return;
+                const centerX = (area.left + area.right) / 2;
+                const centerY = (area.top + area.bottom) / 2;
+                const countText = total.toLocaleString('en-PH');
+                const countFont = Math.min(28, area.height * 0.18, area.width / (countText.length * 0.68));
+                const labelFont = Math.max(9, Math.min(12, area.height * 0.075));
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = theme.text;
+                ctx.font = '800 ' + countFont + 'px system-ui, sans-serif';
+                ctx.fillText(countText, centerX, centerY - labelFont * 0.55);
+                ctx.fillStyle = theme.muted;
+                ctx.font = '700 ' + labelFont + 'px system-ui, sans-serif';
+                ctx.fillText('TOTAL', centerX, centerY + countFont * 0.72);
+                ctx.restore();
+            }
+        }]
+    }, total > 0);
+}
 
-    // columns
-    let columns = [];
-    if (colMode === 'month') {
-        for (let m = 0; m < 12; m++) columns.push({ key: String(m), title: monthName(m), sub: '' });
+/* ---------- HEATMAP ---------- */
+const heatState = { dim: 'purok', mode: 'month', year: '' };
+let heatSelection = null;
+const heatDimTitles = { center: 'Center of Participation', ageGroup: 'Age group', purok: 'Purok', attendance: 'Attendance status' };
+const heatDimensionGroups = {
+    center: copCategories.concat(['Not categorized']),
+    ageGroup: ageGroups.slice(),
+    purok: ['Purok 1', 'Purok 2', 'Purok 3', 'Purok 4', 'Purok 5', 'Purok 6', 'Purok 7', 'Not recorded'],
+    attendance: ['Attended', 'Did not attend', 'Not recorded']
+};
+const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function syncHeatButtons() {
+    document.querySelectorAll('#heatDimGroup button').forEach(function (b) { b.classList.toggle('active', b.dataset.dim === heatState.dim); });
+    document.querySelectorAll('#heatModeGroup button').forEach(function (b) { b.classList.toggle('active', b.dataset.mode === heatState.mode); });
+}
+function initHeatControls() {
+    const thisYear = String(new Date().getFullYear());
+    const years = new Set([thisYear]);
+    participationData.forEach(function (r) { if (isValidIsoDate(r.eventDate)) years.add(r.eventDate.slice(0, 4)); });
+    const sel = document.getElementById('heatYear');
+    sel.innerHTML = Array.from(years).sort().reverse().map(function (y) { return '<option value="' + y + '">' + y + '</option>'; }).join('');
+    heatState.year = thisYear;
+    sel.value = thisYear;
+    sel.addEventListener('change', function () { heatState.year = sel.value; heatSelection = null; renderHeatmap(); });
+    document.getElementById('heatDimGroup').addEventListener('click', function (e) {
+        const b = e.target.closest('button[data-dim]');
+        if (!b) return;
+        heatState.dim = b.dataset.dim; heatSelection = null; syncHeatButtons(); renderHeatmap();
+    });
+    document.getElementById('heatModeGroup').addEventListener('click', function (e) {
+        const b = e.target.closest('button[data-mode]');
+        if (!b) return;
+        heatState.mode = b.dataset.mode; heatSelection = null; syncHeatButtons(); renderHeatmap();
+    });
+    document.getElementById('purokHeatmap').addEventListener('click', function (e) {
+        const cell = e.target.closest('button[data-heat-group]');
+        if (!cell) return;
+        const selection = {
+            dim: heatState.dim,
+            mode: heatState.mode,
+            year: heatState.year,
+            group: cell.dataset.heatGroup,
+            columnKey: cell.dataset.heatColumn,
+            columnLabel: cell.dataset.heatLabel
+        };
+        const sameSelection = heatSelection &&
+            heatSelection.dim === selection.dim && heatSelection.mode === selection.mode &&
+            heatSelection.year === selection.year && heatSelection.group === selection.group &&
+            heatSelection.columnKey === selection.columnKey;
+        heatSelection = sameSelection ? null : selection;
+        renderHeatmap();
+    });
+    syncHeatButtons();
+}
+function renderHeatmap() {
+    const root = document.getElementById('purokHeatmap');
+    const dim = heatState.dim, byMonth = heatState.mode === 'month';
+    const rows = getRows({ dates: false }).filter(function (r) { return isValidIsoDate(r.eventDate) && r.eventDate.slice(0, 4) === heatState.year; });
+    const attended = distinctAttendances(rows);
+    const heatRows = dim === 'attendance' ? attendanceStatusRows(rows) : attended;
+    document.getElementById('heatCaption').textContent = (dim === 'attendance' ? 'Attendance status' : 'Confirmed attendance') +
+        ' in ' + heatState.year + ' by ' + (byMonth ? 'month' : 'activity') + '. Darker means more ' +
+        (dim === 'attendance' ? 'records.' : 'attendance.');
+    let cols;
+    if (byMonth) {
+        cols = monthShort.map(function (m, i) { return { key: String(i + 1).padStart(2, '0'), label: m }; });
     } else {
         const seen = new Map();
-        attended.forEach(function (row) {
-            const key = String(row.eventId || row.eventTitle || '');
-            if (key && !seen.has(key)) seen.set(key, { key: key, title: row.eventTitle || 'Activity', date: row.eventDate });
-        });
-        columns = Array.from(seen.values()).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })
-            .map(function (c) { return { key: c.key, title: c.title, sub: formatDate(c.date).replace(/, \d{4}$/, '') }; });
+        heatRows.forEach(function (r) { const k = eventKey(r); if (!seen.has(k)) seen.set(k, { key: k, label: r.eventTitle || 'Activity', date: r.eventDate }); });
+        cols = Array.from(seen.values()).sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
     }
-    const colKey = function (row) {
-        return colMode === 'month' ? String(Number(row.eventDate.slice(5, 7)) - 1) : String(row.eventId || row.eventTitle || '');
-    };
-
-    // rows
-    const labels = new Map();
-    const data = new Map();
-    const ensure = function (key, label) {
-        if (!data.has(key)) { data.set(key, { label: label, cells: new Map(), total: 0 }); }
-    };
-    if (view === 'cop') copCategories.forEach(function (c) { ensure(c, c); });
-    if (view === 'age') ageGroups.slice(0, 4).forEach(function (g) { ensure(g, g); });
-    attended.forEach(function (row) {
-        rowGroups(row).forEach(function (label) {
-            const key = groupKey(label);
-            ensure(key, label);
-            const entry = data.get(key);
-            const ck = colKey(row);
-            entry.cells.set(ck, (entry.cells.get(ck) || 0) + 1);
-            entry.total++;
+    const found = new Set(), cells = new Map(), rowTotals = new Map();
+    heatRows.forEach(function (r) {
+        const colKey = byMonth ? r.eventDate.slice(5, 7) : eventKey(r), pair = attendanceKey(r);
+        groupsForRow(r, dim).forEach(function (g) {
+            found.add(g);
+            const key = g + '\u001f' + colKey;
+            if (!cells.has(key)) cells.set(key, new Set());
+            cells.get(key).add(pair);
         });
     });
-    let list = Array.from(data.values());
-    if (view !== 'age') {
-        list.sort(function (a, b) {
-            if (a.label === 'Not recorded') return 1;
-            if (b.label === 'Not recorded') return -1;
-            return b.total - a.total || a.label.localeCompare(b.label, undefined, { numeric: true });
-        });
-    }
+    const groups = heatDimensionGroups[dim] || [];
     let max = 0;
-    list.forEach(function (r) { r.cells.forEach(function (v) { max = Math.max(max, v); }); });
-    const box = document.getElementById('heatmapMatrix');
-    const grouping = { cop: 'Center of Participation', age: 'age group', purok: 'Purok' }[view];
-    const total = list.reduce(function (n, r) { return n + r.total; }, 0);
-    document.getElementById('heatmapSummary').textContent = total
-        ? 'Attendance records in ' + year + ' by ' + grouping + ' and ' + (colMode === 'month' ? 'month' : 'activity') + '. Darker means more attendance.'
-        : 'No attendance recorded in ' + year + ' with the current filters.';
-    if (!columns.length) { box.innerHTML = '<div class="text-muted py-3">No activities with attendance in ' + year + '.</div>'; return; }
-
-    let html = '<table class="pc-matrix"><thead><tr><th></th>' + columns.map(function (c) {
-        return '<th scope="col"><span class="pc-coltitle" title="' + escapeCopHtml(c.title) + '">' + escapeCopHtml(c.title) + '</span>' +
-            (c.sub ? '<small>' + escapeCopHtml(c.sub) + '</small>' : '') + '</th>';
-    }).join('') + '<th scope="col" style="text-align:right">Total</th></tr></thead><tbody>';
-    list.forEach(function (r) {
-        html += '<tr><th scope="row" class="pc-rowh">' + escapeCopHtml(r.label) + '</th>';
-        columns.forEach(function (c) {
-            const n = r.cells.get(c.key) || 0;
-            const level = n ? Math.max(1, Math.ceil(n / max * 4)) : 0;
-            const tip = r.label + ' · ' + c.title + ': ' + n + ' attendance' + (n === 1 ? '' : 's');
-            html += '<td class="pc-m"' + (level ? ' data-l="' + level + '"' : '') + ' title="' + escapeCopHtml(tip) + '">' + (n || '') + '</td>';
+    cells.forEach(function (set, key) {
+        max = Math.max(max, set.size);
+        const g = key.slice(0, key.indexOf('\u001f'));
+        rowTotals.set(g, (rowTotals.get(g) || 0) + set.size);
+    });
+    root.style.gridTemplateColumns = 'minmax(150px,1.4fr) repeat(' + cols.length + ',minmax(' + (byMonth ? 64 : 84) + 'px,1fr)) 70px';
+    let html = '<div class="heat-corner">' + esc(heatDimTitles[dim]) + '</div>';
+    cols.forEach(function (c) { html += '<div class="heat-col-head" title="' + esc(c.label) + '"><span>' + esc(c.label) + '</span></div>'; });
+    html += '<div class="heat-col-head">Total</div>';
+    groups.forEach(function (g) {
+        html += '<div class="heat-row-head"><span>' + esc(g) + '</span></div>';
+        cols.forEach(function (c) {
+            const count = (cells.get(g + '\u001f' + c.key) || new Set()).size;
+            const lvl = count ? Math.max(1, Math.ceil(count / max * 5)) : 0;
+            const label = g + ', ' + c.label + ': ' + count +
+                (dim === 'attendance' ? ' attendance record' : ' confirmed attendance') + (count === 1 ? '' : 's');
+            const selected = heatSelection && heatSelection.dim === dim && heatSelection.mode === heatState.mode &&
+                heatSelection.year === heatState.year && heatSelection.group === g && heatSelection.columnKey === c.key;
+            html += '<button type="button" class="heat-cell heat-l' + lvl + (selected ? ' is-selected' : '') +
+                '" data-heat-group="' + esc(g) + '" data-heat-column="' + esc(c.key) + '" data-heat-label="' +
+                esc(c.label) + '" aria-label="' + esc(label + '. Select to filter Attendance Overview') +
+                '" aria-pressed="' + (selected ? 'true' : 'false') + '" title="' + esc(label) + '">' +
+                (count || '') + '</button>';
         });
-        html += '<td class="pc-total">' + r.total + '</td></tr>';
+        html += '<div class="heat-total">' + (rowTotals.get(g) || 0) + '</div>';
     });
-    box.innerHTML = html + '</tbody></table>';
+    root.innerHTML = html;
+    renderAttendanceOverview(rows);
 }
 
-function initializeFilters() {
-    const years = new Set([defaultHeatmapYear]);
-    copRows.forEach(function (row) {
-        if (isValidIsoDate(row.eventDate)) years.add(row.eventDate.slice(0, 4));
+/* ---------- RECORDS TABLE ---------- */
+function syncRosterSaveButton() {
+    if (!rosterSaveButton) return;
+    const eventId = memberRosterActivity.value;
+    const hasPendingChanges = Array.from(pendingRosterChanges.values()).some(function (change) {
+        return change.eventId === eventId;
     });
-    heatmapYearFilter.innerHTML = Array.from(years).sort(function (a, b) {
-        return Number(b) - Number(a);
-    }).map(function (year) {
-        return '<option value="' + escapeCopHtml(year) + '">' + escapeCopHtml(year) + '</option>';
-    }).join('');
-    heatmapYearFilter.value = defaultHeatmapYear;
+    rosterSaveButton.disabled = isPublicView || !eventId || !hasPendingChanges;
+    const hint = document.getElementById('rosterSaveHint');
+    if (hint) hint.textContent = hasPendingChanges
+        ? 'You have unsaved attendance changes.'
+        : 'Set attendee statuses, then save your changes.';
 }
 
+function renderRecords() {
+    const eventId = memberRosterActivity.value;
+    const memberBody = document.getElementById('rosterMemberRows');
+    const removedBody = document.getElementById('removedMemberRows');
+    const rosterActionToolbar = document.getElementById('rosterActionToolbar');
+    const rosterMainTableWrap = document.getElementById('rosterMainTableWrap');
+    const rosterSaveBar = document.getElementById('rosterSaveBar');
+    const rosterActivitySummary = document.getElementById('rosterActivitySummary');
+    const emptyMessage = document.getElementById('emptyRosterMessage');
+    const activeMembers = participationRosterMembers.filter(function (member) { return member.status === 'Active'; });
+    memberBody.innerHTML = '';
+    removedBody.innerHTML = '';
 
-const rosterEl = document.getElementById('participationRosterData');
-const roster = rosterEl ? JSON.parse(rosterEl.textContent || '[]') : [];
-let engageFilter = 'all';
-let engageShowAll = false;
-const ENGAGE_LIMIT = 8;
-const ENGAGE_LABELS = { all: 'All', regular: 'Regular', occasional: 'Occasional', none: 'Not yet attended' };
+    if (!eventId) {
+        const summary = document.getElementById('allActivitiesSummary');
+        const summaryNote = document.getElementById('allActivitiesSummaryNote');
+        const invalidRange = dateFromFilter.value && dateToFilter.value && dateFromFilter.value > dateToFilter.value;
+        const attendanceSummary = completedActivityAttendanceSummary();
+        document.getElementById('allActivitiesAttendanceRate').textContent =
+            !invalidRange && attendanceSummary.rate !== null ? attendanceSummary.rate + '%' : '—';
+        summaryNote.textContent = invalidRange
+            ? 'Correct the selected date range to calculate this percentage.'
+            : (attendanceSummary.rate !== null
+                ? 'Across completed activities'
+                : 'No completed activities or active members in this range.');
+        summary.hidden = false;
+        rosterActionToolbar.hidden = true;
+        rosterMainTableWrap.hidden = true;
+        rosterSaveBar.hidden = true;
+        rosterActivitySummary.hidden = true;
+        document.getElementById('removedRosterSection').hidden = true;
+        emptyMessage.hidden = true;
+        document.getElementById('removedSectionCount').textContent = '0';
+        syncRosterSaveButton();
+        return;
+    }
+    document.getElementById('allActivitiesSummary').hidden = true;
+    rosterActivitySummary.hidden = false;
+    const eventDate = (participationEventAnalytics[eventId] || {}).date || '';
+    const invalidRange = dateFromFilter.value && dateToFilter.value && dateFromFilter.value > dateToFilter.value;
+    const outsideRange = (dateFromFilter.value && (!isValidIsoDate(eventDate) || eventDate < dateFromFilter.value)) ||
+        (dateToFilter.value && (!isValidIsoDate(eventDate) || eventDate > dateToFilter.value));
+    if (invalidRange || outsideRange) {
+        rosterActivitySummary.textContent = invalidRange
+            ? 'Correct the selected date range to view this activity.'
+            : 'This activity is outside the selected date range.';
+        emptyMessage.textContent = rosterActivitySummary.textContent;
+        emptyMessage.hidden = false;
+        rosterActionToolbar.hidden = true;
+        rosterMainTableWrap.hidden = true;
+        rosterSaveBar.hidden = true;
+        document.getElementById('removedSectionCount').textContent = '0';
+        document.getElementById('removedRosterSection').hidden = true;
+        syncRosterSaveButton();
+        return;
+    }
+    rosterActionToolbar.hidden = false;
+    rosterSaveBar.hidden = isPublicView;
+    emptyMessage.textContent = 'No active KK members found.';
 
-function formatDate(iso) {
-    if (!isValidIsoDate(iso)) return '—';
-    return monthName(Number(iso.slice(5, 7)) - 1) + ' ' + Number(iso.slice(8, 10)) + ', ' + iso.slice(0, 4);
-}
-
-function renderEngagement(rows) {
-    const body = document.getElementById('engageBody');
-    if (!body) return;
-    const attended = rows.filter(function (row) { return row.attendanceStatus === 'Attended'; });
-    const held = new Set(rows.map(function (row) { return String(row.eventId || row.eventTitle || ''); }).filter(Boolean)).size;
-    const per = new Map();
-    attended.forEach(function (row) {
-        if (!row.memberId) return;
-        const key = String(row.memberId);
-        let entry = per.get(key);
-        if (!entry) { entry = { events: new Set(), last: '' }; per.set(key, entry); }
-        entry.events.add(String(row.eventId || row.eventTitle || ''));
-        if (isValidIsoDate(row.eventDate) && row.eventDate > entry.last) entry.last = row.eventDate;
-    });
-    const list = roster.map(function (m) {
-        const entry = per.get(m.id);
-        const n = entry ? entry.events.size : 0;
-        const rate = held ? Math.min(100, Math.round(n / held * 100)) : 0;
-        return { id: m.id, memberNo: m.memberNo, name: m.name || 'Unnamed member', purok: m.purok || 'Not recorded',
-                 n: n, rate: rate, last: entry ? entry.last : '', status: n === 0 ? 'none' : (rate >= 50 ? 'regular' : 'occasional') };
-    });
-    const counts = { all: list.length, regular: 0, occasional: 0, none: 0 };
-    list.forEach(function (m) { counts[m.status]++; });
-    document.getElementById('engageChips').innerHTML = Object.keys(ENGAGE_LABELS).map(function (key) {
-        return '<button type="button" class="pc-fchip' + (engageFilter === key ? ' active' : '') + '" data-f="' + key +
-            '" aria-pressed="' + (engageFilter === key) + '">' + ENGAGE_LABELS[key] + '<b>' + counts[key] + '</b></button>';
-    }).join('');
-
-    const q = document.getElementById('engageSearch').value.trim().toLocaleLowerCase();
-    let shown = list.filter(function (m) {
-        if (engageFilter !== 'all' && m.status !== engageFilter) return false;
-        return !q || (m.name + ' ' + m.memberNo + ' ' + m.purok).toLocaleLowerCase().indexOf(q) !== -1;
-    });
-    shown.sort(function (a, b) {
-        if (engageFilter === 'none') return a.name.localeCompare(b.name);
-        return b.rate - a.rate || b.n - a.n || a.name.localeCompare(b.name);
-    });
-    const total = shown.length;
-    if (!engageShowAll) shown = shown.slice(0, ENGAGE_LIMIT);
-    const badge = {
-        regular: '<span class="badge bg-success-subtle text-success-emphasis">Regular</span>',
-        occasional: '<span class="badge bg-warning-subtle text-warning-emphasis">Occasional</span>',
-        none: '<span class="badge bg-danger-subtle text-danger-emphasis">Not yet attended</span>'
+    const searchTerm = memberRosterSearch.value.trim().toLocaleLowerCase();
+    const statusFilter = rosterAttendanceFilter.value;
+    const currentEntries = [];
+    const removed = [];
+    const changeKey = function (kind, recordId, memberId) {
+        return eventId + ':' + kind + ':' + String(recordId || memberId || '');
     };
-    body.innerHTML = shown.length ? shown.map(function (m) {
-        return '<tr><td><strong>' + escapeCopHtml(m.name) + '</strong><div class="small text-muted">' + escapeCopHtml(m.memberNo) + '</div></td>' +
-            '<td>' + escapeCopHtml(m.purok) + '</td>' +
-            '<td>' + m.n + ' of ' + held + '</td>' +
-            '<td><div class="pc-rate"><div class="progress" role="progressbar" aria-label="Attendance rate"><div class="progress-bar" style="width:' + m.rate + '%"></div></div><span>' + m.rate + '%</span></div></td>' +
-            '<td>' + formatDate(m.last) + '</td><td>' + badge[m.status] + '</td></tr>';
-    }).join('') : '<tr><td colspan="6" class="text-center text-muted py-4">' +
-        (held ? 'No members match this view.' : 'No attendance recorded yet for these filters.') + '</td></tr>';
-    document.getElementById('engageNote').textContent = total ? 'Showing ' + shown.length + ' of ' + total + ' members' : '';
-    const more = document.getElementById('engageMore');
-    more.hidden = total <= ENGAGE_LIMIT;
-    more.textContent = engageShowAll ? 'Show fewer' : 'Show all ' + total;
-}
-
-function renderParticipation() {
-    const rows = getFilteredRows();
-    const attendees = rows.filter(function (row) { return row.attendanceStatus === 'Attended'; });
-    const linked = new Set(attendees.filter(function (row) { return !!row.memberId; })
-        .map(function (row) { return String(row.memberId); }));
-    const unlinked = attendees.filter(function (row) { return !row.memberId; }).length;
-    const activities = new Set(rows.map(function (row) {
-        return String(row.eventId || row.eventTitle || '');
-    }).filter(Boolean));
-
-    const rate = activeMembers ? Math.min(100, Math.round(linked.size / activeMembers * 100)) : 0;
-    document.getElementById('participationRate').textContent = rate + '%';
-    document.getElementById('participationRateBar').style.width = rate + '%';
-    document.getElementById('participationRateNote').textContent =
-        linked.size + ' of ' + activeMembers + ' members attended';
-    document.getElementById('confirmedAttendanceCount').textContent = String(attendees.length);
-    document.getElementById('attendanceNote').textContent =
-        unlinked ? unlinked + ' from unlinked sign-ups' : '';
-    document.getElementById('programCount').textContent = String(activities.size);
-
-    renderMatrix(rows);
-    renderEngagement(rows);
-
-    const search = document.getElementById('search').value.trim().toLocaleLowerCase();
-    const status = document.getElementById('attendanceStatusFilter').value;
-    const tableRows = Array.prototype.slice.call(document.querySelectorAll('#participationTable tr[data-event-id]'));
-    let visibleCount = 0, eligibleCount = 0;
-    tableRows.forEach(function (row) {
-        const eventDate = row.dataset.eventDate || '';
-        const validRange = !(dateFromFilter.value && dateToFilter.value && dateFromFilter.value > dateToFilter.value);
-        const matchesDate = validRange && (!(dateFromFilter.value || dateToFilter.value) ||
-            (isValidIsoDate(eventDate) &&
-                (!dateFromFilter.value || eventDate >= dateFromFilter.value) &&
-                (!dateToFilter.value || eventDate <= dateToFilter.value)));
-        const matchesActivity = !activityFilter.value || row.dataset.eventId === activityFilter.value;
-        const matchesGlobalFilters = matchesDate && matchesActivity;
-        const matchesSearch = !search || row.textContent.toLocaleLowerCase().includes(search);
-        const matchesStatus = !status || row.dataset.attendanceStatus === status;
-        const visible = matchesGlobalFilters && matchesSearch && matchesStatus;
-        if (matchesGlobalFilters) eligibleCount++;
-        row.classList.toggle('d-none', !visible);
-        if (visible) visibleCount++;
+    const rowHtml = function (member, status, kind, recordId, memberId) {
+        const key = changeKey(kind, recordId, memberId);
+        const stagedChange = pendingRosterChanges.get(key);
+        const shownStatus = stagedChange ? stagedChange.status : status;
+        let controlHtml = '<span class="badge text-bg-light border">' + esc(shownStatus) + '</span>';
+        if (!isPublicView) {
+            const options = kind === 'signup'
+                ? ['Attended', 'Did not attend', 'Not recorded']
+                : (kind === 'walkin' ? ['Attended', 'Not yet attended'] : ['Not yet attended', 'Attended']);
+            controlHtml = '<select class="form-select form-select-sm attendance-status-select' +
+                (stagedChange ? ' is-staged' : '') + '" data-roster-status="true" data-change-key="' + esc(key) +
+                '" data-change-kind="' + esc(kind) + '" data-record-id="' + esc(recordId || '') +
+                '" data-member-id="' + esc(memberId || '') + '" data-original-status="' + esc(status) +
+                '" aria-label="Attendance status for ' + esc(member.name || 'member') + '"' +
+                ((kind === 'signup' || kind === 'walkin') && !recordId ? ' disabled' : '') + '>' +
+                options.map(function (option) {
+                    return '<option value="' + esc(option) + '"' + (option === shownStatus ? ' selected' : '') + '>' +
+                        esc(option) + '</option>';
+                }).join('') + '</select>';
+        }
+        const sourceLabel = kind === 'walkin' ? 'Walk-in' : (kind === 'signup' ? 'Registered' : 'No record');
+        return '<tr class="member-roster-row' + (shownStatus === 'Attended' ? ' is-attended' : '') + '">' +
+            '<td><span class="member-roster-name">' + esc(member.name || 'Member record unavailable') +
+            '</span><span class="member-roster-no">' + esc(member.memberNo || member.id || '') + ' · ' + sourceLabel + '</span></td>' +
+            '<td><span class="member-roster-purok">' + esc(member.purok || 'Not recorded') + '</span></td>' +
+            '<td>' + esc(eventDate || 'Not recorded') + '</td><td>' + controlHtml + '</td></tr>';
+    };
+    const matchesSearch = function (member) {
+        if (!searchTerm) return true;
+        return [member.name, member.memberNo, member.id, member.purok].join(' ').toLocaleLowerCase().indexOf(searchTerm) !== -1;
+    };
+    activeMembers.forEach(function (member) {
+        const memberId = String(member.id || '');
+        const removedRecord = participationRemovedWalkins.find(function (record) {
+            return String(record.eventId || '') === eventId && String(record.memberId || '') === memberId;
+        });
+        const signup = participationData.find(function (record) {
+            return record.source === 'signup' && String(record.eventId || '') === eventId &&
+                String(record.memberId || '') === memberId;
+        });
+        const walkin = participationData.find(function (record) {
+            return record.source === 'walkin' && String(record.eventId || '') === eventId &&
+                String(record.memberId || '') === memberId;
+        });
+        if (removedRecord && !signup && !walkin) {
+            removed.push({ member: member, record: removedRecord });
+            return;
+        }
+        const record = signup || walkin;
+        const kind = signup ? 'signup' : (walkin ? 'walkin' : 'new');
+        const status = signup ? (signup.attendanceStatus || 'Not recorded') : (walkin ? 'Attended' : 'Not yet attended');
+        if (!matchesSearch(member)) return;
+        const key = changeKey(kind, record && record.recordId, memberId);
+        const stagedChange = pendingRosterChanges.get(key);
+        const shownStatus = stagedChange ? stagedChange.status : status;
+        if (statusFilter === 'Attended' && shownStatus !== 'Attended') return;
+        if (statusFilter === 'Not yet attended' && shownStatus === 'Attended') return;
+        currentEntries.push({
+            member: member,
+            status: status,
+            kind: kind,
+            recordId: record && record.recordId,
+            memberId: memberId,
+            shownStatus: shownStatus
+        });
     });
-    document.getElementById('participationNoRows').classList.toggle('d-none', visibleCount > 0);
-    document.getElementById('participationRecordCount').textContent =
-        visibleCount + ' of ' + eligibleCount + ' shown';
-}
-
-function csvCell(value) {
-    return '"' + String(value).replace(/\s+/g, ' ').trim().replace(/"/g, '""') + '"';
-}
-
-function exportCsv() {
-    const table = document.querySelector('.table');
-    const headers = Array.prototype.slice.call(table.querySelectorAll('thead th'))
-        .filter(function (th) { return th.textContent.trim() !== 'Action'; });
-    const lines = [headers.map(function (th) { return csvCell(th.textContent); }).join(',')];
-    document.querySelectorAll('#participationTable tr[data-event-id]:not(.d-none)').forEach(function (tr) {
-        const cells = Array.prototype.slice.call(tr.children).slice(0, headers.length);
-        lines.push(cells.map(function (td) { return csvCell(td.textContent); }).join(','));
+    currentEntries.forEach(function (entry) {
+        memberBody.insertAdjacentHTML('beforeend', rowHtml(entry.member, entry.status, entry.kind, entry.recordId, entry.memberId));
     });
-    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'participation-records-' + new Date().toISOString().slice(0, 10) + '.csv';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(link.href);
+
+    const memberById = new Map(participationRosterMembers.map(function (member) { return [String(member.id), member]; }));
+    participationRemovedWalkins.filter(function (record) {
+        return String(record.eventId || '') === eventId &&
+            !activeMembers.some(function (member) { return String(member.id) === String(record.memberId || ''); });
+    }).forEach(function (record) {
+        const member = memberById.get(String(record.memberId || '')) || {
+            id: record.memberId, memberNo: record.memberId, name: 'Member record unavailable', purok: 'Not recorded'
+        };
+        removed.push({ member: member, record: record });
+    });
+    const visibleRemoved = removed.filter(function (entry) {
+        return !statusFilter && (!searchTerm || matchesSearch(entry.member));
+    });
+    visibleRemoved.forEach(function (entry) {
+        const removedDate = entry.record.removedAt ? String(entry.record.removedAt).slice(0, 10) : 'Removed';
+        const controls = isPublicView ? '' : '<button type="button" class="btn btn-sm btn-outline-primary" data-roster-action="restore" data-record-id="' +
+            esc(entry.record.id || '') + '">Restore</button>';
+        const actionCell = isPublicView ? '' : '<td class="text-end">' + controls + '</td>';
+        removedBody.insertAdjacentHTML('beforeend',
+            '<tr class="member-roster-row"><td><span class="member-roster-name">' +
+            esc(entry.member.name || 'Member record unavailable') + '</span><span class="member-roster-no">' +
+            esc(entry.member.memberNo || entry.member.id || '') + '</span></td><td><span class="member-roster-purok">' +
+            esc(entry.member.purok || 'Not recorded') + '</span></td><td>' + esc(removedDate) + '</td>' + actionCell + '</tr>');
+    });
+
+    const selectedTitle = memberRosterActivity.options[memberRosterActivity.selectedIndex].text;
+    const attendedCount = currentEntries.filter(function (entry) { return entry.shownStatus === 'Attended'; }).length;
+    const pendingCount = currentEntries.length - attendedCount;
+    rosterActivitySummary.textContent = selectedTitle + ' · ' + attendedCount + ' attended · ' +
+        pendingCount + ' not yet attended';
+    document.getElementById('removedSectionCount').textContent = String(visibleRemoved.length);
+    document.getElementById('removedRosterSection').hidden = visibleRemoved.length === 0;
+    rosterMainTableWrap.hidden = currentEntries.length === 0;
+    emptyMessage.textContent = statusFilter || searchTerm
+        ? 'No members match these filters.'
+        : 'No active KK members found.';
+    emptyMessage.hidden = currentEntries.length > 0 || visibleRemoved.length > 0;
+    syncRosterSaveButton();
 }
 
-['participationActivityFilter', 'participationDateFrom', 'participationDateTo', 'search', 'attendanceStatusFilter']
-    .forEach(function (id) {
-        document.getElementById(id).addEventListener('input', renderParticipation);
-        document.getElementById(id).addEventListener('change', renderParticipation);
+function renderMemberEngagement() {
+    const table = document.getElementById('memberEngagementRows');
+    if (!table) return;
+
+    const from = dateFromFilter.value;
+    const to = dateToFilter.value;
+    const selectedActivity = activityFilter.value;
+    const now = new Date();
+    const completedEvents = Object.keys(participationEventAnalytics).filter(function (eventId) {
+        const activity = participationEventAnalytics[eventId] || {};
+        if (!activity.date || activity.cancelled || activity.published === false || !isValidIsoDate(activity.date)) return false;
+        if (selectedActivity && String(eventId) !== selectedActivity) return false;
+        if ((from && activity.date < from) || (to && activity.date > to)) return false;
+        const endTime = activity.endTime && /^\d{2}:\d{2}$/.test(activity.endTime) ? activity.endTime : '23:59';
+        const eventEnd = new Date(activity.date + 'T' + endTime + ':00');
+        return !Number.isNaN(eventEnd.getTime()) && eventEnd < now;
     });
-heatmapYearFilter.addEventListener('change', renderParticipation);
-document.querySelectorAll('.pc-seg [data-view]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-        view = btn.dataset.view;
-        document.querySelectorAll('.pc-seg [data-view]').forEach(function (b) { b.classList.toggle('active', b === btn); });
-        renderParticipation();
+    const completedEventIds = new Set(completedEvents);
+    const activeMembers = participationRosterMembers.filter(function (member) {
+        return member.status === 'Active';
+    });
+    const attendanceByMember = new Map(activeMembers.map(function (member) {
+        return [String(member.id || ''), { attendedEvents: new Set(), lastAttended: '' }];
+    }));
+
+    distinctAttendances(getRows()).forEach(function (record) {
+        const memberAttendance = attendanceByMember.get(String(record.memberId || ''));
+        const eventId = String(record.eventId || '');
+        if (!memberAttendance || !completedEventIds.has(eventId)) return;
+        memberAttendance.attendedEvents.add(eventId);
+        const eventDate = String(record.eventDate || '');
+        if (isValidIsoDate(eventDate) && eventDate > memberAttendance.lastAttended) {
+            memberAttendance.lastAttended = eventDate;
+        }
+    });
+
+    const activityCount = completedEvents.length;
+    const members = activeMembers.map(function (member) {
+        const attendance = attendanceByMember.get(String(member.id || ''));
+        const attendedCount = attendance.attendedEvents.size;
+        const rate = activityCount ? percent(attendedCount, activityCount) : 0;
+        return {
+            member: member,
+            attendedCount: attendedCount,
+            rate: rate,
+            lastAttended: attendance.lastAttended,
+            status: attendedCount === 0 ? 'Not yet attended' : (attendedCount * 2 >= activityCount ? 'Regular' : 'Occasional')
+        };
+    }).sort(function (a, b) {
+        return b.attendedCount - a.attendedCount ||
+            String(a.member.name || '').localeCompare(String(b.member.name || ''));
+    });
+
+    document.getElementById('memberEngagementScope').textContent =
+        activityCount + ' completed activit' + (activityCount === 1 ? 'y' : 'ies') + ' · based on selected filters';
+    document.getElementById('engagementCountAll').textContent = String(members.length);
+    document.getElementById('engagementCountRegular').textContent = String(members.filter(function (item) { return item.status === 'Regular'; }).length);
+    document.getElementById('engagementCountOccasional').textContent = String(members.filter(function (item) { return item.status === 'Occasional'; }).length);
+    document.getElementById('engagementCountNone').textContent = String(members.filter(function (item) { return item.status === 'Not yet attended'; }).length);
+
+    const search = document.getElementById('memberEngagementSearch').value.trim().toLocaleLowerCase();
+    const filtered = members.filter(function (item) {
+        const member = item.member;
+        const matchesFilter = memberEngagementFilter === 'all' || item.status === memberEngagementFilter;
+        const searchableText = [member.name, member.memberNo, member.id, member.purok].join(' ').toLocaleLowerCase();
+        return matchesFilter && (!search || searchableText.indexOf(search) !== -1);
+    });
+    const visible = memberEngagementExpanded ? filtered : filtered.slice(0, 8);
+    table.innerHTML = visible.map(function (item) {
+        const member = item.member;
+        const statusClass = item.status === 'Regular' ? 'regular' : (item.status === 'Occasional' ? 'occasional' : 'none');
+        const lastAttended = item.lastAttended
+            ? new Date(item.lastAttended + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '—';
+        const rate = activityCount ? item.rate + '%' : '—';
+        return '<tr><td><span class="member-engagement-name">' + esc(member.name || 'Member record unavailable') +
+            '</span><span class="member-engagement-id">' + esc(member.memberNo || member.id || '') +
+            '</span></td><td>' + esc(member.purok || 'Not recorded') + '</td><td>' +
+            item.attendedCount + ' of ' + activityCount + '</td><td><div class="member-engagement-rate"><span class="member-engagement-progress"><span style="width:' +
+            item.rate + '%"></span></span><strong>' + rate + '</strong></div></td><td>' + esc(lastAttended) +
+            '</td><td><span class="member-engagement-status ' + statusClass + '">' + esc(item.status) + '</span></td></tr>';
+    }).join('');
+
+    document.getElementById('memberEngagementEmpty').hidden = filtered.length > 0;
+    document.getElementById('memberEngagementResultCount').textContent = filtered.length
+        ? 'Showing ' + visible.length + ' of ' + filtered.length + ' members'
+        : 'No members match these filters.';
+    const toggle = document.getElementById('memberEngagementToggle');
+    toggle.hidden = filtered.length <= 8;
+    toggle.textContent = memberEngagementExpanded ? 'Show fewer' : 'Show all ' + filtered.length;
+    document.querySelectorAll('#memberEngagementTabs [data-engagement-filter]').forEach(function (button) {
+        const active = button.dataset.engagementFilter === memberEngagementFilter;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+}
+
+/* ---------- MAIN ---------- */
+function renderAll() {
+    renderParticipationHeroMetrics();
+    renderHeatmap();
+    renderMemberEngagement();
+    renderRecords();
+    syncRecordFilterError();
+}
+
+const memberEngagementSearch = document.getElementById('memberEngagementSearch');
+const memberEngagementTabs = document.getElementById('memberEngagementTabs');
+const memberEngagementToggle = document.getElementById('memberEngagementToggle');
+if (memberEngagementSearch) memberEngagementSearch.addEventListener('input', function () {
+    memberEngagementExpanded = false;
+    renderMemberEngagement();
+});
+if (memberEngagementTabs) memberEngagementTabs.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-engagement-filter]');
+    if (!button) return;
+    memberEngagementFilter = button.dataset.engagementFilter;
+    memberEngagementExpanded = false;
+    renderMemberEngagement();
+});
+if (memberEngagementToggle) memberEngagementToggle.addEventListener('click', function () {
+    memberEngagementExpanded = !memberEngagementExpanded;
+    renderMemberEngagement();
+});
+
+['participationActivityFilter', 'participationDateFrom', 'participationDateTo'].forEach(function (id) {
+    const el = document.getElementById(id);
+    const update = function () { heatSelection = null; syncRecordFilterValues(); renderAll(); };
+    el.addEventListener('input', update);
+    el.addEventListener('change', update);
+});
+memberRosterActivity.addEventListener('change', function () {
+    activityFilter.value = memberRosterActivity.value;
+    heatSelection = null;
+    renderAll();
+});
+memberRosterSearch.addEventListener('input', renderRecords);
+rosterAttendanceFilter.addEventListener('change', renderRecords);
+[[recordDateFromFilter, dateFromFilter], [recordDateToFilter, dateToFilter]].forEach(function (pair) {
+    const recordFilter = pair[0], dashboardFilter = pair[1];
+    const update = function () {
+        dashboardFilter.value = recordFilter.value;
+        heatSelection = null;
+        renderAll();
+    };
+    recordFilter.addEventListener('input', update);
+    recordFilter.addEventListener('change', update);
+});
+
+function rosterPost(action, payload, control, onSuccess, onFailure) {
+    if (control) control.disabled = true;
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'api.php?action=' + encodeURIComponent(action), true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('X-CSRF-Token', window.SK_CSRF_TOKEN || '');
+    xhr.onload = function () {
+        let res = {};
+        try { res = JSON.parse(xhr.responseText); } catch (ex) {}
+        if (xhr.status !== 200 || !res.ok) {
+            if (control) control.disabled = false;
+            if (onFailure) onFailure();
+            if (window.AppAlerts) AppAlerts.error(res.error || 'Could not update event attendance.');
+            return;
+        }
+        onSuccess(res);
+    };
+    xhr.onerror = function () {
+        if (control) control.disabled = false;
+        if (onFailure) onFailure();
+        if (window.AppAlerts) AppAlerts.error('No connection. Could not update event attendance.');
+    };
+    xhr.send(JSON.stringify(payload));
+}
+function analyticsRowForWalkin(record) {
+    const member = participationRosterMembers.find(function (item) { return String(item.id) === String(record.memberId); }) || {};
+    const event = participationEventAnalytics[String(record.eventId)] || {};
+    return {
+        source: 'walkin',
+        recordId: String(record.id || ''),
+        memberKey: String(record.memberId || ''),
+        memberId: String(record.memberId || ''),
+        memberNo: String(member.memberNo || record.memberId || ''),
+        memberName: member.name || 'Member record unavailable',
+        eventId: String(record.eventId || ''),
+        eventTitle: record.eventTitle || event.title || '',
+        eventDate: event.date || '',
+        centers: Array.isArray(event.centers) ? event.centers : [],
+        activityCategory: event.category || 'Uncategorized',
+        attendanceStatus: 'Attended',
+        ageGroup: 'Unknown',
+        purok: member.purok || 'Not recorded'
+    };
+}
+document.getElementById('participationRecordsModal').addEventListener('click', function (event) {
+    const control = event.target.closest('[data-roster-action]');
+    if (!control || isPublicView) return;
+    const action = control.dataset.rosterAction;
+    const eventId = memberRosterActivity.value;
+    if (!eventId || action !== 'restore') return;
+    const recordId = control.dataset.recordId;
+    if (!recordId) return;
+    rosterPost('event_walkin_restore', { eventId: eventId, recordId: recordId }, control, function (res) {
+        const index = participationRemovedWalkins.findIndex(function (item) {
+            return String(item.id || '') === recordId;
+        });
+        if (index !== -1) participationRemovedWalkins.splice(index, 1);
+        participationData.push(analyticsRowForWalkin(res.record));
+        renderAll();
+        if (window.AppAlerts) AppAlerts.success('Walk-in attendance restored.');
     });
 });
-document.querySelectorAll('.pc-seg [data-col]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-        colMode = btn.dataset.col;
-        document.querySelectorAll('.pc-seg [data-col]').forEach(function (b) { b.classList.toggle('active', b === btn); });
-        renderParticipation();
-    });
+document.getElementById('participationRecordsModal').addEventListener('change', function (event) {
+    const control = event.target.closest('[data-roster-status="true"]');
+    if (!control || isPublicView) return;
+    const key = control.dataset.changeKey;
+    const originalStatus = control.dataset.originalStatus;
+    if (!key || !originalStatus) return;
+    if (control.value === originalStatus) {
+        pendingRosterChanges.delete(key);
+    } else {
+        pendingRosterChanges.set(key, {
+            eventId: memberRosterActivity.value,
+            kind: control.dataset.changeKind,
+            recordId: control.dataset.recordId,
+            memberId: control.dataset.memberId,
+            originalStatus: originalStatus,
+            status: control.value
+        });
+    }
+    control.classList.toggle('is-staged', control.value !== originalStatus);
+    syncRosterSaveButton();
 });
-document.getElementById('clearParticipationFilters').addEventListener('click', function () {
+function saveRosterAttendanceChanges() {
+    const eventId = memberRosterActivity.value;
+    if (!eventId || isPublicView) return;
+    const changes = Array.from(pendingRosterChanges.entries()).filter(function (entry) {
+        return entry[1].eventId === eventId;
+    });
+    if (!changes.length) return;
+
+    let savedCount = 0;
+    const saveNext = function (index) {
+        if (index >= changes.length) {
+            renderAll();
+            if (window.AppAlerts) AppAlerts.success(savedCount + ' attendance change' + (savedCount === 1 ? '' : 's') + ' saved.');
+            return;
+        }
+        const key = changes[index][0];
+        const change = changes[index][1];
+        let action = '';
+        let payload = { eventId: eventId };
+        if (change.kind === 'signup') {
+            action = 'event_attendance';
+            payload.registrationId = change.recordId;
+            payload.status = change.status;
+        } else if (change.kind === 'walkin' && change.status === 'Not yet attended') {
+            action = 'event_walkin_remove';
+            payload.recordId = change.recordId;
+        } else if (change.kind === 'new' && change.status === 'Attended') {
+            action = 'event_walkin';
+            payload.memberId = change.memberId;
+        } else {
+            pendingRosterChanges.delete(key);
+            saveNext(index + 1);
+            return;
+        }
+
+        rosterPost(action, payload, rosterSaveButton, function (res) {
+            if (change.kind === 'signup') {
+                const record = participationData.find(function (item) {
+                    return item.source === 'signup' && String(item.recordId || '') === String(change.recordId) &&
+                        String(item.eventId || '') === eventId;
+                });
+                if (record) record.attendanceStatus = res.registration.attendanceStatus;
+            } else if (change.kind === 'walkin') {
+                const recordIndex = participationData.findIndex(function (item) {
+                    return item.source === 'walkin' && String(item.recordId || '') === String(change.recordId);
+                });
+                if (recordIndex !== -1) participationData.splice(recordIndex, 1);
+                participationRemovedWalkins.push(res.record);
+            } else {
+                participationData.push(analyticsRowForWalkin(res.record));
+            }
+            pendingRosterChanges.delete(key);
+            savedCount += 1;
+            saveNext(index + 1);
+        }, function () {
+            renderAll();
+            const hint = document.getElementById('rosterSaveHint');
+            if (hint && savedCount > 0) {
+                hint.textContent = savedCount + ' change' + (savedCount === 1 ? '' : 's') +
+                    ' saved. The remaining changes are still staged and can be retried.';
+            }
+        });
+    };
+    saveNext(0);
+}
+if (rosterSaveButton) rosterSaveButton.addEventListener('click', saveRosterAttendanceChanges);
+function clearParticipationFilters() {
     activityFilter.value = '';
     dateFromFilter.value = '';
     dateToFilter.value = '';
-    heatmapYearFilter.value = defaultHeatmapYear;
-    document.getElementById('search').value = '';
-    document.getElementById('attendanceStatusFilter').value = '';
-    renderParticipation();
-});
-if (document.getElementById('engageChips')) {
-    document.getElementById('engageChips').addEventListener('click', function (event) {
-        const chip = event.target.closest('.pc-fchip');
-        if (!chip) return;
-        engageFilter = chip.dataset.f;
-        engageShowAll = false;
-        renderParticipation();
-    });
-    document.getElementById('engageSearch').addEventListener('input', function () { engageShowAll = false; renderParticipation(); });
-    document.getElementById('engageMore').addEventListener('click', function () { engageShowAll = !engageShowAll; renderParticipation(); });
+    memberRosterSearch.value = '';
+    rosterAttendanceFilter.value = '';
+    if (memberEngagementSearch) memberEngagementSearch.value = '';
+    memberEngagementFilter = 'all';
+    memberEngagementExpanded = false;
+    heatSelection = null;
+    syncRecordFilterValues();
+    renderAll();
 }
-const exportButton = document.getElementById('exportCsv');
-if (exportButton) exportButton.addEventListener('click', exportCsv);
-initializeFilters();
-renderParticipation();
-
+document.getElementById('clearParticipationFilters').addEventListener('click', clearParticipationFilters);
+document.getElementById('recordsClearFilters').addEventListener('click', clearParticipationFilters);
+initHeatControls();
+syncRecordFilterValues();
+new MutationObserver(renderAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+renderAll();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>

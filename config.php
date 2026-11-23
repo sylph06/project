@@ -215,7 +215,7 @@ function is_limited_viewer() {
 }
 
 function limited_viewer_can_open_page($page) {
-    return in_array(basename((string)$page), ['index.php', 'announcements.php', 'officials.php', 'registration.php'], true);
+    return in_array(basename((string)$page), ['index.php', 'announcements.php', 'officials.php', 'registration.php', 'archives.php'], true);
 }
 
 /* Limited viewers can open public information pages and the registration notice. */

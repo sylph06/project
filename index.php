@@ -47,10 +47,29 @@ function lp_ann_time($t) {
     return preg_match('/^\d{2}:\d{2}$/', (string)$t) ? date('g:i A', strtotime((string)$t)) : '';
 }
 
+function lp_ann_reschedule_banner($announcement) {
+    $oldDate = (string)($announcement['rescheduledFrom'] ?? '');
+    $newDate = (string)($announcement['date'] ?? '');
+    foreach ([$oldDate, $newDate] as $date) {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)
+            || !checkdate((int)substr($date, 5, 2), (int)substr($date, 8, 2), (int)substr($date, 0, 4))) {
+            return '';
+        }
+    }
+    if ($oldDate === $newDate) return '';
+    $oldDateText = date('F j, Y', strtotime($oldDate));
+    $newDateText = date('F j, Y', strtotime($newDate));
+    return '<div class="lp-ann-rescheduled" aria-label="Rescheduled from ' . e($oldDateText) . ' to ' . e($newDateText) . '">' .
+        '<span class="lp-ann-rescheduled-label">Rescheduled</span>' .
+        '<span class="lp-ann-rescheduled-dates"><del class="lp-ann-rescheduled-old">' . e($oldDateText) . '</del>' .
+        '<i class="bi bi-arrow-right" aria-hidden="true"></i><strong class="lp-ann-rescheduled-new">' . e($newDateText) . '</strong></span></div>';
+}
+
 $today = date('Y-m-d');
 $memberCount = 0;
 $annList = [];
-$annCounts = ['Upcoming' => 0, 'Ongoing' => 0, 'Completed' => 0, 'Cancelled' => 0];
+$annCounts = ['Upcoming' => 0, 'Ongoing' => 0, 'Cancelled' => 0];
+$annArchivedCount = 0;
 $upcoming = [];
 $upcomingCount = 0;
 $officials = [];
@@ -77,12 +96,16 @@ try {
         if (!empty($a['publishDate']) && $a['publishDate'] > $today) continue;
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($a['date'] ?? ''))) continue;
         $a['_status'] = lp_ann_status($a, time());
+        if ($a['_status'] === 'Completed') {
+            $annArchivedCount++;
+            continue;
+        }
         $annCounts[$a['_status']]++;
         $annList[] = $a;
         if ($a['date'] < $today || !empty($a['cancelled'])) continue;
         $upcoming[] = $a;
     }
-    $annRank = ['Ongoing' => 0, 'Upcoming' => 1, 'Completed' => 2, 'Cancelled' => 3];
+    $annRank = ['Ongoing' => 0, 'Upcoming' => 1, 'Cancelled' => 2];
     usort($annList, function ($a, $b) use ($annRank) {
         $ra = $annRank[$a['_status']];
         $rb = $annRank[$b['_status']];
@@ -318,12 +341,18 @@ $L_EVENTS   = '#announcements';
         .lp-ann-banner{position:relative;aspect-ratio:16/9;background:var(--bs-primary-bg-subtle);display:grid;place-items:center;color:var(--bs-primary-text-emphasis);font-size:2.4rem;overflow:hidden}
         .lp-ann-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
         .lp-ann-status{position:absolute;top:.75rem;left:.75rem;z-index:1}
+        .lp-ann-rescheduled{position:absolute;z-index:2;top:3.2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.15rem;width:max-content;max-width:calc(100% - 1.5rem);padding:.45rem .75rem;border:1px solid rgba(255,255,255,.55);border-radius:.75rem;background:rgba(13,110,253,.94);box-shadow:0 4px 12px rgba(0,0,0,.2);color:#fff;font-size:.74rem;line-height:1.2;text-align:center}
+        .lp-ann-rescheduled-label{font-size:.62rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+        .lp-ann-rescheduled-dates{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.35rem}
+        .lp-ann-rescheduled-old{opacity:.86;text-decoration-thickness:2px}
+        .lp-ann-rescheduled-new{font-weight:900}
         .lp-ann-body{display:flex;flex-direction:column;flex:1;padding:1.1rem 1.2rem 1.2rem}
         .lp-ann-cat{font-size:.78rem;font-weight:700;color:var(--bs-primary);text-transform:uppercase;letter-spacing:.04em}
         .lp-ann-desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;color:var(--bs-secondary-color);font-size:.9rem}
         .lp-ann-meta{font-size:.85rem;color:var(--bs-secondary-color);display:grid;gap:.25rem;margin-bottom:1rem}
         .lp-ann-meta i{width:1.2rem;display:inline-block;color:var(--bs-primary)}
         .lp-ann-filters .btn{font-weight:650}
+        .lp-ann-detail-wrap{position:relative}
         .lp-ann-detail-banner{aspect-ratio:16/9;overflow:hidden;background:var(--bs-primary-bg-subtle);display:grid;place-items:center;font-size:3rem;color:var(--bs-primary-text-emphasis)}
         .lp-ann-detail-banner img{width:100%;height:100%;object-fit:cover}
         .lp-ann-text{white-space:pre-line}
@@ -424,7 +453,7 @@ $L_EVENTS   = '#announcements';
 window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;
 window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
 </script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=16"></script>
 
 <div class="page-content lp-main">
     <nav class="lp-mobilebar navbar" aria-label="Landing page header">
@@ -714,7 +743,7 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
         <div class="row g-3 align-items-end mb-4">
             <div class="col-lg">
                 <h2 class="mb-2">Announcements &amp; activities</h2>
-                <p class="text-secondary mb-0">Sports, clean-up drives, learning sessions and notices published by the Sangguniang Kabataan.</p>
+                <p class="text-secondary mb-0">Sports, clean-up drives, learning sessions and notices published by the Sangguniang Kabataan. Completed events are in the <a href="archives.php">Archives</a>.</p>
             </div>
             <div class="col-lg-4">
                 <label class="input-group" aria-label="Search announcements">
@@ -726,7 +755,11 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
         <?php if (!$annList): ?>
             <div class="text-center text-secondary py-5">
                 <i class="bi bi-megaphone fs-1 d-block mb-2"></i>
-                No announcements are posted right now. Please check back soon.
+                <?php if ($annArchivedCount > 0): ?>
+                    All published events have ended. View them in <a href="archives.php">Archives</a>.
+                <?php else: ?>
+                    No announcements are posted right now. Please check back soon.
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="lp-ann-filters d-flex flex-wrap gap-2 mb-4" id="annFilters" role="group" aria-label="Filter announcements">
@@ -752,6 +785,7 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
                             <div class="lp-ann-banner">
                                 <?php if ($annImage !== ''): ?><img src="<?= e($annImage) ?>" alt="" loading="lazy"><?php else: ?><i class="bi bi-megaphone-fill" aria-hidden="true"></i><?php endif; ?>
                                 <span class="lp-ann-status badge <?= e($annBadge) ?>"><?= e($annStatus) ?></span>
+                                <?= lp_ann_reschedule_banner($ann) ?>
                             </div>
                             <div class="lp-ann-body">
                                 <div class="lp-ann-cat mb-1"><?= e($ann['category'] ?? 'Announcement') ?></div>
@@ -767,7 +801,10 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
                             </div>
                         </article>
                         <template id="annDetail<?= (int)$annIndex ?>">
-                            <div class="lp-ann-detail-banner" data-ann-banner><i class="bi bi-megaphone-fill" aria-hidden="true"></i></div>
+                            <div class="lp-ann-detail-wrap">
+                                <div class="lp-ann-detail-banner" data-ann-banner><i class="bi bi-megaphone-fill" aria-hidden="true"></i></div>
+                                <?= lp_ann_reschedule_banner($ann) ?>
+                            </div>
                             <div class="p-4">
                                 <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
                                     <span class="badge <?= e($annBadge) ?>"><?= e($annStatus) ?></span>
