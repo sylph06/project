@@ -465,6 +465,15 @@
 
         .table-scroll { overflow-x:auto; }
 
+        .period-summary-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+        .period-summary-grid h5 { font-size:14px; font-weight:800; margin:0 0 8px; }
+        .period-table { width:100%; border-collapse:collapse; font-size:13px; }
+        .period-table th { background:var(--bs-primary-bg-subtle); padding:9px; text-align:left; font-size:12px; }
+        .period-table td { border-bottom:1px solid var(--bs-border-color); padding:9px; }
+        .period-table .text-end { text-align:right; white-space:nowrap; }
+        .period-select-btn { border:0; padding:0; background:transparent; color:var(--bs-body-color); text-align:left; text-decoration:underline; text-decoration-color:transparent; text-underline-offset:3px; }
+        .period-select-btn:hover,.period-select-btn:focus-visible,.period-select-btn[aria-pressed="true"] { color:var(--bs-primary); text-decoration-color:currentColor; }
+
         .expense-table {
             width:100%;
             border-collapse:collapse;
@@ -547,6 +556,7 @@
             .header { padding:0 15px; }
             .content { padding:12px; }
             .summary-grid { grid-template-columns:1fr; }
+            .period-summary-grid { grid-template-columns:1fr; }
             .budget-modal { padding:8px; }
             .budget-body { padding:10px; }
             .entry-row,
@@ -785,6 +795,31 @@
             </div>
 
             <div class="records-card mb-3">
+                <h4>Monthly and Weekly Spending</h4>
+                <p class="small text-muted">Totals are calculated from expense dates. Weeks run Monday through Sunday; periods without recorded expenses are omitted. Select a month or week to filter its expense details.</p>
+                <div class="period-summary-grid">
+                    <div>
+                        <h5>Monthly totals</h5>
+                        <div class="table-scroll">
+                            <table class="period-table">
+                                <thead><tr><th>Month</th><th class="text-end">Entries</th><th class="text-end">Spent</th></tr></thead>
+                                <tbody id="monthlySpendingBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div>
+                        <h5>Weekly totals</h5>
+                        <div class="table-scroll">
+                            <table class="period-table">
+                                <thead><tr><th>Week (Monday-Sunday)</th><th class="text-end">Entries</th><th class="text-end">Spent</th></tr></thead>
+                                <tbody id="weeklySpendingBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="records-card mb-3">
                 <h4>Projects in this fiscal year</h4>
                 <p class="small text-muted">Each entry is a project budget linked to one Center of Participation and committee.</p>
                 <div class="entry-card mb-3" id="projectEditor">
@@ -908,13 +943,16 @@
 
             </div>
 
-            <div class="records-card">
+            <div class="records-card" id="expenseRecords">
                 <div class="records-top">
                     <div>
                         <h4 style="margin-bottom:4px;">Expense Records</h4>
-                        <div style="font-size:13px;color:var(--bs-secondary-color);">Every recorded expense appears here for public accountability.</div>
+                        <div id="expenseRecordsSummary" style="font-size:13px;color:var(--bs-secondary-color);">Every recorded expense appears here for public accountability.</div>
                     </div>
-                    <div class="expense-count" id="expenseCount">0 Expenses</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="clearExpensePeriodFilter">Show all expenses</button>
+                        <div class="expense-count" id="expenseCount">0 Expenses</div>
+                    </div>
                 </div>
 
                 <div class="table-scroll">
@@ -984,6 +1022,7 @@ let budgetsByYear = {};
 let expenseData = [];
 let editingExpenseIndex = -1;
 let editingProjectId = null;
+let expensePeriodFilter = null;
 
 function formatPeso(value) {
     return '₱' + Number(value || 0).toLocaleString('en-PH', {
@@ -1192,6 +1231,7 @@ function createBudgetYear() {
     budgetData = budgetsByYear[fy];
     try {
         saveBudgetStore();
+        expensePeriodFilter = null;
         updateBudgetInterface();
         AppAlerts.success('Fiscal-year folder opened.');
     } catch (error) {
@@ -1318,6 +1358,103 @@ function renderProjectTable() {
     }).join('');
 }
 
+function summarizeSpendingPeriods(expenses) {
+    const monthly = new Map();
+    const weekly = new Map();
+    expenses.forEach(expense => {
+        const dateValue = String(expense.date || '');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return;
+        const [year, month, day] = dateValue.split('-').map(Number);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return;
+        const amount = Number(expense.amount || 0);
+        if (!Number.isFinite(amount)) return;
+        const monthKey = dateValue.slice(0, 7);
+        const monthTotal = monthly.get(monthKey) || { key:monthKey, amount:0, count:0 };
+        monthTotal.amount += amount;
+        monthTotal.count++;
+        monthly.set(monthKey, monthTotal);
+        const weekStart = new Date(date);
+        weekStart.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+        const weekKey = weekStart.toISOString().slice(0, 10);
+        const weekTotal = weekly.get(weekKey) || { start:weekKey, amount:0, count:0 };
+        weekTotal.amount += amount;
+        weekTotal.count++;
+        weekly.set(weekKey, weekTotal);
+    });
+    return {
+        monthly:Array.from(monthly.values()).sort((a, b) => a.key.localeCompare(b.key)),
+        weekly:Array.from(weekly.values()).sort((a, b) => a.start.localeCompare(b.start))
+    };
+}
+
+function spendingPeriodRows(periods, type) {
+    if (!periods.length) return '<tr><td colspan="3" class="text-center text-muted">No dated expenses recorded.</td></tr>';
+    return periods.map(period => {
+        const key = type === 'month' ? period.key : period.start;
+        let label;
+        if (type === 'month') {
+            label = new Date(period.key + '-01T00:00:00Z').toLocaleDateString('en-PH', {
+                month:'long', year:'numeric', timeZone:'UTC'
+            });
+        } else {
+            const options = { month:'short', day:'numeric', year:'numeric', timeZone:'UTC' };
+            const weekEnd = new Date(period.start + 'T00:00:00Z');
+            weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+            label = new Date(period.start + 'T00:00:00Z').toLocaleDateString('en-PH', options) + ' - ' +
+                weekEnd.toLocaleDateString('en-PH', options);
+        }
+        const selected = expensePeriodFilter && expensePeriodFilter.type === type && expensePeriodFilter.key === key;
+        return '<tr><td><button type="button" class="period-select-btn" data-period-type="' + type +
+            '" data-period-key="' + escapeReportHtml(key) + '" aria-pressed="' + (selected ? 'true' : 'false') + '">' +
+            escapeReportHtml(label) + '</button></td><td class="text-end">' + period.count +
+            '</td><td class="text-end">' + formatPeso(period.amount) + '</td></tr>';
+    }).join('');
+}
+
+function renderSpendingPeriodTables(expenses) {
+    const periods = summarizeSpendingPeriods(expenses);
+    document.getElementById('monthlySpendingBody').innerHTML = spendingPeriodRows(periods.monthly, 'month');
+    document.getElementById('weeklySpendingBody').innerHTML = spendingPeriodRows(periods.weekly, 'week');
+}
+
+function printablePeriodRows(periods, type) {
+    if (!periods.length) return '<tr><td colspan="3" class="center">No dated expenses recorded.</td></tr>';
+    return periods.map(period => {
+        const key = type === 'month' ? period.key : period.start;
+        const filter = { type:type, key:key };
+        return '<tr><td>' + escapeReportHtml(expensePeriodLabel(filter)) + '</td><td class="right">' +
+            period.count + '</td><td class="right">' + formatPeso(period.amount) + '</td></tr>';
+    }).join('');
+}
+
+function filterExpensesByPeriod(expenses) {
+    if (!expensePeriodFilter) return expenses;
+    return expenses.filter(expense => {
+        const date = String(expense.date || '');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+        const parsed = new Date(date + 'T00:00:00Z');
+        if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) return false;
+        if (expensePeriodFilter.type === 'month') return date.slice(0, 7) === expensePeriodFilter.key;
+        const weekEnd = new Date(expensePeriodFilter.key + 'T00:00:00Z');
+        weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+        return date >= expensePeriodFilter.key && date <= weekEnd.toISOString().slice(0, 10);
+    });
+}
+
+function expensePeriodLabel(filter) {
+    if (filter.type === 'month') {
+        return new Date(filter.key + '-01T00:00:00Z').toLocaleDateString('en-PH', {
+            month:'long', year:'numeric', timeZone:'UTC'
+        });
+    }
+    const options = { month:'short', day:'numeric', year:'numeric', timeZone:'UTC' };
+    const weekEnd = new Date(filter.key + 'T00:00:00Z');
+    weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+    return new Date(filter.key + 'T00:00:00Z').toLocaleDateString('en-PH', options) + ' - ' +
+        weekEnd.toLocaleDateString('en-PH', options);
+}
+
 function updateBudgetInterface() {
     renderBudgetYearOptions();
     document.getElementById('budgetFY').value = budgetData.fy;
@@ -1332,10 +1469,16 @@ function updateBudgetInterface() {
     document.getElementById('summaryRemaining').textContent = formatPeso(totalBudget - totalSpent);
     document.getElementById('summaryUtilization').textContent = (totalBudget > 0 ? utilization.toFixed(1) : '0.0') + '%';
     document.getElementById('summaryProgress').style.width = Math.min(100, Math.max(0, utilization)) + '%';
+    renderSpendingPeriodTables(selectedExpenses);
+    document.getElementById('clearExpensePeriodFilter').classList.toggle('d-none', !expensePeriodFilter);
+    document.getElementById('expenseRecordsSummary').textContent = expensePeriodFilter
+        ? 'Showing ' + (expensePeriodFilter.type === 'month' ? 'monthly' : 'weekly') +
+            ' expenses for ' + expensePeriodLabel(expensePeriodFilter) + '.'
+        : 'Every recorded expense appears here for public accountability.';
     renderExpenseProjectOptions(document.getElementById('expenseProject').value);
     renderProjectTable();
     renderProjectBreakdown(totalSpent, selectedExpenses);
-    renderExpenseTable(selectedExpenses);
+    renderExpenseTable(filterExpensesByPeriod(selectedExpenses));
 }
 
 document.getElementById('projectTableBody').addEventListener('click', function (event) {
@@ -1343,6 +1486,19 @@ document.getElementById('projectTableBody').addEventListener('click', function (
     const remove = event.target.closest('[data-project-delete]');
     if (edit) editProject(edit.dataset.projectEdit);
     if (remove) deleteProject(remove.dataset.projectDelete);
+});
+['monthlySpendingBody', 'weeklySpendingBody'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function (event) {
+        const button = event.target.closest('[data-period-type]');
+        if (!button) return;
+        expensePeriodFilter = { type:button.dataset.periodType, key:button.dataset.periodKey };
+        updateBudgetInterface();
+        document.getElementById('expenseRecords').scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+});
+document.getElementById('clearExpensePeriodFilter').addEventListener('click', function () {
+    expensePeriodFilter = null;
+    updateBudgetInterface();
 });
 
 async function addOrUpdateExpense() {
@@ -1540,7 +1696,9 @@ function renderExpenseTable(selectedExpenses) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="9" class="empty-row">
-                    No expenses recorded yet. Add an expense above to show where the money went.
+                    ${expensePeriodFilter
+                        ? 'No expenses recorded for ' + escapeReportHtml(expensePeriodLabel(expensePeriodFilter)) + '.'
+                        : 'No expenses recorded yet. Add an expense above to show where the money went.'}
                 </td>
             </tr>
         `;
@@ -1602,6 +1760,7 @@ document.getElementById('budgetYearSelect').addEventListener('change', function 
         AppAlerts.error(error.message || 'Could not open the selected fiscal-year folder.');
         return;
     }
+    expensePeriodFilter = null;
     editingExpenseIndex = -1;
     cancelExpenseEdit();
     cancelProjectEdit();
@@ -1632,6 +1791,9 @@ function generateBudgetPDF() {
     const fy = budgetData.fy;
     const totalBudget = budgetData.projects.reduce((sum, project) => sum + Number(project.amount || 0), 0);
     const selectedExpenses = expensesForSelectedYear();
+    const spendingPeriods = summarizeSpendingPeriods(selectedExpenses);
+    const monthlySpendingRows = printablePeriodRows(spendingPeriods.monthly, 'month');
+    const weeklySpendingRows = printablePeriodRows(spendingPeriods.weekly, 'week');
     const totalSpent = selectedExpenses.reduce((sum,e) => sum + Number(e.amount || 0),0);
     const remaining = totalBudget - totalSpent;
     const utilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
@@ -1874,6 +2036,18 @@ function generateBudgetPDF() {
                         </tr>
                     </thead>
                     <tbody>${projectRows || `<tr><td colspan="8" class="center">No project budgets recorded.</td></tr>`}</tbody>
+                </table>
+
+                <h2>Monthly Spending Summary</h2>
+                <table>
+                    <thead><tr><th>Month</th><th class="right">Entries</th><th class="right">Spent</th></tr></thead>
+                    <tbody>${monthlySpendingRows}</tbody>
+                </table>
+
+                <h2>Weekly Spending Summary (Monday-Sunday)</h2>
+                <table>
+                    <thead><tr><th>Week</th><th class="right">Entries</th><th class="right">Spent</th></tr></thead>
+                    <tbody>${weeklySpendingRows}</tbody>
                 </table>
 
                 <h2>Complete Expense Records</h2>

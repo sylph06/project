@@ -253,7 +253,20 @@ $officials = array_slice($officials, 0, 5);
 $next = $upcoming[0] ?? null;
 $landingUser = current_user();
 $isOfficer = $landingUser !== null && ($landingUser['role'] ?? '') !== 'KK Member';
-$hasMemberPortal = $landingUser !== null && !empty($landingUser['legacy_id']);
+$hasMemberPortal = $landingUser !== null
+    && ($landingUser['role'] ?? '') === 'KK Member'
+    && !empty($landingUser['legacy_id']);
+$memberInterests = [];
+if ($hasMemberPortal) {
+    $memberId = (string)$landingUser['legacy_id'];
+    foreach (lp_json('skEventInterests') as $interest) {
+        if (!is_array($interest)
+            || (string)($interest['memberId'] ?? '') !== $memberId
+            || !in_array($interest['response'] ?? '', ['Interested', 'Not interested'], true)) continue;
+        $eventId = (string)($interest['eventId'] ?? '');
+        if ($eventId !== '') $memberInterests[$eventId] = $interest['response'];
+    }
+}
 
 /* links: ?view=public lets a first-time visitor open view-only pages without a login screen */
 $L_EVENTS   = '#announcements';
@@ -351,6 +364,18 @@ $L_EVENTS   = '#announcements';
         .lp-ann-desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;color:var(--bs-secondary-color);font-size:.9rem}
         .lp-ann-meta{font-size:.85rem;color:var(--bs-secondary-color);display:grid;gap:.25rem;margin-bottom:1rem}
         .lp-ann-meta i{width:1.2rem;display:inline-block;color:var(--bs-primary)}
+        .lp-ann-footer{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:auto;padding:.75rem 1.1rem 1rem;border-top:1px solid var(--lp-line)}
+        .lp-ann-organizer{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+        .lp-ann-organizer small{color:var(--bs-secondary-color);font-size:.68rem}
+        .lp-ann-organizer strong{overflow:hidden;color:var(--bs-primary);font-size:.78rem;text-overflow:ellipsis;white-space:nowrap}
+        .lp-ann-details-btn{flex:none;padding:.45rem .75rem;border:1px solid var(--bs-primary);border-radius:9px;background:#fff;color:var(--bs-primary);font-size:.8rem;font-weight:650;white-space:nowrap}
+        .lp-ann-details-btn:hover,.lp-ann-details-btn:focus-visible{background:var(--bs-primary);border-color:var(--bs-primary);color:#fff}
+        .lp-ann-interest{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.25rem}
+        #annGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+        @media(max-width:767.98px){#annGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media(max-width:479.98px){#annGrid{grid-template-columns:minmax(0,1fr)}}
+        html.dark-mode .lp-ann-details-btn{background:var(--bs-secondary-bg);color:var(--bs-primary)}
+        html.dark-mode .lp-ann-details-btn:hover,html.dark-mode .lp-ann-details-btn:focus-visible{background:var(--bs-primary);color:#fff}
         .lp-ann-filters .btn{font-weight:650}
         .lp-ann-detail-wrap{position:relative}
         .lp-ann-detail-banner{aspect-ratio:16/9;overflow:hidden;background:var(--bs-primary-bg-subtle);display:grid;place-items:center;font-size:3rem;color:var(--bs-primary-text-emphasis)}
@@ -452,6 +477,7 @@ $L_EVENTS   = '#announcements';
 <script>
 window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;
 window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
+window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
 <script src="js/sidebar.js?v=16"></script>
 
@@ -768,7 +794,7 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
                     <button type="button" class="btn btn-sm btn-outline-primary" data-ann-filter="<?= e($annLabel) ?>" aria-pressed="false"><?= e($annLabel) ?> <span class="badge text-bg-light ms-1"><?= (int)$annNumber ?></span></button>
                 <?php endforeach; ?>
             </div>
-            <div class="row g-4" id="annGrid">
+            <div id="annGrid">
                 <?php foreach ($annList as $annIndex => $ann):
                     $annStatus = $ann['_status'];
                     $annBadge = ['Upcoming' => 'text-bg-primary', 'Ongoing' => 'text-bg-success', 'Completed' => 'text-bg-secondary', 'Cancelled' => 'text-bg-danger'][$annStatus];
@@ -779,8 +805,9 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
                     $annDateText = date('F j, Y', strtotime($ann['date']));
                     $annDays = (int)ceil((strtotime($ann['date'] . ' ' . ($annStart !== '' ? date('H:i', strtotime($annStart)) : '00:00')) - time()) / 86400);
                     $annSearch = strtolower(trim(($ann['title'] ?? '') . ' ' . ($ann['category'] ?? '') . ' ' . ($ann['venue'] ?? '') . ' ' . ($ann['description'] ?? '')));
+                    $interestChoice = $hasMemberPortal ? ($memberInterests[(string)($ann['id'] ?? '')] ?? '') : '';
                 ?>
-                    <div class="col-md-6 col-xl-4" data-ann-item data-status="<?= e($annStatus) ?>" data-search="<?= e($annSearch) ?>">
+                    <div data-ann-item data-status="<?= e($annStatus) ?>" data-search="<?= e($annSearch) ?>">
                         <article class="lp-ann-card<?= $annStatus === 'Cancelled' ? ' is-cancelled' : '' ?>">
                             <div class="lp-ann-banner">
                                 <?php if ($annImage !== ''): ?><img src="<?= e($annImage) ?>" alt="" loading="lazy"><?php else: ?><i class="bi bi-megaphone-fill" aria-hidden="true"></i><?php endif; ?>
@@ -788,16 +815,17 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
                                 <?= lp_ann_reschedule_banner($ann) ?>
                             </div>
                             <div class="lp-ann-body">
-                                <div class="lp-ann-cat mb-1"><?= e($ann['category'] ?? 'Announcement') ?></div>
-                                <h3 class="h5 fw-bold mb-2"><?= e($ann['title'] ?? 'Untitled activity') ?></h3>
-                                <p class="lp-ann-desc mb-3"><?= e($ann['description'] ?? '') ?></p>
-                                <div class="lp-ann-meta mt-auto">
+                                <h3 class="h5 fw-bold mb-3"><?= e($ann['title'] ?? 'Untitled activity') ?></h3>
+                                <div class="lp-ann-meta">
                                     <div><i class="bi bi-calendar-event" aria-hidden="true"></i><?= e($annDateText) ?></div>
                                     <?php if ($annTimeText !== ''): ?><div><i class="bi bi-clock" aria-hidden="true"></i><?= e($annTimeText) ?></div><?php endif; ?>
                                     <?php if (!empty($ann['venue'])): ?><div><i class="bi bi-geo-alt" aria-hidden="true"></i><?= e($ann['venue']) ?></div><?php endif; ?>
                                     <?php if ($annStatus === 'Upcoming' && $annDays >= 0): ?><div><i class="bi bi-hourglass-split" aria-hidden="true"></i><?= $annDays === 0 ? 'Starts today' : $annDays . ' day' . ($annDays === 1 ? '' : 's') . ' remaining' ?></div><?php endif; ?>
                                 </div>
-                                <button type="button" class="btn btn-primary w-100 fw-semibold" data-ann-open="annDetail<?= (int)$annIndex ?>">View details</button>
+                            </div>
+                            <div class="lp-ann-footer">
+                                <div class="lp-ann-organizer"><small>Organized by</small><strong><?= e($ann['organizer'] ?? 'SK Office') ?></strong></div>
+                                <button type="button" class="lp-ann-details-btn" data-ann-open="annDetail<?= (int)$annIndex ?>">View details</button>
                             </div>
                         </article>
                         <template id="annDetail<?= (int)$annIndex ?>">
@@ -822,6 +850,17 @@ window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
                                 <h3 class="h6 fw-bold">About this announcement</h3>
                                 <p class="lp-ann-text mb-0"><?= e(($ann['details'] ?? '') !== '' ? $ann['details'] : ($ann['description'] ?? '')) ?></p>
                                 <?php if (!empty($ann['notes'])): ?><div class="alert alert-warning mt-3 mb-0"><strong>Additional notes</strong><br><span class="lp-ann-text"><?= e($ann['notes']) ?></span></div><?php endif; ?>
+                                <?php if ($hasMemberPortal && in_array($annStatus, ['Upcoming', 'Ongoing'], true)): ?>
+                                    <div class="lp-ann-interest" data-ann-interest data-event-id="<?= e($ann['id'] ?? '') ?>" data-current-response="<?= e($interestChoice) ?>">
+                                        <button type="button" class="btn btn-sm <?= $interestChoice === 'Interested' ? 'btn-primary' : 'btn-outline-primary' ?>" data-interest-response="Interested" aria-pressed="<?= $interestChoice === 'Interested' ? 'true' : 'false' ?>">
+                                            <i class="bi bi-hand-thumbs-up me-1" aria-hidden="true"></i>Interested
+                                        </button>
+                                        <button type="button" class="btn btn-sm <?= $interestChoice === 'Not interested' ? 'btn-secondary' : 'btn-outline-secondary' ?>" data-interest-response="Not interested" aria-pressed="<?= $interestChoice === 'Not interested' ? 'true' : 'false' ?>">
+                                            <i class="bi bi-hand-thumbs-down me-1" aria-hidden="true"></i>Not interested
+                                        </button>
+                                        <span class="small text-muted align-self-center" data-interest-message role="status" aria-live="polite"><?= $interestChoice !== '' ? 'Your response: ' . e($interestChoice) : 'Choose one response.' ?></span>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </template>
                     </div>
@@ -966,6 +1005,55 @@ document.querySelectorAll('#sidebar a[href*="#"]').forEach(function (link) {
         bootstrap.Modal.getOrCreateInstance(document.getElementById('annModal')).show();
     });
 })();
+document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-interest-response]');
+    if (!button) return;
+    var group = button.closest('[data-ann-interest]');
+    if (!group || button.disabled) return;
+
+    var response = button.dataset.interestResponse;
+    var eventId = group.dataset.eventId;
+    var buttons = Array.prototype.slice.call(group.querySelectorAll('[data-interest-response]'));
+    var status = group.querySelector('[data-interest-message]');
+    buttons.forEach(function (item) { item.disabled = true; });
+    status.textContent = 'Saving your response...';
+
+    fetch('api.php?action=event_interest', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': window.SK_CSRF_TOKEN || ''
+        },
+        body: JSON.stringify({ eventId: eventId, response: response })
+    }).then(function (httpResponse) {
+        return httpResponse.json().then(function (result) {
+            if (!httpResponse.ok || !result || result.ok !== true) {
+                throw new Error(result && result.error ? result.error : 'Could not save your response.');
+            }
+            if (result.response !== 'Interested' && result.response !== 'Not interested') {
+                throw new Error('The server returned an invalid response.');
+            }
+            return result;
+        });
+    }).then(function (result) {
+        group.dataset.currentResponse = result.response;
+        buttons.forEach(function (item) {
+            var selected = item.dataset.interestResponse === result.response;
+            var interested = item.dataset.interestResponse === 'Interested';
+            item.classList.toggle('btn-primary', selected && interested);
+            item.classList.toggle('btn-outline-primary', !selected && interested);
+            item.classList.toggle('btn-secondary', selected && !interested);
+            item.classList.toggle('btn-outline-secondary', !selected && !interested);
+            item.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        });
+        status.textContent = 'Your response: ' + result.response;
+    }).catch(function (error) {
+        status.textContent = error && error.message ? error.message : 'Could not save your response.';
+    }).finally(function () {
+        buttons.forEach(function (item) { item.disabled = false; });
+    });
+});
 document.querySelectorAll('[data-registration-advice]').forEach(function (button) {
     button.addEventListener('click', function () {
         window.AppAlerts.show(

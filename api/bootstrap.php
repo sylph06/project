@@ -30,7 +30,7 @@ function out($arr, $code = 200) {
 function audit_successful_api_action() {
     $actions = [
         'login', 'password',
-        'event_register', 'event_attendance', 'event_walkin',
+        'event_register', 'event_interest', 'event_attendance', 'event_walkin',
         'meeting_minutes_save', 'meeting_minutes_approve', 'meeting_minutes_reopen',
         'meeting_attendance_save', 'meeting_attendance_delete',
         'role_assign', 'role_update', 'role_end', 'role_archive', 'role_archive_expired',

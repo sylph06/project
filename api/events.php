@@ -77,6 +77,118 @@ if ($action === 'event_register') {
     out(['ok' => true, 'ref' => strtoupper(substr($rec['id'], -6)), 'record' => $rec]);
 }
 
+/* ---------- member event interest ---------- */
+if ($action === 'event_interest') {
+    $memberUser = current_user();
+    if (!$memberUser) out(['ok' => false, 'error' => 'Please log in to respond to an event.'], 401);
+    if (($memberUser['role'] ?? '') !== 'KK Member' || empty($memberUser['legacy_id'])) {
+        out(['ok' => false, 'error' => 'Only linked KK member accounts can respond to events.'], 403);
+    }
+    if (!empty($memberUser['must_change_password'])) {
+        out(['ok' => false, 'error' => 'Change your temporary password before responding.'], 403);
+    }
+
+    $eventId = $in['eventId'] ?? null;
+    $response = $in['response'] ?? null;
+    if (!is_string($eventId) || !preg_match('/^[A-Za-z0-9_-]{1,60}$/', $eventId)
+        || !is_string($response) || !in_array($response, ['Interested', 'Not interested'], true)) {
+        out(['ok' => false, 'error' => 'Choose a valid event response.'], 400);
+    }
+
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $memberId = (string)$memberUser['legacy_id'];
+        if (USE_MEMBERS_TABLE) {
+            $memberQuery = $pdo->prepare('SELECT status FROM members WHERE legacy_id = ? FOR UPDATE');
+            $memberQuery->execute([$memberId]);
+            $memberStatus = $memberQuery->fetchColumn();
+        } else {
+            $memberQuery = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'kkMembers' FOR UPDATE");
+            $memberQuery->execute();
+            $members = json_decode((string)$memberQuery->fetchColumn(), true);
+            if (!is_array($members)) throw new RuntimeException('KK member data is invalid.');
+            $memberStatus = false;
+            foreach ($members as $member) {
+                if (is_array($member) && (string)($member['id'] ?? '') === $memberId) {
+                    $memberStatus = $member['status'] ?? 'Active';
+                    break;
+                }
+            }
+        }
+        if ($memberStatus !== 'Active') {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'Only active KK members can respond to events.'], 403);
+        }
+
+        $announcementQuery = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skAnnouncements' FOR UPDATE");
+        $announcementQuery->execute();
+        $announcements = json_decode((string)$announcementQuery->fetchColumn(), true);
+        if (!is_array($announcements)) throw new RuntimeException('Announcement data is invalid.');
+        $announcement = null;
+        foreach ($announcements as $record) {
+            if (is_array($record) && (string)($record['id'] ?? '') === $eventId) {
+                $announcement = $record;
+                break;
+            }
+        }
+        $today = date('Y-m-d');
+        if (!$announcement
+            || ($announcement['publishState'] ?? '') !== 'Published'
+            || (!empty($announcement['publishDate']) && $announcement['publishDate'] > $today)) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'This event is not available for responses.'], 404);
+        }
+        $eventDate = (string)($announcement['date'] ?? '');
+        $endTime = (string)($announcement['endTime'] ?? '');
+        if (!empty($announcement['cancelled'])
+            || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $eventDate)
+            || !checkdate((int)substr($eventDate, 5, 2), (int)substr($eventDate, 8, 2), (int)substr($eventDate, 0, 4))
+            || (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $endTime) && $endTime !== '')) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'This event is not available for responses.'], 400);
+        }
+        $eventEnd = strtotime($eventDate . ' ' . ($endTime !== '' ? $endTime . ':00' : '23:59:59'));
+        if ($eventEnd === false || $eventEnd < time()) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'This event has already ended.'], 400);
+        }
+
+        $pdo->prepare("INSERT INTO app_data (data_key, data_value, updated_by)
+                       VALUES ('skEventInterests', '[]', ?)
+                       ON DUPLICATE KEY UPDATE data_key = VALUES(data_key)")
+            ->execute([$memberUser['username']]);
+        $interestQuery = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skEventInterests' FOR UPDATE");
+        $interestQuery->execute();
+        $interests = json_decode((string)$interestQuery->fetchColumn(), true);
+        if (!is_array($interests)) throw new RuntimeException('Event interest data is invalid.');
+
+        $interests = array_values(array_filter($interests, function ($interest) use ($memberId, $eventId) {
+            return !is_array($interest)
+                || (string)($interest['memberId'] ?? '') !== $memberId
+                || (string)($interest['eventId'] ?? '') !== $eventId;
+        }));
+        $record = [
+            'memberId' => $memberId,
+            'eventId' => $eventId,
+            'response' => $response,
+            'respondedAt' => gmdate('c'),
+        ];
+        $interests[] = $record;
+        $save = $pdo->prepare("UPDATE app_data SET data_value = ?, updated_by = ? WHERE data_key = 'skEventInterests'");
+        $save->execute([
+            json_encode($interests, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
+            $memberUser['username'],
+        ]);
+        $pdo->commit();
+        out(['ok' => true, 'response' => $response]);
+    } catch (Throwable $ex) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log('Event interest response failed: ' . $ex->getMessage());
+        out(['ok' => false, 'error' => 'Could not save your event response. Please try again.'], 500);
+    }
+}
+
 /* ---------- everything below needs a logged-in officer ---------- */
 $user = require_officer();
 

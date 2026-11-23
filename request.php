@@ -44,6 +44,54 @@ require_official();
         #toastBox { position:fixed; right:20px; bottom:20px; z-index:2000; width:min(400px,calc(100% - 40px)); }
         @media(max-width:800px) { .review-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
         @media(max-width:767px) { .content { padding:14px; } .header { padding:0 16px; } .review-date-tools .form-control { flex:1; min-width:120px; } }
+        :root, body.review-requests-page {
+            --rq-bg:#f5f7fb;
+            --rq-surface:#fff;
+            --rq-surface-2:#f8fafc;
+            --rq-line:#e5e7eb;
+            --rq-text:#1f2937;
+            --rq-muted:#6b7280;
+            --rq-accent:#2563eb;
+            --rq-select:#eff6ff;
+            color-scheme:light;
+        }
+        html[data-bs-theme="dark"] body.review-requests-page,
+        html.dark-mode body.review-requests-page {
+            --rq-bg:#111827;
+            --rq-surface:#1f2937;
+            --rq-surface-2:#273449;
+            --rq-line:#374151;
+            --rq-text:#f3f4f6;
+            --rq-muted:#9ca3af;
+            --rq-accent:#93c5fd;
+            --rq-select:#253247;
+            color-scheme:dark;
+        }
+        body.review-requests-page,
+        body.review-requests-page .page-content { background:var(--rq-bg); color:var(--rq-text); }
+        body.review-requests-page .header,
+        body.review-requests-page .records-card,
+        body.review-requests-page .review-welcome,
+        body.review-requests-page .review-summary-card { background:var(--rq-surface); color:var(--rq-text); border-color:var(--rq-line); }
+        body.review-requests-page .header { border-bottom-color:var(--rq-line); }
+        body.review-requests-page .review-summary-card { border-left-color:var(--review-accent,var(--rq-accent)); }
+        body.review-requests-page .review-summary-card.active { box-shadow:0 0 0 2px var(--rq-accent); }
+        body.review-requests-page .review-summary-label,
+        body.review-requests-page .review-welcome small,
+        body.review-requests-page .footer-note { color:var(--rq-muted)!important; }
+        body.review-requests-page .card-header { background:var(--rq-surface-2); color:var(--rq-text); border-bottom:1px solid var(--rq-line); }
+        body.review-requests-page .table {
+            --bs-table-color:var(--rq-text);
+            --bs-table-bg:var(--rq-surface);
+            --bs-table-hover-bg:var(--rq-surface-2);
+            --bs-table-hover-color:var(--rq-text);
+            --bs-table-border-color:var(--rq-line);
+        }
+        body.review-requests-page .table th { background:var(--rq-surface-2); color:var(--rq-muted); }
+        body.review-requests-page .request-tabs .nav-link { color:var(--rq-text); }
+        body.review-requests-page .request-tabs .nav-link.active { background:var(--rq-accent); color:#fff; }
+        body.review-requests-page .btn-outline { background:var(--rq-surface); color:var(--rq-text); border-color:var(--rq-line); }
+        body.review-requests-page .btn-black { background:var(--rq-accent); color:#fff; }
     </style>
     <?php include __DIR__ . '/init.php'; ?>
     <?php
@@ -65,7 +113,7 @@ require_official();
         window.SK_CAN_REVIEW_MEMBER_REQUESTS = <?= in_array(urole(), MEMBER_DATA_ADMIN_ROLES, true) ? 'true' : 'false' ?>;
     </script>
 </head>
-<body>
+<body class="review-requests-page">
 <div class="top-strip"></div>
 <script src="js/theme.js"></script>
 <script src="js/sidebar.js?v=15"></script>

@@ -31,6 +31,7 @@ $routes = [
 
     /* Events */
     'event_register'          => 'api/events.php',
+    'event_interest'          => 'api/events.php',
     'event_attendance'        => 'api/events.php',
     'event_walkin'            => 'api/events.php',
 
