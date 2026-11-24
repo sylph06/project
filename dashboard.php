@@ -8,9 +8,80 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=31" rel="stylesheet">
+    <link href="css/sidebar.css?v=32" rel="stylesheet">
     <style>
-        .dashboard-page{background:var(--ui-paper)}
+        .dashboard-page{
+            --dashboard-canvas:#eef4ff;
+            --dashboard-card:#fff;
+            --dashboard-outline:#dce7fb;
+            --dashboard-blue:#1558c7;
+            --dashboard-blue-light:#e9f1ff;
+            --dashboard-shadow:0 10px 28px rgba(37,76,151,.08);
+            background:var(--dashboard-canvas);
+        }
+        html[data-bs-theme="dark"] .dashboard-page{
+            --dashboard-canvas:#171d2d;
+            --dashboard-card:#222d40;
+            --dashboard-outline:#35435d;
+            --dashboard-blue:#82aaff;
+            --dashboard-blue-light:#293b58;
+            --dashboard-shadow:0 10px 28px rgba(0,0,0,.2);
+        }
+        html[data-bs-theme="dark"] .dashboard-stat-members{--stat-decoration:#293c5b}
+        html[data-bs-theme="dark"] .dashboard-stat-events{--stat-decoration:#233d4b}
+        html[data-bs-theme="dark"] .dashboard-stat-requests{--stat-decoration:#383355}
+        html[data-bs-theme="dark"] .dashboard-stat-budget{--stat-decoration:#293b53}
+        .dashboard-page main.container-fluid{
+            min-height:calc(100vh - 68px);
+            background:var(--dashboard-canvas);
+        }
+        .dashboard-welcome{
+            position:relative;
+            isolation:isolate;
+            overflow:hidden;
+            min-height:160px;
+            padding:1.5rem clamp(1.25rem,3vw,2rem);
+            border:1px solid rgba(255,255,255,.2);
+            border-radius:20px;
+            color:#fff;
+            background:linear-gradient(112deg,#1249a8 0%,#1765d6 58%,#4385ec 100%);
+            box-shadow:0 14px 32px rgba(24,78,174,.2);
+        }
+        .dashboard-welcome::before,.dashboard-welcome::after{
+            position:absolute;
+            z-index:-1;
+            content:"";
+            border:1px solid rgba(255,255,255,.14);
+            border-radius:50%;
+            pointer-events:none;
+        }
+        .dashboard-welcome::before{
+            width:330px;height:330px;right:7%;top:-225px;
+            box-shadow:0 0 0 30px rgba(255,255,255,.045),0 0 0 70px rgba(255,255,255,.035);
+        }
+        .dashboard-welcome::after{
+            width:190px;height:190px;right:-34px;bottom:-133px;
+            box-shadow:0 0 0 25px rgba(255,255,255,.05),0 0 0 55px rgba(255,255,255,.035);
+        }
+        .dashboard-welcome h2{color:#fff;font-size:clamp(1.35rem,2.4vw,1.9rem)}
+        .dashboard-welcome p{color:rgba(255,255,255,.82)}
+        .dashboard-welcome-copy{position:relative;z-index:1}
+        .dashboard-welcome-note{max-width:620px}
+        .dashboard-welcome-meta{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+        .dashboard-welcome-meta span{
+            display:inline-flex;align-items:center;gap:.4rem;
+            padding:.38rem .7rem;border:1px solid rgba(255,255,255,.22);
+            border-radius:999px;background:rgba(255,255,255,.13);
+            color:#fff;font-size:.78rem;font-weight:650;
+        }
+        .dashboard-welcome-action{
+            border:1px solid rgba(255,255,255,.75)!important;
+            border-radius:999px!important;
+            background:#fff!important;
+            color:#1558c7!important;
+            white-space:nowrap;
+        }
+        .dashboard-welcome-action:hover{background:#edf4ff!important;color:#1249a8!important}
         .dashboard-toolbar{
             min-height:68px;
             border-bottom:1px solid var(--ui-line);
@@ -26,10 +97,10 @@
         .dashboard-overview{padding-top:.25rem}
         .dashboard-stat,.dashboard-panel{
             height:100%;
-            background:var(--ui-surface);
-            border:1px solid var(--ui-line);
-            border-radius:12px;
-            box-shadow:0 2px 8px rgba(15,23,42,.035);
+            background:var(--dashboard-card);
+            border:1px solid var(--dashboard-outline);
+            border-radius:18px;
+            box-shadow:var(--dashboard-shadow);
         }
         .dashboard-stat{
             min-height:130px;
@@ -38,7 +109,21 @@
             flex-direction:column;
             justify-content:center;
             gap:.12rem;
+            position:relative;
+            overflow:hidden;
+            transition:transform .18s ease,box-shadow .18s ease;
         }
+        .dashboard-stat::after{
+            position:absolute;right:-22px;bottom:-34px;width:104px;height:104px;
+            border-radius:50%;background:var(--stat-decoration,#e9f1ff);
+            content:"";pointer-events:none;
+        }
+        .dashboard-stat:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(37,76,151,.13)}
+        .dashboard-stat>*{position:relative;z-index:1}
+        .dashboard-stat-members{--stat-accent:#1765d6;--stat-decoration:#edf4ff}
+        .dashboard-stat-events{--stat-accent:#1689b9;--stat-decoration:#e9f8ff}
+        .dashboard-stat-requests{--stat-accent:#7057d9;--stat-decoration:#f1edff}
+        .dashboard-stat-budget{--stat-accent:#2678c9;--stat-decoration:#eaf3ff}
         .dashboard-stat-icon{
             display:grid;
             place-items:center;
@@ -46,11 +131,11 @@
             height:2.35rem;
             margin-bottom:.35rem;
             border-radius:50%;
-            color:var(--bs-primary);
-            background:var(--bs-primary-bg-subtle);
+            color:var(--stat-accent,var(--dashboard-blue));
+            background:var(--stat-decoration,var(--dashboard-blue-light));
             font-size:1.05rem;
         }
-        .dashboard-panel{padding:1.1rem 1.2rem;overflow:hidden}
+        .dashboard-panel{padding:1.2rem 1.3rem;overflow:hidden}
         .dashboard-greeting{max-width:none}
         .dashboard-attention{
             display:flex;
@@ -119,6 +204,8 @@
         .dashboard-budget-center span{color:var(--bs-secondary-color);font-size:.75rem}
         .dashboard-stat-row>.col-6{min-width:0}
         @media(max-width:575.98px){
+            .dashboard-welcome{min-height:0;padding:1.2rem;border-radius:16px}
+            .dashboard-welcome-action{margin-top:.25rem}
             .dashboard-toolbar .dashboard-search{width:100%;order:3}
             .dashboard-toolbar{flex-wrap:wrap}
             .budget-stat{border-left:0;border-top:1px solid var(--ui-line);padding:.75rem 0}
@@ -329,12 +416,18 @@
     </header>
 
     <main class="container-fluid p-3 p-lg-4">
-        <section class="dashboard-greeting dashboard-overview d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
-            <div>
-                <h2 class="h5 fw-bold mb-1">Overview</h2>
-                <p class="text-muted small mb-0"><?= e($dashboardGreeting) ?>, <?= e(uname()) ?> · <?= e(date('l, F j, Y')) ?></p>
+        <section class="dashboard-welcome d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3" aria-labelledby="dashboardWelcomeTitle">
+            <div class="dashboard-welcome-copy">
+                <div class="small fw-semibold text-uppercase mb-2">Official dashboard</div>
+                <h2 class="fw-bold mb-2" id="dashboardWelcomeTitle"><?= e($dashboardGreeting) ?>, <?= e(uname()) ?>!</h2>
+                <p class="dashboard-welcome-note mb-0">Your overview of KK members, SK activities, youth participation, and community resources.</p>
+                <div class="dashboard-welcome-meta" aria-label="Dashboard highlights">
+                    <span><i class="bi bi-people-fill" aria-hidden="true"></i><?= (int)$dashboardActiveMembers ?> active KK members</span>
+                    <span><i class="bi bi-calendar-event" aria-hidden="true"></i><?= (int)$upcomingAnnouncementCount ?> upcoming activities</span>
+                    <span><i class="bi bi-clipboard-check" aria-hidden="true"></i><?= (int)$dashboardAttentionCount ?> profile edits to review</span>
+                </div>
             </div>
-            <a href="announcements.php" class="btn btn-sm btn-primary px-3">
+            <a href="announcements.php" class="btn btn-sm dashboard-welcome-action px-3">
                 <i class="bi bi-plus-lg me-1"></i>New activity
             </a>
         </section>
@@ -357,28 +450,28 @@
 
         <section class="row g-3 mb-4 dashboard-stat-row" aria-label="System summary">
             <div class="col-6 col-xl-3">
-                <div class="dashboard-stat">
+                <div class="dashboard-stat dashboard-stat-members">
                     <span class="dashboard-stat-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
                     <div class="fs-2 fw-bold"><?= $dashboardActiveMembers ?></div>
                     <div class="text-muted">Active KK members</div>
                 </div>
             </div>
             <div class="col-6 col-xl-3">
-                <div class="dashboard-stat">
+                <div class="dashboard-stat dashboard-stat-events">
                     <span class="dashboard-stat-icon"><i class="bi bi-calendar-event" aria-hidden="true"></i></span>
                     <div class="fs-2 fw-bold"><?= $upcomingAnnouncementCount ?></div>
                     <div class="text-muted">Upcoming events</div>
                 </div>
             </div>
             <div class="col-6 col-xl-3">
-                <div class="dashboard-stat">
+                <div class="dashboard-stat dashboard-stat-requests">
                     <span class="dashboard-stat-icon"><i class="bi bi-inbox" aria-hidden="true"></i></span>
                     <div class="fs-2 fw-bold"><?= (int)$dashboardAttentionCount ?></div>
                     <div class="text-muted">Pending requests</div>
                 </div>
             </div>
             <div class="col-6 col-xl-3">
-                <div class="dashboard-stat">
+                <div class="dashboard-stat dashboard-stat-budget">
                     <span class="dashboard-stat-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span>
                     <div class="fs-2 fw-bold"><?= $dashboardBudgetPublished ? e($dashboardCurrency($dashboardBudgetAmount - $dashboardTotalSpent)) : '—' ?></div>
                     <div class="text-muted">Budget remaining</div>

@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=31" rel="stylesheet">
+    <link href="css/sidebar.css?v=32" rel="stylesheet">
     <link href="vendor/summernote/summernote-bs5.min.css" rel="stylesheet">
 
     <style>
@@ -54,25 +54,27 @@ header h1{
 }
 
 .btn-success{
-    --bs-btn-bg:var(--bs-body-color);
-    --bs-btn-border-color:var(--bs-body-color);
-    --bs-btn-hover-bg:var(--kk-primary);
-    --bs-btn-hover-border-color:var(--kk-primary);
+    --bs-btn-bg:#1464ed;
+    --bs-btn-border-color:#1464ed;
+    --bs-btn-hover-bg:#0d54d0;
+    --bs-btn-hover-border-color:#0d54d0;
     --bs-btn-hover-color:#fff;
-    --bs-btn-active-bg:var(--bs-body-color);
-    --bs-btn-active-border-color:var(--bs-body-color);
-    --bs-btn-focus-shadow-rgb:255,230,0;
+    --bs-btn-active-bg:#0d54d0;
+    --bs-btn-active-border-color:#0d54d0;
+    --bs-btn-color:#fff;
+    --bs-btn-focus-shadow-rgb:20,100,237;
     font-weight:800;
 }
 
 .btn-outline-success{
-    --bs-btn-color:var(--bs-body-color);
-    --bs-btn-border-color:var(--bs-body-color);
+    --bs-btn-color:#1761d9;
+    --bs-btn-border-color:#cddcf8;
     --bs-btn-hover-bg:var(--kk-primary);
-    --bs-btn-hover-border-color:var(--kk-primary);
+    --bs-btn-hover-border-color:#b8cdf5;
     --bs-btn-hover-color:#fff;
-    --bs-btn-active-bg:var(--kk-primary);
-    --bs-btn-active-border-color:var(--kk-primary);
+    --bs-btn-active-bg:#eaf1ff;
+    --bs-btn-active-border-color:#b8cdf5;
+    --bs-btn-active-color:#124eb2;
     font-weight:700;
 }
 
@@ -293,6 +295,100 @@ header h1{
 
 .dashboard-card .card-header h2{
     font-weight:900;
+}
+
+.meeting-welcome{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:1rem;
+    margin:0 0 1.1rem;
+}
+.meeting-welcome h2{
+    color:#14234c;
+    font-size:clamp(1.35rem,2vw,1.8rem);
+    font-weight:800;
+    letter-spacing:-.04em;
+    margin:0 0 .28rem;
+}
+.meeting-welcome p{color:#6e7c99;margin:0;font-size:.9rem}
+.meeting-date{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    padding:.65rem .9rem;
+    background:#fff;
+    border:1px solid #e3eaf8;
+    border-radius:999px;
+    color:#234c9a;
+    font-size:.83rem;
+    font-weight:700;
+    box-shadow:0 5px 16px rgba(27,71,150,.06);
+    white-space:nowrap;
+}
+#sk-members .dashboard-card{
+    position:relative;
+    min-height:164px;
+    overflow:hidden;
+    color:#fff;
+    border:0!important;
+    border-radius:19px!important;
+    background:linear-gradient(120deg,#0754db 0%,#176ff3 65%,#438bff 100%)!important;
+    box-shadow:0 10px 24px rgba(22,91,220,.2)!important;
+}
+#sk-members .dashboard-card:before,
+#sk-members .dashboard-card:after{
+    position:absolute;
+    content:"";
+    border-radius:50%;
+    pointer-events:none;
+}
+#sk-members .dashboard-card:before{
+    width:230px;
+    height:230px;
+    right:-68px;
+    top:-137px;
+    background:rgba(255,255,255,.12);
+    box-shadow:0 0 0 25px rgba(255,255,255,.05),0 0 0 55px rgba(255,255,255,.035);
+}
+#sk-members .dashboard-card:after{
+    width:180px;
+    height:180px;
+    right:80px;
+    bottom:-142px;
+    background:rgba(255,255,255,.1);
+}
+#sk-members .card-body{position:relative;z-index:1}
+#sk-members .section-label{background:rgba(255,255,255,.16);color:#fff}
+#sk-members h2{color:#fff}
+#sk-members p{color:rgba(255,255,255,.88)!important}
+#sk-members .btn-success{
+    --bs-btn-bg:#fff;
+    --bs-btn-border-color:#fff;
+    --bs-btn-color:#1558c7;
+    --bs-btn-hover-bg:#edf4ff;
+    --bs-btn-hover-border-color:#edf4ff;
+    --bs-btn-hover-color:#1249a8;
+    background:#fff;
+    border-color:#fff;
+    color:#1558c7;
+}
+#sk-members .btn-success:hover,
+#sk-members .btn-success:focus-visible{
+    background:#edf4ff;
+    border-color:#edf4ff;
+    color:#1249a8;
+}
+html.dark-mode .meeting-welcome h2{color:#e4ebf8}
+html.dark-mode .meeting-welcome p{color:#a7b5cf}
+html.dark-mode .meeting-date{background:#222d40;border-color:#35435d;color:#e4ebf8}
+@media(max-width:767.98px){
+    .meeting-welcome{align-items:flex-start;flex-direction:column}
+    #sk-members .dashboard-card{min-height:150px}
+}
+@media(max-width:575.98px){
+    .meeting-date{font-size:.75rem}
 }
 
 .table{
@@ -550,6 +646,14 @@ html{
 
     <main class="container-fluid p-3 p-lg-4">
 
+        <section class="meeting-welcome" aria-labelledby="meetingDashboardTitle">
+            <div>
+                <h2 id="meetingDashboardTitle">Mabuhay, SK Officials!</h2>
+                <p>Here&rsquo;s the latest overview of your meetings and attendance.</p>
+            </div>
+            <div class="meeting-date"><i class="bi bi-calendar3" aria-hidden="true"></i><?= e(date('l, F j, Y')) ?></div>
+        </section>
+
         <!-- ============================================================
              SK MEMBERS ARE KK MEMBERS WITH AN SK ROLE (managed in Member List)
              ============================================================ -->
@@ -557,11 +661,11 @@ html{
             <div class="card dashboard-card">
                 <div class="card-body d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     <div>
-                        <span class="section-label"><i class="bi bi-person-badge-fill"></i> SK OFFICIALS</span>
-                        <h2 class="h5 fw-bold mt-2 mb-1">SK members come from the KK Member List</h2>
+                        <span class="section-label"><i class="bi bi-calendar2-week" aria-hidden="true"></i> SK MANAGEMENT</span>
+                        <h2 class="h5 fw-bold mt-2 mb-1">Meetings &amp; Attendance</h2>
                         <p class="small text-muted mb-0">
-                            Select a registered KK member in the Member List and assign an SK position. They appear here automatically
-                            and can be invited to meetings and marked for attendance.
+                            Manage meeting records and attendance here. SK officials are managed in the KK Member List; assign a position
+                            to a registered member to invite them and record their attendance.
                             <span class="fw-semibold" id="skCountNote"></span>
                         </p>
                     </div>

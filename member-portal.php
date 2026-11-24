@@ -10,7 +10,7 @@ $memberPortalUser = require_member_account();
     <title>KK Youth Profiling System | Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=31" rel="stylesheet">
+    <link href="css/sidebar.css?v=32" rel="stylesheet">
     <link href="css/kk-id.css?v=1" rel="stylesheet">
     <link href="css/participation-heatmap.css?v=1" rel="stylesheet">
     <style>
@@ -20,12 +20,54 @@ $memberPortalUser = require_member_account();
             border-bottom:1px solid var(--ui-line);
         }
         .dashboard-overview{padding-top:.25rem}
+        .portal-welcome{
+            position:relative;
+            isolation:isolate;
+            overflow:hidden;
+            min-height:138px;
+            padding:1.35rem clamp(1.1rem,2.5vw,1.75rem);
+            border:1px solid rgba(255,255,255,.2);
+            border-radius:20px;
+            color:#fff;
+            background:linear-gradient(112deg,#1249a8 0%,#1765d6 58%,#4385ec 100%);
+            box-shadow:0 14px 32px rgba(24,78,174,.18);
+        }
+        .portal-welcome:after{
+            position:absolute;
+            z-index:-1;
+            content:"";
+            width:230px;
+            height:230px;
+            right:-55px;
+            top:-145px;
+            border:1px solid rgba(255,255,255,.16);
+            border-radius:50%;
+            box-shadow:0 0 0 25px rgba(255,255,255,.05),0 0 0 55px rgba(255,255,255,.035);
+            pointer-events:none;
+        }
+        .portal-welcome h2{color:#fff}
+        .portal-welcome p{color:rgba(255,255,255,.84)!important}
+        .portal-welcome .btn-outline-primary{
+            --bs-btn-color:#fff;
+            --bs-btn-border-color:rgba(255,255,255,.72);
+            --bs-btn-hover-color:#1558c7;
+            --bs-btn-hover-bg:#fff;
+            --bs-btn-hover-border-color:#fff;
+        }
+        .portal-welcome .btn-primary{
+            --bs-btn-bg:#fff;
+            --bs-btn-border-color:#fff;
+            --bs-btn-color:#1558c7;
+            --bs-btn-hover-bg:#edf4ff;
+            --bs-btn-hover-border-color:#edf4ff;
+            --bs-btn-hover-color:#1249a8;
+        }
         .dashboard-stat,.dashboard-panel{
             height:100%;
             background:var(--ui-surface);
             border:1px solid var(--ui-line);
-            border-radius:12px;
-            box-shadow:0 2px 8px rgba(15,23,42,.035);
+            border-radius:18px;
+            box-shadow:0 10px 28px rgba(37,76,151,.08);
         }
         .dashboard-stat{
             min-height:130px;
@@ -158,7 +200,7 @@ $memberPortalUser = require_member_account();
     </header>
 
     <main class="container-fluid p-3 p-lg-4">
-        <section class="dashboard-overview d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+        <section class="dashboard-overview portal-welcome d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
             <div>
                 <h2 class="h5 fw-bold mb-1" id="welcomeName">Loading your dashboard...</h2>
                 <p class="text-muted small mb-0"><?= e(date('l, F j, Y')) ?> · Your profile, participation record and digital KK ID.</p>

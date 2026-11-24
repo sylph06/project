@@ -17,7 +17,7 @@ if (can_manage_sk_roles()) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=31" rel="stylesheet">
+    <link href="css/sidebar.css?v=32" rel="stylesheet">
     <link href="css/kk-id.css?v=1" rel="stylesheet">
 
 <style>
@@ -79,10 +79,11 @@ header h1{ font-weight:900; }
 .member-hero{
     position:relative;
     overflow:hidden;
-    background:var(--bs-primary);
+    color:#fff;
+    background:linear-gradient(112deg,#1249a8 0%,#1765d6 58%,#4385ec 100%);
     border-radius:26px;
     padding:28px;
-    box-shadow:0 12px 30px rgba(20,20,20,.08);
+    box-shadow:0 14px 32px rgba(24,78,174,.2);
 }
 .member-hero:after{
     content:"";
@@ -92,8 +93,9 @@ header h1{ font-weight:900; }
     border-radius:50%;
     right:-70px;
     top:-95px;
-    background:var(--bs-primary-text-emphasis);
-    opacity:.08;
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.08);
+    box-shadow:0 0 0 28px rgba(255,255,255,.04),0 0 0 62px rgba(255,255,255,.03);
 }
 .member-hero-content{ position:relative; z-index:2; }
 .member-icon{
@@ -103,22 +105,30 @@ header h1{ font-weight:900; }
     align-items:center;
     justify-content:center;
     border-radius:17px;
-    background:var(--bs-primary-text-emphasis);
-    color:var(--kk-primary);
+    background:rgba(255,255,255,.16);
+    color:#fff;
     font-size:1.6rem;
 }
-.member-hero h2{ font-weight:950; letter-spacing:-.7px; }
-.member-hero p{ color:var(--bs-body-color); max-width:680px; }
+.member-hero h2{ color:#fff; font-weight:950; letter-spacing:-.7px; }
+.member-hero p{ color:rgba(255,255,255,.86); max-width:680px; }
+.member-hero .btn-dark{
+    border-color:rgba(255,255,255,.75);
+    background:#fff;
+    color:#1558c7;
+    font-weight:700;
+}
+.member-hero .btn-dark:hover,
+.member-hero .btn-dark:focus-visible{ background:#edf4ff; color:#1249a8; }
 
 .stat-card{
     height:100%;
     border:1px solid var(--line);
     border-radius:20px;
     background:#fff;
-    box-shadow:0 8px 20px rgba(20,20,20,.05);
+    box-shadow:0 8px 24px rgba(27,65,125,.07);
     transition:.2s ease;
 }
-.stat-card:hover{ transform:translateY(-4px); box-shadow:0 14px 28px rgba(20,20,20,.09); }
+.stat-card:hover{ transform:translateY(-3px); box-shadow:0 14px 28px rgba(27,65,125,.13); }
 .stat-icon{
     width:45px;
     height:45px;
@@ -126,8 +136,8 @@ header h1{ font-weight:900; }
     align-items:center;
     justify-content:center;
     border-radius:14px;
-    background:var(--bs-primary);
-    color:var(--bs-body-color);
+    background:var(--bs-primary-bg-subtle);
+    color:var(--bs-primary-text-emphasis);
     font-size:1.2rem;
 }
 .stat-link{ cursor:pointer; }
@@ -146,6 +156,32 @@ header h1{ font-weight:900; }
     background:#fff!important;
     border-bottom:1px solid var(--line);
     border-radius:22px 22px 0 0;
+}
+.member-directory-header{
+    padding:1rem 1.1rem!important;
+    border-bottom-color:#e9edf4!important;
+}
+.member-directory-top{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:.85rem 1.25rem;
+    flex-wrap:wrap;
+}
+.member-directory-title h2{color:#1b2c4d}
+.member-toolbar .btn-outline-success{
+    --bs-btn-color:#1761d9;
+    --bs-btn-border-color:#d3dff1;
+    --bs-btn-hover-bg:#eaf1ff;
+    --bs-btn-hover-border-color:#bfd1ef;
+    --bs-btn-hover-color:#124eb2;
+    --bs-btn-active-bg:#eaf1ff;
+    --bs-btn-active-border-color:#bfd1ef;
+    --bs-btn-active-color:#124eb2;
+}
+.member-search .form-control{
+    min-height:40px;
+    border-radius:9px;
 }
 .member-card .card-footer{ border-radius:0 0 22px 22px; }
 
@@ -530,16 +566,16 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
     <!-- ================= MEMBER MANAGEMENT ================= -->
     <div class="card member-card">
 
-        <div class="card-header p-3 p-lg-4">
+        <div class="card-header p-3 p-lg-4 member-directory-header">
 
-            <div class="d-flex flex-column flex-xl-row gap-3 justify-content-between mb-3">
+            <div class="d-flex flex-column flex-xl-row gap-3 justify-content-between mb-3 member-directory-top">
 
-                <div>
+                <div class="member-directory-title">
                     <h2 class="h6 fw-bold mb-1">Member Directory</h2>
                     <div class="small text-muted" id="directorySub">Search, filter and manage member profiles</div>
                 </div>
 
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap gap-2 member-toolbar">
 
                     <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="collapse" data-bs-target="#filterPanel" aria-expanded="true" aria-controls="filterPanel">
                         <i class="bi bi-funnel me-1"></i>Filter
@@ -592,7 +628,7 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                 </div>
                 <div class="col-12 col-md-8 col-xl-9">
                     <label class="form-label small fw-semibold mb-1" for="searchInput">Search</label>
-                    <div class="search-box">
+                    <div class="search-box member-search">
                         <i class="bi bi-search"></i>
                         <input type="text" class="form-control" id="searchInput" placeholder="Search name, SK position, contact, email, Purok, ID...">
                     </div>

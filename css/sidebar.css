@@ -28,13 +28,13 @@ html{
 
 :root,
 html[data-bs-theme="light"]{
-    --bs-body-bg:#f5f2ea;
-    --bs-body-color:#1c1a1a;
-    --bs-emphasis-color:#1c1a1a;
-    --bs-secondary-color:#57534a;
-    --bs-tertiary-bg:#fbf9f3;
+    --bs-body-bg:#f3f6fc;
+    --bs-body-color:#17233c;
+    --bs-emphasis-color:#17233c;
+    --bs-secondary-color:#66748d;
+    --bs-tertiary-bg:#f9fbff;
     --bs-secondary-bg:#ffffff;
-    --bs-border-color:#e3ded0;
+    --bs-border-color:#e1e9f6;
     --bs-primary:#0d6efd;
     --bs-primary-rgb:13,110,253;
     --bs-primary-text-emphasis:#0a58ca;
@@ -49,17 +49,17 @@ html[data-bs-theme="light"]{
     --bs-success-border-subtle:#9ec5fe;
     --bs-form-valid-color:#0a58ca;
     --bs-form-valid-border-color:#0d6efd;
-    --ui-paper:#f5f2ea;
+    --ui-paper:#f3f6fc;
     --ui-surface:#ffffff;
-    --ui-surface-2:#fbf9f3;
-    --ui-line:#e3ded0;
-    --ui-ink:#1c1a1a;
-    --ui-muted:#57534a;
+    --ui-surface-2:#f9fbff;
+    --ui-line:#e1e9f6;
+    --ui-ink:#17233c;
+    --ui-muted:#66748d;
     --ui-brand:#0d6efd;
     --ui-brand-ink:#0a58ca;
     --ui-radius:16px;
     --ui-radius-sm:10px;
-    --ui-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12);
+    --ui-shadow:0 1px 2px rgba(27,65,125,.04),0 8px 24px -12px rgba(27,65,125,.14);
 }
 
 body{
@@ -222,14 +222,14 @@ html[data-bs-theme="dark"]{
     --bs-success-border-subtle:#264f84;
     --bs-form-valid-color:#9ec5fe;
     --bs-form-valid-border-color:#0d6efd;
-    --ui-paper:#181613;
-    --ui-surface:#211e19;
-    --ui-surface-2:#26231d;
-    --ui-line:#38342a;
-    --ui-ink:#f0ede6;
-    --ui-muted:#a8a396;
+    --ui-paper:#151a24;
+    --ui-surface:#222d3d;
+    --ui-surface-2:#1c2432;
+    --ui-line:#384457;
+    --ui-ink:#e8edf5;
+    --ui-muted:#aeb8c7;
     --ui-brand:#0d6efd;
-    --ui-brand-ink:#9ec5fe;
+    --ui-brand-ink:#347cf6;
 }
 
 .theme-toggle{
@@ -564,6 +564,8 @@ html.dark-mode .dashboard-panel .list-group-item{
 }
 
 .sidebar .nav-link{
+    display:flex;
+    align-items:center;
     color:var(--ui-muted);
     font-size:14px;
     padding:6px 10px;
@@ -587,7 +589,12 @@ html.dark-mode .dashboard-panel .list-group-item{
 }
 
 .sidebar-request-count{
-    float:right;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    margin-left:auto;
+    margin-right:4px;
+    flex:none;
     min-width:22px;
     padding:1px 6px;
     border-radius:999px;
