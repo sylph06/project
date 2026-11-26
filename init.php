@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/notification_logic.php';
 
 $__user = current_user();
 $__official = $__user !== null && ($__user['role'] ?? '') !== 'KK Member';
@@ -190,6 +191,18 @@ if (isset($__data['skRoles']) && !can_view_background_history()) {
         $__data['skRoles'] = json_encode(array_values($__roles));
     }
 }
+$__sidebarNotices = [
+    'announcements' => false,
+    'interested' => false,
+    'review_requests' => false,
+];
+if ($__user) {
+    $__sidebarNotices = sidebar_notification_compute(
+        db(),
+        $__user,
+        $_SERVER['SCRIPT_NAME'] ?? ''
+    );
+}
 if ($__official && can_write_app_data()) {
     require_once __DIR__ . '/role_store.php';
     sk_audit(db(), $__user, null, 'page_view', null, [
@@ -211,8 +224,8 @@ window.SK_MEMBER_PORTAL = <?= !empty($__user['legacy_id']) ? 'true' : 'false' ?>
 window.SK_OFFICER = <?= json_encode($__official ? uname() . ' (' . urole() . ')' : '', $__flags) ?>;
 window.SK_CAN_MANAGE_ROLES = <?= can_manage_sk_roles() ? 'true' : 'false' ?>;
 window.SK_CAN_EDIT_MEMBERS = <?= can_write_app_data() ? 'true' : 'false' ?>;
-window.SK_CAN_REQUEST_GOOGLE_LINK = <?= can_request_google_member_links() ? 'true' : 'false' ?>;
 window.SK_CAN_VIEW_AUDIT_LOG = <?= can_view_background_history() ? 'true' : 'false' ?>;
+window.SK_SIDEBAR_NOTICES = <?= json_encode($__sidebarNotices, $__flags) ?>;
 window.USE_MEMBERS_TABLE = <?= USE_MEMBERS_TABLE ? 'true' : 'false' ?>;
 window.USE_SK_ROLES_TABLE = <?= USE_SK_ROLES_TABLE ? 'true' : 'false' ?>;
 </script>

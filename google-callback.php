@@ -11,22 +11,25 @@ function google_registration_callback() {
         || !hash_equals($registrationOAuth['state'], $currentState)
         || !is_int($registrationOAuth['created_at'] ?? null)
         || $registrationOAuth['created_at'] < time() - 600) {
-        google_registration_popup_result(false, 'The Google verification expired. Return to the form and try again.');
+        google_registration_popup_result(false, 'The Google verification expired. Return to Settings and try again.');
     }
-    $purpose = $registrationOAuth['purpose'] ?? 'registration';
+    $purpose = $registrationOAuth['purpose'] ?? '';
     $memberId = $registrationOAuth['member_id'] ?? null;
-    if (!in_array($purpose, ['registration', 'member_link'], true)
-        || ($purpose === 'member_link' && (!is_string($memberId) || $memberId === ''))) {
+    if ($purpose !== 'member_self_link' || !is_string($memberId) || $memberId === '') {
         google_registration_popup_result(false, 'This Google verification request is invalid.');
     }
 
     $user = current_user();
-    $operatorCanContinue = $purpose === 'member_link'
-        ? can_request_google_member_links()
-        : can_write_app_data();
-    if (!$user || (int)$user['id'] !== (int)($registrationOAuth['operator_id'] ?? 0)
-        || !$operatorCanContinue || !empty($user['must_change_password'])) {
-        google_registration_popup_result(false, 'The SK profiling session is no longer active. Sign in again and retry.');
+    if (!$user || ($user['role'] ?? '') !== 'KK Member'
+        || (int)$user['id'] !== (int)($registrationOAuth['operator_id'] ?? 0)
+        || (string)($user['legacy_id'] ?? '') !== $memberId || !empty($user['must_change_password'])) {
+        google_registration_popup_result(false, 'Your sign-in session is no longer active. Sign in again and retry.');
+    }
+    if ($purpose === 'member_self_link') {
+        $member = sk_member_for_role_change(db(), $memberId);
+        if (!$member || ($member['status'] ?? 'Active') !== 'Active') {
+            google_registration_popup_result(false, 'Only an active KK member can bind a Google account.');
+        }
     }
     if (isset($_GET['error'])) {
         google_registration_popup_result(false, 'Google account verification was cancelled.');
@@ -48,11 +51,15 @@ function google_registration_callback() {
         || ($profile['email_verified'] ?? false) !== true || $email === null) {
         google_registration_popup_result(false, 'Use a Google account with a verified, valid email address.');
     }
-
     try {
-        $statement = db()->prepare('SELECT user_id FROM google_account_links WHERE google_subject = ?');
+        $statement = db()->prepare('SELECT id FROM users WHERE google_sub = ?');
         $statement->execute([$subject]);
         $subjectOwner = $statement->fetchColumn();
+        if ($subjectOwner === false) {
+            $statement = db()->prepare('SELECT user_id FROM google_account_links WHERE google_subject = ?');
+            $statement->execute([$subject]);
+            $subjectOwner = $statement->fetchColumn();
+        }
         if ($subjectOwner !== false) {
             google_registration_popup_result(false, 'This Google account is already linked to an existing login.');
         }
@@ -68,7 +75,7 @@ function google_registration_callback() {
         'email' => $email,
         'expires_at' => time() + 600,
         'purpose' => $purpose,
-        'member_id' => $purpose === 'member_link' ? $memberId : null,
+        'member_id' => $memberId,
     ];
     google_registration_popup_result(true, 'Google account verified.', $ticket, $email, $purpose, $memberId);
 }
@@ -133,69 +140,92 @@ if ($email === null) google_callback_fail('email_invalid', $destination);
 $pdo = db();
 $pdo->beginTransaction();
 try {
-    $members = google_auth_load_members($pdo, true);
-    $match = google_auth_match_member_email($members, $email);
-    if ($match['status'] !== 'matched') {
-        $pdo->rollBack();
-        $errors = [
-            'not_found' => 'member_not_found',
-            'ambiguous' => 'email_ambiguous',
-            'inactive' => 'member_inactive',
-            'invalid_email' => 'email_invalid',
-        ];
-        google_callback_fail($errors[$match['status']] ?? 'google_failed', $destination);
-    }
-    $member = $match['member'];
-    $memberId = (string)($member['id'] ?? '');
-    if ($memberId === '') throw new RuntimeException('The matched member has no profile id.');
-
-    $accountQuery = $pdo->prepare("SELECT id, username, full_name, role, is_active, legacy_id, must_change_password
-        FROM users WHERE legacy_id = ? AND legacy_id IS NOT NULL AND is_active = 1 FOR UPDATE");
-    $accountQuery->execute([$memberId]);
+    $accountQuery = $pdo->prepare("SELECT id, username, full_name, role, is_active, legacy_id, must_change_password, google_sub
+        FROM users WHERE google_sub = ? AND is_active = 1 FOR UPDATE");
+    $accountQuery->execute([$googleSubject]);
     $account = $accountQuery->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
-        $pdo->rollBack();
-        google_callback_fail('member_account_missing', $destination);
+        $legacyLink = $pdo->prepare('SELECT user_id FROM google_account_links WHERE google_subject = ? FOR UPDATE');
+        $legacyLink->execute([$googleSubject]);
+        $legacyUserId = $legacyLink->fetchColumn();
+        if ($legacyUserId !== false) {
+            $accountQuery = $pdo->prepare('SELECT id, username, full_name, role, is_active, legacy_id, must_change_password, google_sub
+                FROM users WHERE id = ? AND is_active = 1 FOR UPDATE');
+            $accountQuery->execute([(int)$legacyUserId]);
+            $account = $accountQuery->fetch(PDO::FETCH_ASSOC);
+            if ($account && !empty($account['google_sub'])
+                && !hash_equals((string)$account['google_sub'], $googleSubject)) {
+                $pdo->rollBack();
+                google_callback_fail('google_link_conflict', $destination);
+            }
+            if ($account && empty($account['google_sub'])) {
+                $pdo->prepare('UPDATE users SET google_sub = ? WHERE id = ?')
+                    ->execute([$googleSubject, (int)$account['id']]);
+            }
+        }
     }
-    if (!google_auth_account_is_member_linked($account)) {
+    if (!$account || !google_auth_account_is_member_linked($account)) {
         $pdo->rollBack();
-        google_callback_fail('member_account_missing', $destination);
+        google_callback_fail('google_account_not_bound', $destination);
     }
-
-    $linkedSubjectQuery = $pdo->prepare('SELECT user_id FROM google_account_links WHERE google_subject = ? FOR UPDATE');
-    $linkedSubjectQuery->execute([$googleSubject]);
-    $subjectOwner = $linkedSubjectQuery->fetchColumn();
-    if ($subjectOwner !== false && (int)$subjectOwner !== (int)$account['id']) {
+    if (kk_effective_role($account) !== 'KK Member') {
         $pdo->rollBack();
-        google_callback_fail('google_link_conflict', $destination);
+        google_callback_fail('official_password_required', $destination);
     }
-
-    $linkedAccountQuery = $pdo->prepare('SELECT google_subject FROM google_account_links WHERE user_id = ? FOR UPDATE');
+    $memberId = (string)$account['legacy_id'];
+    $members = google_auth_load_members($pdo, true);
+    $memberIsActive = false;
+    foreach ($members as $member) {
+        if (is_array($member) && (string)($member['id'] ?? '') === $memberId
+            && ($member['status'] ?? 'Active') === 'Active') {
+            $memberIsActive = true;
+            break;
+        }
+    }
+    if (!$memberIsActive) {
+        $pdo->rollBack();
+        google_callback_fail('member_inactive', $destination);
+    }
+    $linkedAccountQuery = $pdo->prepare('SELECT google_subject, google_email FROM google_account_links WHERE user_id = ? FOR UPDATE');
     $linkedAccountQuery->execute([(int)$account['id']]);
-    $existingSubject = $linkedAccountQuery->fetchColumn();
-    if ($existingSubject !== false && !hash_equals((string)$existingSubject, $googleSubject)) {
+    $existingLink = $linkedAccountQuery->fetch(PDO::FETCH_ASSOC);
+    if (!$existingLink || !hash_equals((string)$existingLink['google_subject'], $googleSubject)) {
         $pdo->rollBack();
-        google_callback_fail('account_already_linked', $destination);
+        google_callback_fail('google_account_not_bound', $destination);
     }
-
-    $isFirstLink = $existingSubject === false;
-    if ($isFirstLink) {
-        $pdo->prepare('INSERT INTO google_account_links (user_id, google_subject, google_email)
-            VALUES (?, ?, ?)')->execute([(int)$account['id'], $googleSubject, $email]);
-    } else {
+    if (!hash_equals((string)$account['google_sub'], $googleSubject)) {
+        $pdo->prepare('UPDATE users SET google_sub = ? WHERE id = ?')
+            ->execute([$googleSubject, (int)$account['id']]);
+    }
+    $googleEmailChanged = google_auth_normalize_email($existingLink['google_email'] ?? null) !== $email;
+    $googleEmailUpdateAllowed = google_auth_changed_email_is_unique($members, $memberId, $email);
+    if ($googleEmailUpdateAllowed) {
+        $emailOwnerQuery = $pdo->prepare('SELECT user_id FROM google_account_links
+            WHERE google_email = ? AND user_id <> ? FOR UPDATE');
+        $emailOwnerQuery->execute([$email, (int)$account['id']]);
+        $googleEmailUpdateAllowed = $emailOwnerQuery->fetchColumn() === false;
+    }
+    if ($googleEmailChanged && $googleEmailUpdateAllowed) {
         $pdo->prepare('UPDATE google_account_links SET google_email = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?')
             ->execute([$email, (int)$account['id']]);
     }
-    $pdo->prepare('UPDATE users SET must_change_password = 0 WHERE id = ?')->execute([(int)$account['id']]);
 
-    $actor = [
-        'id' => (int)$account['id'],
-        'username' => (string)$account['username'],
-    ];
-    sk_audit($pdo, $actor, $memberId, $isFirstLink ? 'google_account_linked' : 'google_login', null, [
+    $actor = ['id' => (int)$account['id'], 'username' => (string)$account['username']];
+    sk_audit($pdo, $actor, $memberId, 'google_login', null, [
         'provider' => 'Google',
+        'google_email' => $email,
         'email_verified' => true,
     ]);
+    if ($googleEmailChanged && $googleEmailUpdateAllowed) {
+        sk_audit($pdo, $actor, $memberId, 'google_account_email_updated', [
+            'google_email' => $existingLink['google_email'] ?? null,
+        ], ['google_email' => $email]);
+    } elseif ($googleEmailChanged) {
+        sk_audit($pdo, $actor, $memberId, 'google_account_email_change_not_applied', null, [
+            'google_email' => $email,
+            'reason' => 'The email is already assigned to another member or login; Google subject authentication was retained.',
+        ]);
+    }
     $pdo->commit();
 } catch (Throwable $exception) {
     if ($pdo->inTransaction()) $pdo->rollBack();
@@ -206,9 +236,30 @@ try {
 session_regenerate_id(true);
 unset($_SESSION['public']);
 $_SESSION['user'] = ['id' => (int)$account['id']];
+$_SESSION['google_authenticated_at'] = time();
+$_SESSION['google_authenticated_user_id'] = (int)$account['id'];
+$resetNoticeTable = $pdo->prepare("SELECT COUNT(*) FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_password_reset_notices'");
+$resetNoticeTable->execute();
+$resetNotice = null;
+if ((int)$resetNoticeTable->fetchColumn() === 1) {
+    $resetNoticeQuery = $pdo->prepare('SELECT reset_by_name, reset_at FROM user_password_reset_notices WHERE user_id = ?');
+    $resetNoticeQuery->execute([(int)$account['id']]);
+    $resetNotice = $resetNoticeQuery->fetch(PDO::FETCH_ASSOC);
+}
+if ($resetNotice) {
+    $pdo->prepare('DELETE FROM user_password_reset_notices WHERE user_id = ?')->execute([(int)$account['id']]);
+    $_SESSION['password_reset_notice'] = 'Your password was reset by ' . $resetNotice['reset_by_name']
+        . ' on ' . $resetNotice['reset_at'] . '.';
+}
 $signedInUser = current_user();
-$target = is_string($destination) && strpos($destination, 'announcements.php?view=public') === 0
-    ? $destination : (($signedInUser['role'] ?? 'KK Member') === 'KK Member'
-        ? 'member-portal.php' : 'dashboard.php');
+if (!empty($signedInUser['must_change_password']) || $resetNotice) {
+    $target = 'settings.php';
+} elseif (is_string($destination) && strpos($destination, 'announcements.php?view=public') === 0) {
+    $target = $destination;
+} else {
+    $target = ($signedInUser['role'] ?? 'KK Member') === 'KK Member'
+        ? 'member-portal.php' : 'dashboard.php';
+}
 header('Location: ' . $target);
 exit;

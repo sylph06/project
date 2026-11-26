@@ -17,97 +17,88 @@ if (can_manage_sk_roles()) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <link href="css/kk-id.css?v=1" rel="stylesheet">
 
 <style>
 
-:root{
-    --kk-primary:var(--bs-primary);
-    --kk-primary-dark:var(--bs-primary-text-emphasis);
-    --kk-primary-soft:rgba(var(--bs-primary-rgb),.12);
-    --black:var(--bs-body-color);
-    --dark:var(--bs-primary-text-emphasis);
-    --cream:var(--bs-tertiary-bg);
-    --line:var(--bs-border-color);
-    --muted:var(--bs-secondary-color);
-    --white:#ffffff;
+:root {
+    --mem-bg: var(--ui-bg, #f8fafc);
+    --mem-surface: var(--ui-paper, #ffffff);
+    --mem-surface-alt: var(--ui-surface, #f1f5f9);
+    --mem-ink: var(--ui-ink, #1e293b);
+    --mem-muted: var(--ui-ink-muted, #64748b);
+    --mem-brand: var(--ui-brand, #1e40af);
+    --mem-brand-soft: rgba(30, 64, 175, 0.1);
+    --mem-brand-rgb: rgb(30, 64, 175);
+    --mem-radius: var(--ui-radius, 12px);
+    --mem-line: var(--ui-line, #e2e8f0);
+    --mem-brand-text-emphasis: rgba(30, 64, 175, 0.6);
 }
 
-*{ box-sizing:border-box; }
-
-body{
-    margin:0;
-    background:var(--bs-tertiary-bg);
-    color:var(--black);
-    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+html[data-bs-theme="dark"] {
+    --mem-bg: #0f172a;
+    --mem-surface: #1e293b;
+    --mem-surface-alt: #334155;
+    --mem-ink: #f1f5f9;
+    --mem-muted: #94a3b8;
+    --mem-brand: #3b82f6;
+    --mem-brand-soft: rgba(59, 130, 246, 0.16);
+    --mem-brand-rgb: rgb(59, 130, 246);
+    --mem-brand-text-emphasis: rgba(59, 130, 246, 0.7);
+    --mem-line: #334155;
 }
 
-a{ text-decoration:none; }
-
-.top-strip{ height:7px; background:var(--bs-primary); }
-
-header{
-    background:#fff!important;
-    border-bottom:1px solid var(--line)!important;
+body {
+    margin: 0;
+    background: var(--mem-bg);
+    color: var(--mem-ink);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
 }
 
-header h1{ font-weight:900; }
+.top-strip { height: 4px; background: var(--mem-brand); }
 
-.btn-success{
-    --bs-btn-bg:var(--bs-body-color);
-    --bs-btn-border-color:var(--bs-body-color);
-    --bs-btn-hover-bg:var(--kk-primary);
-    --bs-btn-hover-border-color:var(--kk-primary);
-    --bs-btn-hover-color:#fff;
-    --bs-btn-active-bg:var(--bs-body-color);
-    --bs-btn-active-border-color:var(--bs-body-color);
-    font-weight:800;
+header.sticky-top {
+    background: var(--mem-surface) !important;
+    border-bottom: 1px solid var(--mem-line) !important;
+    z-index: 1020;
 }
 
-.btn-outline-success{
-    --bs-btn-color:var(--bs-body-color);
-    --bs-btn-border-color:var(--bs-body-color);
-    --bs-btn-hover-bg:var(--kk-primary);
-    --bs-btn-hover-border-color:var(--kk-primary);
-    --bs-btn-hover-color:#fff;
-    --bs-btn-active-bg:var(--kk-primary);
-    --bs-btn-active-border-color:var(--kk-primary);
-    font-weight:700;
+.member-hero {
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    background: linear-gradient(135deg, var(--mem-brand) 0%, #3b82f6 100%);
+    border-radius: var(--mem-radius);
+    padding: 2rem;
+    border: none;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
-.member-hero{
-    position:relative;
-    overflow:hidden;
-    color:#fff;
-    background:linear-gradient(112deg,#1249a8 0%,#1765d6 58%,#4385ec 100%);
-    border-radius:26px;
-    padding:28px;
-    box-shadow:0 14px 32px rgba(24,78,174,.2);
+.member-hero::after {
+    content: "";
+    position: absolute;
+    top: -10%;
+    right: -5%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
 }
-.member-hero:after{
-    content:"";
-    position:absolute;
-    width:220px;
-    height:220px;
-    border-radius:50%;
-    right:-70px;
-    top:-95px;
-    border:1px solid rgba(255,255,255,.16);
-    background:rgba(255,255,255,.08);
-    box-shadow:0 0 0 28px rgba(255,255,255,.04),0 0 0 62px rgba(255,255,255,.03);
-}
-.member-hero-content{ position:relative; z-index:2; }
-.member-icon{
-    width:58px;
-    height:58px;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:17px;
-    background:rgba(255,255,255,.16);
-    color:#fff;
-    font-size:1.6rem;
+
+.member-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
 }
 .member-hero h2{ color:#fff; font-weight:950; letter-spacing:-.7px; }
 .member-hero p{ color:rgba(255,255,255,.86); max-width:680px; }
@@ -122,13 +113,13 @@ header h1{ font-weight:900; }
 
 .stat-card{
     height:100%;
-    border:1px solid var(--line);
-    border-radius:20px;
-    background:#fff;
-    box-shadow:0 8px 24px rgba(27,65,125,.07);
+    border:1px solid var(--mem-line);
+    border-radius:var(--mem-radius);
+    background:var(--mem-surface);
+    box-shadow:0 8px 24px rgba(0,0,0,.07);
     transition:.2s ease;
 }
-.stat-card:hover{ transform:translateY(-3px); box-shadow:0 14px 28px rgba(27,65,125,.13); }
+.stat-card:hover{ transform:translateY(-3px); box-shadow:0 14px 28px rgba(0,0,0,.13); }
 .stat-icon{
     width:45px;
     height:45px;
@@ -136,30 +127,30 @@ header h1{ font-weight:900; }
     align-items:center;
     justify-content:center;
     border-radius:14px;
-    background:var(--bs-primary-bg-subtle);
-    color:var(--bs-primary-text-emphasis);
+    background:var(--mem-brand-soft);
+    color:var(--mem-brand);
     font-size:1.2rem;
 }
 .stat-link{ cursor:pointer; }
-.stat-link:focus-visible{ outline:3px solid var(--bs-primary-border-subtle); outline-offset:2px; }
-.stat-link.selected{ border-color:var(--bs-primary); box-shadow:0 0 0 2px var(--bs-primary), 0 14px 28px rgba(20,20,20,.09); }
-.stat-number{ font-size:1.8rem; font-weight:950; letter-spacing:-1px; }
+.stat-link:focus-visible{ outline:3px solid var(--mem-brand); outline-offset:2px; }
+.stat-link.selected{ border-color:var(--mem-brand); box-shadow:0 0 0 2px var(--mem-brand), 0 14px 28px rgba(0,0,0,.09); }
+.stat-number{ font-size:1.8rem; font-weight:950; letter-spacing:-1px; color:var(--mem-ink); }
 
 /* overflow is visible so the Print / Manage dropdowns are not clipped */
 .member-card{
-    border:1px solid var(--line)!important;
-    border-radius:22px!important;
-    box-shadow:0 8px 22px rgba(20,20,20,.05)!important;
-    background:#fff;
+    border:1px solid var(--mem-line)!important;
+    border-radius:var(--mem-radius)!important;
+    box-shadow:0 8px 22px rgba(0,0,0,.05)!important;
+    background:var(--mem-surface);
 }
 .member-card .card-header{
-    background:#fff!important;
-    border-bottom:1px solid var(--line);
-    border-radius:22px 22px 0 0;
+    background:var(--mem-surface)!important;
+    border-bottom:1px solid var(--mem-line);
+    border-radius:var(--mem-radius) var(--mem-radius) 0 0;
 }
 .member-directory-header{
     padding:1rem 1.1rem!important;
-    border-bottom-color:#e9edf4!important;
+    border-bottom-color:var(--mem-surface-alt)!important;
 }
 .member-directory-top{
     display:flex;
@@ -168,22 +159,22 @@ header h1{ font-weight:900; }
     gap:.85rem 1.25rem;
     flex-wrap:wrap;
 }
-.member-directory-title h2{color:#1b2c4d}
+.member-directory-title h2{color:var(--mem-ink)}
 .member-toolbar .btn-outline-success{
-    --bs-btn-color:#1761d9;
-    --bs-btn-border-color:#d3dff1;
-    --bs-btn-hover-bg:#eaf1ff;
-    --bs-btn-hover-border-color:#bfd1ef;
-    --bs-btn-hover-color:#124eb2;
-    --bs-btn-active-bg:#eaf1ff;
-    --bs-btn-active-border-color:#bfd1ef;
-    --bs-btn-active-color:#124eb2;
+    --bs-btn-color:var(--mem-brand);
+    --bs-btn-border-color:var(--mem-line);
+    --bs-btn-hover-bg:rgba(var(--mem-brand-rgb),.08);
+    --bs-btn-hover-border-color:var(--mem-line);
+    --bs-btn-hover-color:var(--mem-brand);
+    --bs-btn-active-bg:rgba(var(--mem-brand-rgb),.06);
+    --bs-btn-active-border-color:var(--mem-line);
+    --bs-btn-active-color:var(--mem-brand);
 }
 .member-search .form-control{
     min-height:40px;
-    border-radius:9px;
+    border-radius:var(--mem-radius);
 }
-.member-card .card-footer{ border-radius:0 0 22px 22px; }
+.member-card .card-footer{ border-radius:var(--mem-radius) var(--mem-radius) 0 0; }
 
 .search-box{ position:relative; }
 .search-box i{
@@ -191,28 +182,28 @@ header h1{ font-weight:900; }
     left:14px;
     top:50%;
     transform:translateY(-50%);
-    color:var(--bs-secondary-color);
+    color:var(--mem-muted);
 }
 .search-box input{ padding-left:42px; }
 
 .form-control,
 .form-select{
-    border:1px solid var(--bs-border-color);
-    border-radius:12px;
+    border:1px solid var(--mem-line);
+    border-radius:var(--mem-radius);
     min-height:43px;
     box-shadow:none!important;
 }
 textarea.form-control{ min-height:0; }
 .form-control:focus,
 .form-select:focus{
-    border-color:var(--bs-body-color);
-    box-shadow:0 0 0 3px rgba(var(--bs-primary-rgb),.28)!important;
+    border-color:var(--mem-ink);
+    box-shadow:0 0 0 3px rgba(var(--mem-brand-rgb),.28)!important;
 }
 
-.table{ --bs-table-hover-bg:rgba(var(--bs-primary-rgb),.08); }
+.table{ --bs-table-hover-bg:rgba(var(--mem-brand-rgb),.08); }
 .table thead th{
-    background:rgba(var(--bs-primary-rgb),.08);
-    color:var(--bs-secondary-color);
+    background:rgba(var(--mem-brand-rgb),.08);
+    color:var(--mem-muted);
     font-size:.73rem;
     text-transform:uppercase;
     letter-spacing:.45px;
@@ -226,20 +217,20 @@ textarea.form-control{ min-height:0; }
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    border-radius:12px;
-    background:var(--bs-primary);
-    color:var(--bs-body-color);
+    border-radius:var(--mem-radius);
+    background:var(--mem-brand);
+    color:#fff;
     font-weight:900;
     flex:none;
 }
-.thumb{ flex:none; object-fit:cover; border-radius:50%; background:var(--bs-primary); display:inline-flex; align-items:center; justify-content:center; font-weight:900; color:#fff; }
+.thumb{ flex:none; object-fit:cover; border-radius:50%; background:var(--mem-brand); display:inline-flex; align-items:center; justify-content:center; font-weight:900; color:#fff; }
 .member-name{ font-weight:800; }
-.member-id{ font-size:.72rem; color:var(--bs-secondary-color); }
+.member-id{ font-size:.72rem; color:var(--mem-muted); }
 
-.status-active{ background:var(--bs-primary); color:var(--bs-body-color); }
+.status-active{ background:var(--mem-brand); color:#fff; }
 .status-pending,
-.status-inactive{ background:var(--bs-secondary-bg-subtle); color:var(--bs-secondary-text-emphasis); }
-.status-archived{ background:var(--bs-secondary); color:#fff; }
+.status-inactive{ background:var(--mem-surface-alt); color:var(--mem-muted); }
+.status-archived{ background:var(--mem-line); color:#fff; }
 
 .action-btn{
     width:34px;
@@ -247,38 +238,38 @@ textarea.form-control{ min-height:0; }
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    border-radius:10px;
+    border-radius:calc(var(--mem-radius)/2);
     padding:0;
 }
 
-.pagination .page-link{ color:var(--bs-body-color); border-color:var(--line); }
+.pagination .page-link{ color:var(--mem-ink); border-color:var(--mem-line); }
 .pagination .page-item.active .page-link{
-    background:var(--bs-primary-text-emphasis);
-    border-color:var(--bs-body-color);
-    color:#fff;
+    background:rgba(var(--mem-brand-rgb),.16);
+    border-color:var(--mem-ink);
+    color:var(--mem-brand);
 }
 
-.empty-state{ padding:50px 20px; text-align:center; color:var(--bs-secondary-color); }
-.empty-state i{ font-size:3rem; color:var(--bs-border-color); }
+.empty-state{ padding:50px 20px; text-align:center; color:var(--mem-muted); }
+.empty-state i{ font-size:3rem; color:var(--mem-line); }
 
 /* ---- profile cards ---- */
 .person-card{
-    border:1px solid var(--line);
-    border-radius:20px;
-    background:#fff;
+    border:1px solid var(--mem-line);
+    border-radius:var(--mem-radius);
+    background:var(--mem-surface);
     transition:.2s ease;
 }
-.person-card:hover{ box-shadow:0 12px 26px rgba(20,20,20,.09); transform:translateY(-3px); }
+.person-card:hover{ box-shadow:0 12px 26px rgba(0,0,0,.09); transform:translateY(-3px); }
 .person-card .desc{
     display:-webkit-box;
     -webkit-line-clamp:3;
     -webkit-box-orient:vertical;
     overflow:hidden;
-    color:var(--bs-secondary-color);
+    color:var(--mem-muted);
     font-size:.84rem;
     min-height:3.9em;
 }
-.person-card .meta{ font-size:.82rem; color:var(--bs-secondary-color); }
+.person-card .meta{ font-size:.82rem; color:var(--mem-muted); }
 .person-card .meta i{ width:1.3em; display:inline-block; }
 .person-card.is-archived{ opacity:.78; }
 .type-pill{
@@ -286,22 +277,22 @@ textarea.form-control{ min-height:0; }
     font-weight:800;
     letter-spacing:.4px;
     padding:.3em .65em;
-    border-radius:999px;
-    background:var(--bs-secondary-bg-subtle);
-    color:var(--bs-secondary-text-emphasis);
+    border-radius:calc(var(--mem-radius)/2);
+    background:var(--mem-surface-alt);
+    color:var(--mem-muted);
 }
 
 /* ---- profile modal ---- */
-.kv-l{ font-size:.74rem; color:var(--bs-secondary-color); }
+.kv-l{ font-size:.74rem; color:var(--mem-muted); }
 .kv-v{ font-size:.9rem; font-weight:700; word-break:break-word; }
 .group-title{
     font-weight:800;
     font-size:.82rem;
     padding-bottom:6px;
     margin:20px 0 10px;
-    border-bottom:2px solid var(--bs-primary);
+    border-bottom:2px solid var(--mem-brand);
 }
-.modal-content{ border-radius:22px; }
+.modal-content{ border-radius:var(--mem-radius); }
 #profileFooter.kk-footer{
     display:flex;
     align-items:center;
@@ -352,54 +343,55 @@ textarea.form-control{ min-height:0; }
 }
 
 /* sidebar.css makes modal titles white, so the header needs the primary colour */
-.modal-header{ background:var(--bs-primary); border-bottom:0; border-radius:22px 22px 0 0; }
+.modal-header{ background:var(--mem-brand); border-bottom:0; border-radius:var(--mem-radius) var(--mem-radius) 0 0; }
 .modal-body .search-box i{ z-index:3; }
-#pickMember{ border-radius:12px; }
+#pickMember{ border-radius:var(--mem-radius); }
 
 /* ---- compact member card (same style as the announcement cards, smaller) ---- */
-.mini-card{ border:1px solid var(--line); border-radius:16px; background:#fff; overflow:hidden; transition:.2s ease; }
-.mini-card:hover{ box-shadow:0 10px 22px rgba(20,20,20,.09); transform:translateY(-2px); }
+.mini-card{ border:1px solid var(--mem-line); border-radius:var(--mem-radius); background:var(--mem-surface); overflow:hidden; transition:.2s ease; }
+.mini-card:hover{ box-shadow:0 10px 22px rgba(0,0,0,.09); transform:translateY(-2px); }
 .mini-card[data-act="view"],
 .member-row[data-act="view"]{ cursor:pointer; }
 .mini-card[data-act="view"]:focus-visible,
-.member-row[data-act="view"]:focus-visible{ outline:3px solid var(--bs-primary); outline-offset:2px; }
+.member-row[data-act="view"]:focus-visible{ outline:3px solid var(--mem-brand); outline-offset:2px; }
 .mini-card.is-archived{ opacity:.75; }
-.mini-banner{ position:relative; height:84px; background:rgba(var(--bs-primary-rgb),.14); }
-.mini-banner:before{ content:""; position:absolute; width:110px; height:110px; border-radius:50%; right:-30px; top:-55px; background:rgba(var(--bs-primary-rgb),.2); }
-.mini-pill{ position:absolute; font-size:.62rem; font-weight:800; padding:.28em .7em; border-radius:999px; line-height:1.2; max-width:62%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.mini-pill-main{ top:8px; left:8px; background:var(--bs-primary); color:#fff; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.15); }
-.mini-pill-dark{ bottom:8px; left:8px; background:#fff; color:var(--bs-body-color); border:1.5px solid var(--bs-body-color); }
-.mini-pill-status{ bottom:8px; right:8px; background:var(--bs-primary-text-emphasis); color:#fff; }
-.mini-age{ position:absolute; top:8px; right:8px; width:38px; text-align:center; background:var(--bs-primary); color:#fff; border:2px solid var(--bs-body-color); border-radius:10px; padding:2px 0; line-height:1; }
+.mini-banner{ position:relative; height:84px; background:rgba(var(--mem-brand-rgb),.14); }
+.mini-banner:before{ content:""; position:absolute; width:110px; height:110px; border-radius:50%; right:-30px; top:-55px; background:rgba(var(--mem-brand-rgb),.2); }
+.mini-pill{ position:absolute; font-size:.62rem; font-weight:800; padding:.28em .7em; border-radius:calc(var(--mem-radius)/2); line-height:1.2; max-width:62%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mini-pill-main{ top:8px; left:8px; background:var(--mem-brand); color:#fff; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+.mini-pill-dark{ bottom:8px; left:8px; background:#fff; color:var(--mem-ink); border:1.5px solid var(--mem-ink); }
+.mini-pill-status{ bottom:8px; right:8px; background:var(--mem-brand-text-emphasis); color:#fff; }
+.mini-age{ position:absolute; top:8px; right:8px; width:38px; text-align:center; background:var(--mem-brand); color:#fff; border:2px solid var(--mem-ink); border-radius:calc(var(--mem-radius)/2); padding:2px 0; line-height:1; }
 .mini-age small{ display:block; font-size:.5rem; font-weight:800; letter-spacing:.4px; }
 .mini-age b{ font-size:.95rem; }
 .mini-avatar{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
 .mini-avatar .thumb{ border:3px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.15); }
 .mini-body{ padding:10px 12px 12px; }
 .mini-name{ font-weight:800; font-size:.92rem; }
-.mini-desc{ font-size:.74rem; color:var(--bs-secondary-color); display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:6px; min-height:1.2em; }
+.mini-desc{ font-size:.74rem; color:var(--mem-muted); display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:6px; min-height:1.2em; }
 .mini-row{ display:flex; align-items:center; gap:8px; font-size:.76rem; margin-bottom:4px; min-width:0; }
-.mini-row i{ flex:none; width:22px; height:22px; border-radius:6px; background:var(--bs-primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:.72rem; }
+.mini-row i{ flex:none; width:22px; height:22px; border-radius:calc(var(--mem-radius)/3); background:var(--mem-brand); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:.72rem; }
 .mini-actions{ display:flex; gap:5px; margin-top:8px; }
-.mini-view{ flex:1; background:var(--bs-body-color); color:#fff; font-weight:800; font-size:.78rem; border-radius:9px; padding:.3rem .5rem; }
-.mini-view:hover{ background:var(--bs-primary); color:#fff; }
-.mini-ico{ width:30px; height:30px; padding:0; border:1px solid var(--bs-body-color); border-radius:50%; background:#fff; color:var(--bs-body-color); font-size:.8rem; display:inline-flex; align-items:center; justify-content:center; }
-.mini-ico:hover{ background:var(--bs-primary); border-color:var(--bs-primary); color:#fff; }
-.mini-del{ border-color:var(--bs-danger); color:var(--bs-danger); }
-.mini-del:hover{ background:var(--bs-danger); border-color:var(--bs-danger); }
+.mini-view{ flex:1; background:var(--mem-ink); color:#fff; font-weight:800; font-size:.78rem; border-radius:calc(var(--mem-radius)/2); padding:.3rem .5rem; }
+.mini-view:hover{ background:var(--mem-brand); color:#fff; }
+.mini-ico{ width:30px; height:30px; padding:0; border:1px solid var(--mem-ink); border-radius:50%; background:#fff; color:var(--mem-ink); font-size:.8rem; display:inline-flex; align-items:center; justify-content:center; }
+.mini-ico:hover{ background:var(--mem-brand); border-color:var(--mem-brand); color:#fff; }
+.mini-del{ border-color:var(--mem-line); color:var(--mem-muted); }
+.mini-del:hover{ background:var(--mem-line); border-color:var(--mem-muted); }
 
 /* ---- assign SK role: scrollable form + position choices + always-visible Save ---- */
 #roleModal .modal-body{ overflow-y:auto; max-height:calc(100vh - 190px); }
 #pickMember{ max-height:190px; overflow-y:auto; }
 .pos-choices{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
-.pos-choice{ text-align:left; border:1.5px solid var(--bs-border-color); border-radius:12px; background:#fff; padding:8px 10px; cursor:pointer; transition:.15s ease; color:var(--bs-body-color); }
-.pos-choice:hover:not(:disabled){ border-color:var(--bs-primary); background:rgba(var(--bs-primary-rgb),.06); }
-.pos-choice.active{ background:var(--bs-primary); border-color:var(--bs-primary); color:#fff; }
+.pos-choice{ text-align:left; border:1.5px solid var(--mem-line); border-radius:var(--mem-radius); background:var(--mem-surface); padding:8px 10px; cursor:pointer; transition:.15s ease; color:var(--mem-ink); }
+.pos-choice:hover:not(:disabled){ border-color:var(--mem-brand); background:rgba(var(--mem-brand-rgb),.06); }
+.pos-choice.active{ background:var(--mem-brand); border-color:var(--mem-brand); color:#fff; }
 .pos-choice:disabled{ opacity:.5; cursor:not-allowed; }
 .pos-choice b{ display:block; font-size:.85rem; }
 .pos-choice small{ font-size:.7rem; opacity:.85; }
-#roleModal .modal-footer{ position:sticky; bottom:0; background:#fff; border-top:1px solid var(--bs-border-color); border-radius:0 0 22px 22px; }
+#roleModal .modal-footer{ position:sticky; bottom:0; background:var(--mem-surface); border-top:1px solid var(--mem-line); border-radius:0 0 var(--mem-radius) var(--mem-radius); }
 </style>
+
 
 <?php include __DIR__ . '/init.php'; ?>
 <script>
@@ -408,6 +400,8 @@ window.SK_ACCOUNT_ROLE_SEATS = <?= json_encode(
     JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
 ) ?>;
 window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
+window.SK_CAN_UNBIND_GOOGLE = <?= can('unbind_google') ? 'true' : 'false' ?>;
+window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' : 'false' ?>;
 </script>
 </head>
 
@@ -416,7 +410,7 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
 <div class="top-strip"></div>
 
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=18"></script>
 
 <div class="page-content">
 
@@ -449,13 +443,6 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                     <i class="bi bi-person-vcard me-md-1"></i><span class="members-own-profile-label">My profile</span>
                 </a>
             <?php endif; ?>
-
-            <a href="announcements.php"
-               class="header-notification"
-               aria-label="Notifications">
-                <i class="bi bi-bell"></i>
-                <span class="header-notification-count">3</span>
-            </a>
 
             <span class="header-avatar">
                 <?= e(uinit()) ?>
@@ -595,10 +582,6 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                             <i class="bi bi-gear me-1"></i><?= is_public() ? 'Options' : 'Manage' ?>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <?php if (can_manage_sk_roles()): ?>
-                                <li><button class="dropdown-item" type="button" data-act="google-link-approvals"><i class="bi bi-google me-2"></i>Google link approvals</button></li>
-                                <li><hr class="dropdown-divider"></li>
-                            <?php endif; ?>
                             <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="assignBtn"><i class="bi bi-person-badge me-2"></i>Assign SK member</button></li>
                             <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="manageCommitteesBtn"><i class="bi bi-diagram-3 me-2"></i>Manage committees</button></li>
                             <li class="admin-only"><button class="dropdown-item" type="button" id="scanKkIdBtn"><i class="bi bi-qr-code-scan me-2"></i>Scan KK ID</button></li>
@@ -849,7 +832,7 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="small text-muted">Linking connects one existing login to this KK member without changing its credentials. An SK Kagawad can later request a Google link; the Chairperson or Secretary must approve it before Google sign-in is enabled.</p>
+                <p class="small text-muted">Linking connects one existing login to this KK member without changing its credentials. After signing in, the member can bind their Google account from Settings using the email on their profile.</p>
                 <label class="form-label" for="linkAccountSelect">Unlinked account</label>
                 <select class="form-select" id="linkAccountSelect"></select>
                 <div class="small text-danger mt-2" id="linkAccountError"></div>
@@ -867,11 +850,18 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="createAccountTitle">Create Google-Activated Member Account</h5>
+                <h5 class="modal-title fw-bold" id="createAccountTitle">Create KK Member Login</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="small text-muted">Create the member login now. An SK Kagawad can request a Google link later; the Chairperson or Secretary must approve it before Google sign-in is enabled.</p>
+                <p class="small text-muted">
+                    The member will receive a one-time temporary password based on their uppercase surname and must change it at first password sign-in.
+                    <?php if (GOOGLE_KK_LOGIN_REQUIRED): ?>
+                        This system requires KK members to use Google sign-in, so the temporary password cannot be used to sign in until that policy changes.
+                    <?php else: ?>
+                        After signing in, the member can bind Google from Settings using the email on their profile. Add an email to the profile first if it is blank.
+                    <?php endif; ?>
+                </p>
                 <label class="form-label" for="newAccountUsername">Internal account username</label>
                 <input class="form-control mb-3" id="newAccountUsername" maxlength="50" autocomplete="off">
                 <div class="form-check mb-2">
@@ -881,30 +871,11 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                 <label class="form-label" for="consentVersion">Consent form version (if consent is recorded)</label>
                 <input class="form-control" id="consentVersion" maxlength="50" placeholder="Enter the actual form version">
                 <div class="small text-danger mt-2" id="createAccountError"></div>
-                <div class="alert alert-success d-none mt-3 mb-0" id="googleActivationBox"></div>
+                <div class="alert alert-success d-none mt-3 mb-0" id="googleActivationBox" role="status" aria-live="polite"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="confirmCreateAccount">Create account</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ================= GOOGLE LINK APPROVALS ================= -->
-<div class="modal fade" id="googleLinkApprovalsModal" tabindex="-1" aria-labelledby="googleLinkApprovalsTitle" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="googleLinkApprovalsTitle">Google Link Requests</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="small text-muted">A Kagawad can request a link after the member verifies their Google account. Approve only after confirming the member’s identity; Google sign-in stays disabled until approval.</p>
-                <div id="googleLinkApprovalsBody" aria-live="polite">Loading requests...</div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -1406,21 +1377,32 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
             f += '<button type="button" class="btn btn-outline-danger" data-act="remove" data-key="' + esc(key) + '"><i class="bi bi-person-x me-1"></i>End SK Role</button>';
             f += '<button type="button" class="btn btn-outline-secondary" data-act="archive-role" data-key="' + esc(key) + '"><i class="bi bi-archive me-1"></i>Archive SK Role</button>';
         }
-        if (window.SK_CAN_MANAGE_ROLES) {
+        var canResetMemberPassword = window.SK_CAN_RESET_MEMBER_PASSWORD && r.kkStatus === 'Active' && !r.isSK;
+        var canResetOfficialPassword = window.SK_CAN_MANAGE_ROLES && r.kkStatus === 'Active' && r.isSK;
+        var canRecoverGoogleAccount = window.SK_CAN_UNBIND_GOOGLE && r.kkStatus && r.kkStatus !== 'Archived';
+        if (window.SK_CAN_MANAGE_ROLES || canResetMemberPassword || canRecoverGoogleAccount) {
             f += '<div class="dropdown">' +
                 '<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-key me-1"></i>Login Account</button>' +
-                '<ul class="dropdown-menu dropdown-menu-end">' +
-                '<li><button class="dropdown-item" type="button" id="btnCreateLogin" data-act="create-account" data-key="' + esc(key) + '"><i class="bi bi-person-plus me-2"></i>Create Login</button></li>' +
-                '<li><button class="dropdown-item" type="button" id="btnLinkAccount" data-act="link-account" data-key="' + esc(key) + '"><i class="bi bi-link-45deg me-2"></i>Link Existing Account</button></li>';
-            if (r.kkStatus === 'Active') {
-                f += '<li><button class="dropdown-item" type="button" id="btnLinkGoogleAccount" data-act="link-google-account" data-key="' + esc(key) + '"><i class="bi bi-google me-2"></i>Request Google Link</button></li>' +
-                    '<li><button class="dropdown-item" type="button" id="btnShowUsername" data-act="show-account-username" data-key="' + esc(key) + '"><i class="bi bi-eye me-2"></i>Show Username</button></li>' +
-                    '<li><hr class="dropdown-divider"></li>' +
-                    '<li><button class="dropdown-item text-danger" type="button" id="btnResetPassword" data-act="reset-account" data-key="' + esc(key) + '"><i class="bi bi-arrow-repeat me-2"></i>Reset Password</button></li>';
+                '<ul class="dropdown-menu dropdown-menu-end">';
+            if (window.SK_CAN_MANAGE_ROLES) {
+                f += '<li><button class="dropdown-item" type="button" id="btnCreateLogin" data-act="create-account" data-key="' + esc(key) + '"><i class="bi bi-person-plus me-2"></i>Create Login</button></li>' +
+                    '<li><button class="dropdown-item" type="button" id="btnLinkAccount" data-act="link-account" data-key="' + esc(key) + '"><i class="bi bi-link-45deg me-2"></i>Link Existing Account</button></li>';
+                if (r.kkStatus === 'Active') {
+                    f += '<li><button class="dropdown-item" type="button" id="btnShowUsername" data-act="show-account-username" data-key="' + esc(key) + '"><i class="bi bi-eye me-2"></i>Show Username</button></li>';
+                }
+                if (canResetOfficialPassword) {
+                    f += '<li><button class="dropdown-item text-danger" type="button" data-act="reset-official-account" data-key="' + esc(key) + '"><i class="bi bi-arrow-repeat me-2"></i>Reset Official Password</button></li>';
+                }
+            }
+            if (canResetMemberPassword) {
+                f += '<li><button class="dropdown-item text-danger" type="button" id="btnResetPassword" data-act="reset-account" data-key="' + esc(key) + '"><i class="bi bi-arrow-repeat me-2"></i>Reset Password</button></li>';
+            }
+            if (canRecoverGoogleAccount) {
+                f += '<li><hr class="dropdown-divider"></li>' +
+                    '<li><button class="dropdown-item" type="button" data-act="unbind-google" data-key="' + esc(key) + '"><i class="bi bi-unlink me-2"></i>Unbind Google Account</button></li>' +
+                    '<li><button class="dropdown-item text-danger" type="button" data-act="clear-google-email" data-key="' + esc(key) + '"><i class="bi bi-eraser me-2"></i>Clear Profile Email &amp; Unbind</button></li>';
             }
             f += '</ul></div>';
-        } else if (window.SK_CAN_REQUEST_GOOGLE_LINK && r.kkStatus === 'Active') {
-            f += '<button class="btn btn-outline-secondary" type="button" id="btnLinkGoogleAccount" data-act="link-google-account" data-key="' + esc(key) + '"><i class="bi bi-google me-1"></i>Request Google Link</button>';
         }
         f += '</div><button type="button" class="btn btn-outline-secondary kk-close-btn" data-bs-dismiss="modal">Close</button>';
         $('profileFooter').innerHTML = f;
@@ -1474,7 +1456,7 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
     function openCreateAccount(legacyId) {
         $('createAccountError').textContent = '';
         $('googleActivationBox').classList.add('d-none');
-        $('googleActivationBox').textContent = '';
+        $('googleActivationBox').replaceChildren();
         $('newAccountUsername').value = '';
         $('guardianConsent').checked = false;
         $('consentVersion').value = 'v1';
@@ -1493,14 +1475,27 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
 
     function resetMemberAccount(legacyId) {
         var member = getRec(legacyId);
-        if (!member || !window.SK_CAN_MANAGE_ROLES) return;
-        if (!window.confirm('Reset the password for ' + member.name + '? This only works for an account that is not using Google sign-in. Google-linked KK members must continue with their verified Google account.')) return;
+        if (!member || !window.SK_CAN_RESET_MEMBER_PASSWORD) return;
+        if (!window.confirm('Reset the password for ' + member.name + '? A temporary password will be shown once, and the member must change it at next sign-in.')) return;
         try {
             var result = DB.resetMemberAccountByLegacyId(legacyId);
-            window.alert('Temporary password (uppercase surname; show only once): ' + result.temporaryPassword +
+            window.alert('Temporary password (show only once): ' + result.temporaryPassword +
                 '\n\nShare it securely. The member must change it at next sign-in.');
         } catch (error) {
             notify('danger', error.message || 'Could not reset the member password.');
+        }
+    }
+
+    function resetOfficialAccount(legacyId) {
+        var member = getRec(legacyId);
+        if (!member || !window.SK_CAN_MANAGE_ROLES || !member.isSK) return;
+        if (!window.confirm('Reset the official password for ' + member.name + '? Only the other SK Chairperson or Secretary may reset this account.')) return;
+        try {
+            var result = DB.resetOfficialAccountByLegacyId(legacyId);
+            window.alert('Temporary password (show only once): ' + result.temporaryPassword +
+                '\n\nShare it securely. The official must change it at next sign-in.');
+        } catch (error) {
+            notify('danger', error.message || 'Could not reset the official password.');
         }
     }
 
@@ -1516,127 +1511,32 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
         }
     }
 
-    var googleMemberLinkPopup = null;
-    var googleMemberLinkPopupWatcher = null;
-    var googleMemberLinkTarget = null;
-    function openGoogleMemberLink(legacyId) {
-        if (!window.SK_CAN_REQUEST_GOOGLE_LINK) return;
-        if (googleMemberLinkPopup && !googleMemberLinkPopup.closed) googleMemberLinkPopup.close();
-        var popup = window.open('about:blank', 'kkGoogleMemberLink',
-            'popup=yes,width=520,height=680,resizable=yes,scrollbars=yes');
-        if (!popup) {
-            notify('warning', 'Allow pop-ups for this site, then try linking the Google account again.');
-            return;
-        }
-
-        googleMemberLinkTarget = String(legacyId);
-        googleMemberLinkPopup = popup;
-        var request = document.createElement('form');
-        request.method = 'POST';
-        request.action = 'google-registration-start.php';
-        request.target = 'kkGoogleMemberLink';
-        [
-            ['csrf', window.SK_CSRF_TOKEN || ''],
-            ['purpose', 'member_link'],
-            ['memberId', googleMemberLinkTarget]
-        ].forEach(function (item) {
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = item[0];
-            input.value = item[1];
-            request.appendChild(input);
-        });
-        document.body.appendChild(request);
-        request.submit();
-        request.remove();
-
-        googleMemberLinkPopupWatcher = window.setInterval(function () {
-            if (!googleMemberLinkPopup || !googleMemberLinkPopup.closed) return;
-            window.clearInterval(googleMemberLinkPopupWatcher);
-            googleMemberLinkPopupWatcher = null;
-            googleMemberLinkPopup = null;
-            googleMemberLinkTarget = null;
-        }, 500);
-    }
-
-    function renderGoogleLinkApprovals(requests) {
-        var host = $('googleLinkApprovalsBody');
-        if (!Array.isArray(requests) || requests.length === 0) {
-            host.innerHTML = '<div class="alert alert-light border mb-0">There are no Google link requests waiting for approval.</div>';
-            return;
-        }
-        host.innerHTML = '<div class="table-responsive"><table class="table align-middle">' +
-            '<thead><tr><th>Member</th><th>Verified Google email</th><th>Requested by</th><th>Requested</th><th class="text-end">Review</th></tr></thead><tbody>' +
-            requests.map(function (request) {
-                var requestedAt = String(request.requested_at || '').replace(' ', 'T');
-                return '<tr><td>' + esc(request.member_name || request.legacy_id) + '</td>' +
-                    '<td>' + esc(request.google_email) + '</td>' +
-                    '<td>' + esc(request.requested_by) + '</td>' +
-                    '<td>' + esc(fmtDate(requestedAt)) + '</td>' +
-                    '<td class="text-end text-nowrap">' +
-                    '<button type="button" class="btn btn-success btn-sm me-1" data-act="approve-google-link" data-request-id="' + esc(request.request_id) + '">Approve</button>' +
-                    '<button type="button" class="btn btn-outline-danger btn-sm" data-act="reject-google-link" data-request-id="' + esc(request.request_id) + '">Reject</button>' +
-                    '</td></tr>';
-            }).join('') + '</tbody></table></div>';
-    }
-
-    function loadGoogleLinkApprovals() {
-        $('googleLinkApprovalsBody').textContent = 'Loading requests...';
-        try {
-            var result = DB.listPendingGoogleMemberLinks();
-            renderGoogleLinkApprovals(result.requests);
-        } catch (error) {
-            $('googleLinkApprovalsBody').innerHTML = '<div class="alert alert-danger mb-0"></div>';
-            $('googleLinkApprovalsBody').firstElementChild.textContent =
-                error.message || 'Could not load Google link requests.';
-        }
-    }
-
-    function openGoogleLinkApprovals() {
-        if (!window.SK_CAN_MANAGE_ROLES) return;
-        modal('googleLinkApprovalsModal').show();
-        loadGoogleLinkApprovals();
-    }
-
-    function reviewGoogleMemberLink(requestId, approve) {
-        if (!window.SK_CAN_MANAGE_ROLES) return;
-        if (!approve && !window.confirm('Reject this Google account link request?')) return;
-        try {
-            if (approve) DB.approveGoogleMemberLink(requestId);
-            else DB.rejectGoogleMemberLink(requestId);
-            notify('success', approve
-                ? 'Google account link approved. The member can now sign in with Google.'
-                : 'Google account link request rejected.');
-            loadGoogleLinkApprovals();
-            if (approve) window.setTimeout(function () { window.location.reload(); }, 900);
-        } catch (error) {
-            notify('danger', error.message || 'Could not review this Google link request.');
-        }
-    }
-
-    window.addEventListener('message', function (event) {
-        if (event.origin !== window.location.origin || !googleMemberLinkPopup
-            || event.source !== googleMemberLinkPopup || !event.data
-            || event.data.type !== 'kk-google-registration'
-            || (event.data.ok === true && (event.data.purpose !== 'member_link'
-                || String(event.data.memberId) !== googleMemberLinkTarget))) return;
-
-        if (googleMemberLinkPopupWatcher) window.clearInterval(googleMemberLinkPopupWatcher);
-        googleMemberLinkPopupWatcher = null;
-        googleMemberLinkPopup = null;
-        var memberId = googleMemberLinkTarget;
-        googleMemberLinkTarget = null;
-        if (event.data.ok !== true || typeof event.data.ticket !== 'string' || event.data.ticket === '') {
-            notify('danger', event.data.message || 'Google verification failed.');
+    function recoverMemberGoogleAccount(legacyId, clearProfileEmail) {
+        var member = getRec(legacyId);
+        if (!member || !window.SK_CAN_UNBIND_GOOGLE) return;
+        var message = clearProfileEmail
+            ? 'Clear the profile email and unbind every Google account linked to ' + member.name + '? They can bind a new account later from Settings.'
+            : 'Unbind the Google account for ' + member.name + '? Their profile email will be preserved.';
+        if (!window.confirm(message)) return;
+        var reason = window.prompt('Briefly explain why this Google account is being unbound (5-240 characters):');
+        if (reason === null) return;
+        reason = reason.trim();
+        if (reason.length < 5 || reason.length > 240) {
+            notify('warning', 'Enter a reason between 5 and 240 characters.');
             return;
         }
         try {
-            DB.requestMemberGoogleLink(memberId, event.data.ticket);
-            notify('success', 'Google link request sent. Google sign-in will work after the Chairperson or Secretary approves it.');
+            var result = clearProfileEmail
+                ? DB.clearMemberGoogleAccount(legacyId, reason)
+                : DB.unbindMemberGoogleAccount(legacyId, reason);
+            reload();
+            notify('success', clearProfileEmail
+                ? (result.profileEmailCleared ? 'The profile email was cleared and Google account unbound.' : 'The Google account was unbound.')
+                : 'The Google account was unbound. The profile email was preserved.');
         } catch (error) {
-            notify('danger', error.message || 'Could not submit the Google link request.');
+            notify('danger', error.message || 'Could not update the member Google account.');
         }
-    });
+    }
 
     $('confirmCreateAccount').addEventListener('click', function () {
         var username = $('newAccountUsername').value.trim();
@@ -1651,7 +1551,27 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
                 $('guardianConsent').checked,
                 $('consentVersion').value.trim()
             );
-            $('googleActivationBox').textContent = 'Account created without a Google link. An SK Kagawad can request one from this profile; the Chairperson or Secretary must approve it.';
+            if (!result || typeof result.temporaryPassword !== 'string' || result.temporaryPassword === '') {
+                $('createAccountError').textContent = 'The account was created, but its temporary password was not returned. Do not retry; contact the SK Chairperson or Secretary to reset it.';
+                $('confirmCreateAccount').disabled = true;
+                createAccountTarget = null;
+                return;
+            }
+            var message = document.createElement('p');
+            message.className = 'fw-semibold mb-2';
+            message.textContent = 'Account created. Share this temporary password privately; it will not be shown again after you close this dialog.';
+            var passwordLabel = document.createElement('div');
+            passwordLabel.className = 'small text-muted';
+            passwordLabel.textContent = 'Temporary password';
+            var password = document.createElement('code');
+            password.className = 'd-block fs-5 user-select-all';
+            password.textContent = result.temporaryPassword;
+            var passwordNote = document.createElement('p');
+            passwordNote.className = 'small mb-0 mt-2';
+            passwordNote.textContent = result.googleSignInRequired
+                ? 'Google sign-in is required. The member must use a verified Google account that matches their KK profile email.'
+                : 'The member must change this password at first sign-in. After signing in, they can bind a matching Google account in Settings.';
+            $('googleActivationBox').replaceChildren(message, passwordLabel, password, passwordNote);
             $('googleActivationBox').classList.remove('d-none');
             $('confirmCreateAccount').disabled = true;
             createAccountTarget = null;
@@ -2017,13 +1937,12 @@ window.SK_CAN_SCAN_KK_ID = <?= can_write_app_data() ? 'true' : 'false' ?>;
             else if (act === 'remove') afterHide('profileModal', function () { removeRole(key); });
             else if (act === 'archive-role') afterHide('profileModal', function () { archiveRole(key); });
             else if (act === 'link-account') afterHide('profileModal', function () { openAccountLink(key); });
-            else if (act === 'link-google-account') openGoogleMemberLink(key);
-            else if (act === 'google-link-approvals') openGoogleLinkApprovals();
-            else if (act === 'approve-google-link') reviewGoogleMemberLink(b.dataset.requestId, true);
-            else if (act === 'reject-google-link') reviewGoogleMemberLink(b.dataset.requestId, false);
             else if (act === 'create-account') afterHide('profileModal', function () { openCreateAccount(key); });
             else if (act === 'reset-account') afterHide('profileModal', function () { resetMemberAccount(key); });
+            else if (act === 'reset-official-account') afterHide('profileModal', function () { resetOfficialAccount(key); });
             else if (act === 'show-account-username') afterHide('profileModal', function () { showMemberAccountUsername(key); });
+            else if (act === 'unbind-google') afterHide('profileModal', function () { recoverMemberGoogleAccount(key, false); });
+            else if (act === 'clear-google-email') afterHide('profileModal', function () { recoverMemberGoogleAccount(key, true); });
             else if (act === 'print-id') printMemberId(key);
             else if (act === 'log-manual-id') logManualIdPrint(key);
             return;

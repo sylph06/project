@@ -34,7 +34,11 @@ if ($action === 'set') {
     if ($key === 'skCommittees') out(['ok' => false, 'error' => 'Use the dedicated committee actions.'], 403);
     if ($key === 'skAttendance') out(['ok' => false, 'error' => 'Use the dedicated meeting attendance actions.'], 403);
     if ($key === 'kkMembers') out(['ok' => false, 'error' => 'Use the atomic member-data action to save KK member records.'], 403);
-    if (!can_write_app_data()) out(['ok' => false, 'error' => 'Your account role cannot make this change.'], 403);
+    if ($key === 'skTransparencyBudget' || $key === 'skTransparencyExpenses') {
+        if (!can('manage_projects')) out(['ok' => false, 'error' => 'You do not have permission to manage projects.'], 403);
+    } elseif (!can_write_app_data()) {
+        out(['ok' => false, 'error' => 'Your account role cannot make this change.'], 403);
+    }
     generic_storage_key_is_allowed($key, 'written', $user);
     $value = $in['value'] ?? null;
     if (!is_string($value)) out(['ok' => false, 'error' => 'Bad value.'], 400);
@@ -312,7 +316,9 @@ if ($action === 'remove') {
         out(['ok' => false, 'error' => 'Transparency records cannot be removed through generic storage.'], 403);
     }
     if ($key === 'skMeetings') out(['ok' => false, 'error' => 'Meeting records cannot be removed through the generic storage endpoint.'], 403);
-    if (!can_write_app_data()) out(['ok' => false, 'error' => 'Your account role cannot make this change.'], 403);
+    if (!can_manage_sk_roles()) {
+        out(['ok' => false, 'error' => 'Record deletions cannot be delegated.'], 403);
+    }
     generic_storage_key_is_allowed($key, 'removed', $user);
     $expected = $in['expected'] ?? null;
     if ($expected !== null && !is_string($expected)) {

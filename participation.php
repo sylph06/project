@@ -8,112 +8,562 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
 
     <style>
-        :root{--kk-primary:var(--bs-primary);--line:var(--bs-border-color)}
-        *{box-sizing:border-box}
-        body{margin:0}
+:root {
+    --mem-bg: var(--ui-bg, #f8fafc);
+    --mem-surface: var(--ui-paper, #ffffff);
+    --mem-surface-alt: var(--ui-surface, #f1f5f9);
+    --mem-ink: var(--ui-ink, #1e293b);
+    --mem-muted: var(--ui-ink-muted, #64748b);
+    --mem-brand: var(--ui-brand, #1e40af);
+    --mem-brand-soft: rgba(30,64,175,.1);
+    --mem-brand-rgb: 30,64,175;
+    --mem-brand-text-emphasis: var(--ui-brand-text-emphasis, rgba(30,64,175,.75));
+    --mem-radius: var(--ui-radius, 12px);
+    --mem-line: var(--ui-line, #e2e8f0);
+}
 
-        /* ===== Calm, high-contrast blue theme ===== */
-        .participation-page{
-            --p-canvas:#eff5ff;--p-card:#ffffff;--p-border:#dce8f7;--p-grid:#e5edf8;
-            --p-text:#1b3150;--muted:#5c6e86;
-            --p-blue:#2457d6;--p-blue-soft:#e7f0ff;--p-track:#e3ebf7;--p-on-blue:#ffffff;
-            --h0:#eff5ff;--h1:#d9e8ff;--h2:#a9ccff;--h3:#6fa7fb;--h4:#3d82ed;--h5:#1f5ecb;
-            --hc0:#4b5b7a;--hc1:#0f1f3d;--hc2:#0f1f3d;--hc3:#ffffff;--hc4:#ffffff;--hc5:#ffffff;
-            background:linear-gradient(180deg,#edf4ff 0%,#f7faff 50%,#edf4ff 100%) fixed!important;color:var(--p-text);font-size:15px;line-height:1.45;
-            font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+html[data-bs-theme="dark"] {
+    --mem-bg: #111827;
+    --mem-surface: #1f2937;
+    --mem-surface-alt: #374151;
+    --mem-ink: #f9fafb;
+    --mem-muted: #9ca3af;
+    --mem-brand: #3b82f6;
+    --mem-brand-soft: rgba(59,130,246,.1);
+    --mem-brand-rgb: 59,130,246;
+    --mem-brand-text-emphasis: rgba(59,130,246,.8);
+    --mem-line: #374151;
+}
+
+* { box-sizing:border-box; }
+
+body.participation-page {
+    margin:0;
+    background:var(--mem-bg)!important;
+    color:var(--mem-ink)!important;
+    font-family:Arial,sans-serif;
+    font-size:15px;
+    line-height:1.45;
+}
+
+.top-strip {
+    height:7px;
+    background:var(--mem-brand)!important;
+}
+
+.header {
+    height:72px;
+    background:var(--mem-surface)!important;
+    border-bottom:1px solid var(--mem-line)!important;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 30px;
+    gap:14px;
+}
+.header-title {
+    font-weight:800;
+    font-size:1.3rem;
+    color:var(--mem-ink)!important;
+}
+.header small {
+    color:var(--mem-muted)!important;
+}
+.content {
+    width:100%;
+    max-width:1600px;
+    margin:0 auto;
+    padding:24px clamp(16px,2.6vw,40px)!important;
+}
+
+        .card-box {
+            height:100%;
+            overflow:hidden;
+            background:var(--mem-surface)!important;
+            border:1px solid var(--mem-line)!important;
+            border-radius:var(--mem-radius)!important;
+            box-shadow:0 10px 30px rgba(0,0,0,.07);
         }
-        html[data-bs-theme="dark"] .participation-page{
-            --p-canvas:#141a29;--p-grid:#33415c;--p-card:#1e2738;--p-border:#3a4863;
-            --p-text:#eef3ff;--muted:#b4c0da;
-            --p-blue:#8db2ff;--p-blue-soft:#2a3a58;--p-track:#33425f;--p-on-blue:#0b1a33;
-            --h0:#2a3750;--h1:#34508a;--h2:#3f6bc4;--h3:#5b8df0;--h4:#8db2ff;--h5:#bcd3ff;
-            --hc0:#b4c0da;--hc1:#eef3ff;--hc2:#eef3ff;--hc3:#0b1a33;--hc4:#0b1a33;--hc5:#0b1a33;
+
+        .card-head {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:1rem;
+            padding:18px 22px 0;
         }
-        html[data-bs-theme="dark"] .participation-page{background:var(--p-canvas)!important}
-        .top-strip{height:5px;background:#1f63d4}
-        .header{height:72px;background:var(--p-card);border-bottom:1px solid var(--p-border);display:flex;justify-content:space-between;align-items:center;padding:0 30px}
-        .header-title{font-weight:800;font-size:1.3rem;color:var(--p-text)}
-        .header small{color:var(--muted);font-size:.9rem}
-        body.participation-page>main.page-content>.content{width:100%;max-width:1600px;margin:0 auto;padding:24px clamp(16px,2.6vw,40px)!important}
+        .card-head h2 {
+            margin:0;
+            font-size:1.05rem;
+            font-weight:700;
+            color:var(--mem-ink)!important;
+            line-height:1.2;
+        }
+        .card-sub {
+            margin:.25rem 0 0;
+            font-size:.85rem;
+            color:var(--mem-muted)!important;
+        }
+        .card-pad {
+            padding:16px 22px 22px;
+        }
 
-        /* ===== Cards ===== */
-        .card-box{height:100%;overflow:hidden;background:var(--p-card);border:1px solid var(--p-border);border-radius:18px;box-shadow:0 10px 30px rgba(35,91,170,.10)}
-        .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:18px 22px 0}
-        .card-head h2{margin:0;font-size:1.05rem;font-weight:700;color:var(--p-text);line-height:1.2}
-        .card-sub{margin:.25rem 0 0;font-size:.85rem;color:var(--muted)}
-        .card-pad{padding:16px 22px 22px}
+        .participation-hero {
+            position:relative;
+            isolation:isolate;
+            display:flex;
+            flex-direction:column;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:12px;
+            width:100%;
+            height:100%;
+            min-height:320px;
+            padding:24px;
+            overflow:hidden;
+            border:0;
+            border-radius:16px;
+            background:var(--mem-brand)!important;
+            color:#fff;
+            box-shadow:0 10px 26px rgba(30,64,175,.2);
+        }
+        .participation-hero::before,
+        .participation-hero::after {
+            position:absolute;
+            z-index:0;
+            border:22px solid rgba(255,255,255,.08);
+            border-radius:50%;
+            content:"";
+            pointer-events:none;
+        }
+        .participation-hero::before {
+            top:-168px;
+            right:-62px;
+            width:255px;
+            height:255px;
+        }
+        .participation-hero::after {
+            right:-70px;
+            bottom:-182px;
+            width:260px;
+            height:260px;
+        }
+        .participation-hero-copy {
+            position:relative;
+            z-index:1;
+        }
+        .participation-hero-kicker {
+            display:block;
+            margin-bottom:10px;
+            color:rgba(255,255,255,.7);
+            font-size:.73rem;
+            font-weight:700;
+            letter-spacing:.1em;
+            text-transform:uppercase;
+        }
+        .participation-hero h1 {
+            margin:0;
+            color:#fff;
+            font-size:clamp(1.35rem,1.8vw,1.7rem);
+            font-weight:750;
+            line-height:1.2;
+        }
+        .participation-hero p {
+            max-width:320px;
+            margin:10px 0 0;
+            color:rgba(255,255,255,.82);
+            font-size:.9rem;
+        }
+        .participation-hero-metrics {
+            position:relative;
+            z-index:1;
+            width:100%;
+            margin-top:auto;
+        }
+        .participation-hero-metric {
+            display:grid;
+            grid-template-columns:30px minmax(0,1fr) auto;
+            align-items:center;
+            gap:9px;
+            padding:7px 0;
+            border-top:1px solid rgba(255,255,255,.24);
+        }
+        .participation-hero-metric-icon {
+            display:grid;
+            place-items:center;
+            width:30px;
+            height:30px;
+            border-radius:50%;
+            background:rgba(255,255,255,.16);
+            color:#fff;
+            font-size:.88rem;
+        }
+        .participation-hero-metric-label {
+            color:rgba(255,255,255,.86);
+            font-size:.76rem;
+            font-weight:650;
+            line-height:1.2;
+        }
+        .participation-hero-metric-value {
+            color:#fff;
+            font-size:1rem;
+            font-weight:850;
+            font-variant-numeric:tabular-nums;
+        }
+        .participation-hero-icon {
+            position:absolute;
+            z-index:0;
+            right:20px;
+            bottom:18px;
+            color:rgba(255,255,255,.16);
+            font-size:4rem;
+            line-height:1;
+        }
+        .participation-hero .btn {
+            position:relative;
+            z-index:1;
+        }
+        .member-engagement-card {
+            height:100%;
+            min-width:0;
+        }
+        .member-engagement-card .card-head {
+            align-items:flex-end;
+            flex-wrap:wrap;
+            padding:16px 18px 0;
+        }
+        .member-engagement-card .card-pad {
+            padding:10px 18px 16px;
+        }
+        .member-engagement-heading {
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        .member-engagement-heading i {
+            color:var(--mem-brand)!important;
+        }
+        .member-engagement-search {
+            width:min(270px,100%);
+        }
+        .member-engagement-search .form-control {
+            min-height:38px;
+            border-radius:8px;
+        }
+        .member-engagement-tabs {
+            display:flex;
+            flex-wrap:wrap;
+            gap:7px;
+            margin:0 0 8px;
+        }
+        .member-engagement-tab {
+            display:inline-flex;
+            align-items:center;
+            gap:7px;
+            padding:6px 11px;
+            border:1px solid var(--mem-line)!important;
+            border-radius:999px;
+            background:var(--mem-surface)!important;
+            color:var(--mem-ink)!important;
+            font-size:.78rem;
+            font-weight:650;
+            white-space:nowrap;
+        }
+        .member-engagement-tab.active {
+            border-color:var(--mem-brand)!important;
+            background:var(--mem-brand)!important;
+            color:#fff!important;
+        }
+        .member-engagement-tab-count {
+            font-weight:800;
+        }
+        .member-engagement-table-wrap {
+            max-height:360px;
+            overflow:auto;
+        }
+        .member-engagement-table {
+            min-width:760px;
+            margin:0;
+            font-size:.82rem;
+        }
+        .member-engagement-table thead th {
+            position:sticky;
+            top:0;
+            z-index:1;
+            padding:8px;
+            background:var(--mem-surface)!important;
+            color:var(--mem-muted)!important;
+            font-size:.7rem;
+            letter-spacing:.04em;
+            text-transform:uppercase;
+            white-space:nowrap;
+            border:1px solid var(--mem-line)!important;
+        }
+        .member-engagement-table td {
+            padding:8px;
+            vertical-align:middle;
+            border:1px solid var(--mem-line)!important;
+            color:var(--mem-ink)!important;
+        }
+        .member-engagement-name {
+            display:block;
+            color:var(--mem-ink)!important;
+            font-weight:700;
+        }
+        .member-engagement-id {
+            display:block;
+            color:var(--mem-muted)!important;
+            font-size:.72rem;
+        }
+        .member-engagement-rate {
+            display:flex;
+            align-items:center;
+            gap:8px;
+            min-width:120px;
+        }
+        .member-engagement-progress {
+            flex:1;
+            height:7px;
+            overflow:hidden;
+            border-radius:999px;
+            background:var(--mem-line)!important;
+        }
+        .member-engagement-progress span {
+            display:block;
+            height:100%;
+            border-radius:inherit;
+            background:var(--mem-brand)!important;
+        }
+        .member-engagement-rate strong {
+            min-width:34px;
+            color:var(--mem-ink)!important;
+            font-size:.75rem;
+            text-align:right;
+        }
+        .member-engagement-status {
+            display:inline-block;
+            padding:3px 8px;
+            border-radius:999px;
+            font-size:.72rem;
+            font-weight:700;
+            white-space:nowrap;
+        }
+        .member-engagement-status.regular {
+            background:#e2eee7;
+            color:#416d53;
+        }
+        .member-engagement-status.occasional {
+            background:#f4eedf;
+            color:#876b34;
+        }
+        .member-engagement-status.none {
+            background:var(--mem-brand-soft)!important;
+            color:var(--mem-brand)!important;
+        }
+        .member-engagement-footer {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+            margin-top:8px;
+            color:var(--mem-muted)!important;
+            font-size:.76rem;
+        }
+        .member-engagement-note {
+            display:block;
+            margin-top:6px;
+            color:var(--mem-muted)!important;
+            font-size:.72rem;
+        }
+        .participation-overview-card .card-head {
+            padding:16px 18px 0;
+        }
+        .participation-overview-card .card-pad {
+            padding:12px 18px 18px;
+        }
 
-        .participation-hero{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:12px;width:100%;height:100%;min-height:320px;padding:24px;overflow:hidden;border:0;border-radius:16px;background:#1f63d4;color:#fff;box-shadow:0 10px 26px rgba(21,83,185,.2)}
-        .participation-hero::before,.participation-hero::after{position:absolute;z-index:0;border:22px solid rgba(255,255,255,.08);border-radius:50%;content:"";pointer-events:none}
-        .participation-hero::before{top:-168px;right:-62px;width:255px;height:255px}
-        .participation-hero::after{right:-70px;bottom:-182px;width:260px;height:260px}
-        .participation-hero-copy{position:relative;z-index:1}
-        .participation-hero-kicker{display:block;margin-bottom:10px;color:rgba(255,255,255,.7);font-size:.73rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
-        .participation-hero h1{margin:0;color:#fff;font-size:clamp(1.35rem,1.8vw,1.7rem);font-weight:750;line-height:1.2}
-        .participation-hero p{max-width:320px;margin:10px 0 0;color:rgba(255,255,255,.82);font-size:.9rem}
-        .participation-hero-metrics{position:relative;z-index:1;width:100%;margin-top:auto}
-        .participation-hero-metric{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,.24)}
-        .participation-hero-metric-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:.88rem}
-        .participation-hero-metric-label{color:rgba(255,255,255,.86);font-size:.76rem;font-weight:650;line-height:1.2}
-        .participation-hero-metric-value{color:#fff;font-size:1rem;font-weight:850;font-variant-numeric:tabular-nums}
-        .participation-hero-icon{position:absolute;z-index:0;right:20px;bottom:18px;color:rgba(255,255,255,.16);font-size:4rem;line-height:1}
-        .participation-hero .btn{position:relative;z-index:1}
-        .member-engagement-card{height:100%;min-width:0}
-        .member-engagement-card .card-head{align-items:flex-end;flex-wrap:wrap;padding:16px 18px 0}
-        .member-engagement-card .card-pad{padding:10px 18px 16px}
-        .member-engagement-heading{display:flex;align-items:center;gap:8px}
-        .member-engagement-heading i{color:var(--p-blue)}
-        .member-engagement-search{width:min(270px,100%)}
-        .member-engagement-search .form-control{min-height:38px;border-radius:8px}
-        .member-engagement-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 8px}
-        .member-engagement-tab{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid var(--p-border);border-radius:999px;background:var(--p-card);color:var(--p-text);font-size:.78rem;font-weight:650;white-space:nowrap}
-        .member-engagement-tab.active{border-color:var(--p-blue);background:var(--p-blue);color:var(--p-on-blue)}
-        .member-engagement-tab-count{font-weight:800}
-        .member-engagement-table-wrap{max-height:360px;overflow:auto}
-        .member-engagement-table{min-width:760px;margin:0;font-size:.82rem}
-        .member-engagement-table thead th{position:sticky;top:0;z-index:1;padding:8px;background:var(--p-card);color:var(--muted);font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
-        .member-engagement-table td{padding:8px;vertical-align:middle}
-        .member-engagement-name{display:block;color:var(--p-text);font-weight:700}
-        .member-engagement-id{display:block;color:var(--muted);font-size:.72rem}
-        .member-engagement-rate{display:flex;align-items:center;gap:8px;min-width:120px}
-        .member-engagement-progress{flex:1;height:7px;overflow:hidden;border-radius:999px;background:var(--p-track)}
-        .member-engagement-progress span{display:block;height:100%;border-radius:inherit;background:var(--p-blue)}
-        .member-engagement-rate strong{min-width:34px;color:var(--p-text);font-size:.75rem;text-align:right}
-        .member-engagement-status{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.72rem;font-weight:700;white-space:nowrap}
-        .member-engagement-status.regular{background:#e2eee7;color:#416d53}
-        .member-engagement-status.occasional{background:#f4eedf;color:#876b34}
-        .member-engagement-status.none{background:var(--p-blue-soft);color:var(--muted)}
-        .member-engagement-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;color:var(--muted);font-size:.76rem}
-        .member-engagement-note{display:block;margin-top:6px;color:var(--muted);font-size:.72rem}
-        .participation-overview-card .card-head{padding:16px 18px 0}
-        .participation-overview-card .card-pad{padding:12px 18px 18px}
+        .chart-box {
+            position:relative;
+            height:290px;
+        }
+        .chart-empty {
+            position:absolute;
+            inset:0;
+            display:grid;
+            place-items:center;
+            padding:1rem;
+            color:var(--mem-muted)!important;
+            font-size:.9rem;
+            text-align:center;
+        }
 
-        .chart-box{position:relative;height:290px}
-        .chart-empty{position:absolute;inset:0;display:grid;place-items:center;padding:1rem;color:var(--muted);font-size:.9rem;text-align:center}
+        .attendance-overview-layout {
+            display:grid;
+            grid-template-columns:1fr;
+            gap:14px;
+        }
+        .attendance-doughnut {
+            height:270px;
+        }
+        .attendance-overview-legend {
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+            gap:12px;
+            min-width:0;
+        }
+        .attendance-overview-item {
+            display:grid;
+            grid-template-columns:12px minmax(0,1fr) auto;
+            align-items:center;
+            gap:8px;
+            min-width:0;
+            color:var(--mem-muted)!important;
+            font-size:.88rem;
+        }
+        .attendance-overview-item>span:nth-child(2) {
+            min-width:0;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+        .attendance-overview-dot {
+            width:12px;
+            height:12px;
+            border-radius:4px;
+        }
+        .attendance-overview-item strong {
+            color:var(--mem-ink)!important;
+            white-space:nowrap;
+        }
 
         /* ===== Filters ===== */
-        .filter-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;padding:16px 20px;background:var(--p-card);border:1px solid var(--p-border);border-radius:16px;box-shadow:0 10px 30px rgba(35,91,170,.08)}
-        .filter-bar .form-label{font-size:.82rem;font-weight:700;margin-bottom:.25rem;color:var(--muted)}
-        .filter-bar .form-control,.filter-bar .form-select{min-height:42px;border-radius:8px;border:1px solid var(--p-border);color:var(--p-text);background-color:var(--p-card)}
-        .filter-title{display:flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.05rem;color:var(--p-text);padding-bottom:.55rem}
-        .participation-page .form-control:focus,.participation-page .form-select:focus{border-color:var(--p-blue);box-shadow:0 0 0 .2rem rgba(11,79,194,.2)}
+        .filter-bar {
+            display:flex;
+            flex-wrap:wrap;
+            align-items:flex-end;
+            gap:14px;
+            padding:16px 20px;
+            background:var(--mem-surface)!important;
+            border:1px solid var(--mem-line)!important;
+            border-radius:var(--mem-radius)!important;
+            box-shadow:0 10px 30px rgba(0,0,0,.05);
+        }
+        .filter-bar .form-label {
+            font-size:.82rem;
+            font-weight:700;
+            margin-bottom:.25rem;
+            color:var(--mem-muted)!important;
+        }
+        .filter-bar .form-control,
+        .filter-bar .form-select {
+            min-height:42px;
+            border-radius:var(--mem-radius);
+            border:1px solid var(--mem-line)!important;
+            color:var(--mem-ink)!important;
+            background-color:var(--mem-surface)!important;
+        }
+        .filter-title {
+            display:flex;
+            align-items:center;
+            gap:.5rem;
+            font-weight:800;
+            font-size:1.05rem;
+            color:var(--mem-ink)!important;
+            padding-bottom:.55rem;
+        }
+        body.participation-page .form-control:focus,
+        body.participation-page .form-select:focus {
+            border-color:var(--mem-brand)!important;
+            box-shadow:0 0 0 .2rem rgba(var(--mem-brand-rgb),.28)!important;
+        }
 
         /* ===== Heatmap ===== */
-        .heat-scroll{max-width:100%;overflow:auto;border:1px solid var(--p-border);border-radius:10px}
-        .heat-grid{display:grid;gap:4px;min-width:max-content;padding:8px;font-size:.88rem;text-align:center}
-        .heat-grid .heat-corner,.heat-grid .heat-col-head,.heat-grid .heat-row-head,.heat-grid .heat-cell,.heat-grid .heat-total{display:flex;min-height:44px;align-items:center;justify-content:center;padding:.4rem .6rem}
-        .heat-grid .heat-corner,.heat-grid .heat-col-head{position:sticky;top:0;z-index:2;background:var(--p-card);color:var(--muted);font-weight:700;font-size:.82rem;white-space:nowrap}
-        .heat-grid .heat-corner,.heat-grid .heat-row-head{position:sticky;left:0;z-index:3;justify-content:flex-start;background:var(--p-card);text-align:left}
-        .heat-grid .heat-row-head{min-width:150px;border-right:1px solid var(--p-border);font-weight:700;color:var(--p-text)}
-        .heat-grid .heat-col-head span{display:block;max-width:110px;overflow:hidden;text-overflow:ellipsis}
-        .heat-grid .heat-cell{min-width:60px;border-radius:8px;font-weight:800;font-size:.95rem}
-        .heat-grid button.heat-cell{width:100%;border:0;font-family:inherit;font-size:.95rem;font-weight:800;cursor:pointer}
-        .heat-grid .heat-cell.is-selected{outline:2px solid var(--p-blue);outline-offset:1px}
-        .heat-grid button.heat-cell:focus-visible{outline:2px solid var(--p-blue);outline-offset:1px}
-        .heat-grid .heat-total{font-weight:800;color:var(--p-text)}
+        .heat-scroll {
+            max-width:100%;
+            overflow:auto;
+            border:1px solid var(--mem-line)!important;
+            border-radius:10px;
+        }
+        .heat-grid {
+            display:grid;
+            gap:4px;
+            min-width:max-content;
+            padding:8px;
+            font-size:.88rem;
+            text-align:center;
+        }
+        .heat-grid .heat-corner,
+        .heat-grid .heat-col-head,
+        .heat-grid .heat-row-head,
+        .heat-grid .heat-cell,
+        .heat-grid .heat-total {
+            display:flex;
+            min-height:44px;
+            align-items:center;
+            justify-content:center;
+            padding:.4rem .6rem;
+        }
+        .heat-grid .heat-corner,
+        .heat-grid .heat-col-head {
+            position:sticky;
+            top:0;
+            z-index:2;
+            background:var(--mem-surface)!important;
+            color:var(--mem-muted)!important;
+            font-weight:700;
+            font-size:.82rem;
+            white-space:nowrap;
+        }
+        .heat-grid .heat-corner,
+        .heat-grid .heat-row-head {
+            position:sticky;
+            left:0;
+            z-index:3;
+            justify-content:flex-start;
+            background:var(--mem-surface)!important;
+            text-align:left;
+        }
+        .heat-grid .heat-row-head {
+            min-width:150px;
+            border-right:1px solid var(--mem-line)!important;
+            font-weight:700;
+            color:var(--mem-ink)!important;
+        }
+        .heat-grid .heat-col-head span {
+            display:block;
+            max-width:110px;
+            overflow:hidden;
+            text-overflow:ellipsis;
+        }
+        .heat-grid .heat-cell {
+            min-width:60px;
+            border-radius:8px;
+            font-weight:800;
+            font-size:.95rem;
+        }
+        .heat-grid button.heat-cell {
+            width:100%;
+            border:0;
+            font-family:inherit;
+            font-size:.95rem;
+            font-weight:800;
+            cursor:pointer;
+        }
+        .heat-grid .heat-cell.is-selected {
+            outline:2px solid var(--mem-brand);
+            outline-offset:1px;
+        }
+        .heat-grid button.heat-cell:focus-visible {
+            outline:2px solid var(--mem-brand);
+            outline-offset:1px;
+        }
+        .heat-grid .heat-total {
+            font-weight:800;
+            color:var(--mem-ink)!important;
+        }
         .heat-l0{background:var(--h0);color:var(--hc0)}.heat-l1{background:var(--h1);color:var(--hc1)}.heat-l2{background:var(--h2);color:var(--hc2)}
         .heat-l3{background:var(--h3);color:var(--hc3)}.heat-l4{background:var(--h4);color:var(--hc4)}.heat-l5{background:var(--h5);color:var(--hc5)}
         .heat-scale{display:flex;align-items:center;gap:.6rem;margin-top:.9rem;color:var(--muted);font-size:.82rem}
@@ -122,82 +572,284 @@
         .heat-scale-blocks span:nth-child(2){background:var(--h1)}.heat-scale-blocks span:nth-child(3){background:var(--h2)}
         .heat-scale-blocks span:nth-child(4){background:var(--h3)}.heat-scale-blocks span:nth-child(5){background:var(--h5)}
 
-        /* ===== Tables ===== */
-        .participation-page .table{font-size:.92rem;--bs-table-bg:transparent;--bs-table-color:var(--p-text);--bs-table-border-color:var(--p-border);color:var(--p-text)}
-        .participation-page .table th{background:var(--p-blue-soft);color:var(--p-blue);font-size:.82rem;font-weight:800;white-space:nowrap}
-        .participation-page .table td{vertical-align:middle}
-        .participation-page .table .text-muted{color:var(--muted)!important}
-        .participation-page .table tbody tr:hover>*{background-color:var(--p-blue-soft)}
-        .record-wrap{max-height:62vh;overflow:auto;border:1px solid var(--p-border);border-radius:10px}
-        .record-table thead th{position:sticky;top:0;z-index:2}
-        .record-count{display:flex;align-items:center;min-height:42px;padding:.45rem .8rem;border-radius:8px;background:var(--p-blue-soft);color:var(--p-blue);font-size:.9rem;font-weight:800}
-        .attendance-record-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:62vh;overflow:auto;padding:2px}
-        .participation-records-panel{border:1px solid var(--p-border);border-radius:16px;overflow:hidden}
-        .participation-records-panel .card-head{align-items:center;padding:16px 18px 8px;border-bottom:0}
-        .participation-records-panel .card-head h2{padding-left:0;border-left:0;font-size:1.05rem}
-        .participation-records-header-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--p-blue-soft);color:var(--p-blue);flex:none}
-        .participation-records-panel .card-pad{padding:10px 18px 18px}
-        .participation-records-toolbar{display:flex;align-items:flex-end;gap:10px;margin-bottom:10px}
-        .participation-records-toolbar .search-wrap{flex:1 1 280px}
-        .participation-records-toolbar .status-wrap{width:210px}
-        .participation-records-toolbar .record-count{min-height:40px}
-        .participation-records-panel .attendance-record-grid{grid-template-columns:1fr;max-height:330px;gap:0;border-top:1px solid var(--p-border)}
-        .participation-records-panel .attendance-record-card{border:0;border-bottom:1px solid var(--p-border);border-radius:0;padding:11px 4px;box-shadow:none}
-        .participation-records-panel .attendance-record-card:first-child{border-top:0}
-        .participation-records-panel .attendance-record-card:hover{transform:none;box-shadow:none;background:rgba(var(--heat-rgb),.035)}
-        .participation-records-panel .attendance-date-chip{width:48px;height:48px}
-        .records-kpi{padding:0;border:1px solid var(--p-border);background:var(--p-card);width:100%;text-align:left}
-        .records-kpi .kpi-body{padding:20px 22px}
-        .records-kpi-open{display:flex;align-items:center;justify-content:space-between;width:100%;color:var(--p-blue);font-size:.82rem;font-weight:800}
-        .participation-records-modal .modal-dialog{max-width:min(980px,calc(100vw - 2rem))}
-        .participation-records-modal .modal-content{border:1px solid var(--p-border);border-radius:16px;background:var(--p-card)}
-        .participation-records-modal .modal-header{border-bottom:1px solid var(--p-border)}
-        .participation-records-modal .modal-body{padding:18px}
-        .participation-records-modal .attendance-record-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:65vh;gap:10px}
-        .participation-records-modal .attendance-record-card{border:1px solid var(--p-border);border-radius:12px;padding:12px}
+        /* Table styling */
+        body.participation-page .table {
+            font-size:.92rem;
+            --bs-table-bg:transparent;
+            --bs-table-color:var(--mem-ink);
+            --bs-table-border-color:var(--mem-line);
+            color:var(--mem-ink);
+        }
+        body.participation-page .table th {
+            background:var(--mem-surface-alt)!important;
+            color:var(--mem-muted)!important;
+            font-size:.82rem;
+            font-weight:800;
+            text-transform:uppercase;
+            letter-spacing:.04em;
+            white-space:nowrap;
+            border:1px solid var(--mem-line)!important;
+        }
+        body.participation-page .table td {
+            vertical-align:middle;
+            border:1px solid var(--mem-line)!important;
+            color:var(--mem-ink)!important;
+        }
+        body.participation-page .table tbody tr:hover>* {
+            background-color:var(--mem-surface-alt)!important;
+        }
+        body.participation-page .table .text-muted {
+            color:var(--mem-muted)!important;
+        }
+        .record-wrap {
+            max-height:62vh;
+            overflow:auto;
+            border:1px solid var(--mem-line)!important;
+            border-radius:10px;
+        }
+        .record-table thead th {
+            position:sticky;
+            top:0;
+            z-index:2;
+        }
+        .record-count {
+            display:flex;
+            align-items:center;
+            min-height:42px;
+            padding:.45rem .8rem;
+            border-radius:8px;
+            background:var(--mem-brand-soft)!important;
+            color:var(--mem-brand)!important;
+            font-size:.9rem;
+            font-weight:800;
+        }
+        .attendance-record-grid {
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:10px;
+            max-height:62vh;
+            overflow:auto;
+            padding:2px;
+        }
+        .participation-records-panel {
+            border:1px solid var(--mem-line)!important;
+            border-radius:16px;
+            overflow:hidden;
+        }
+        .participation-records-panel .card-head {
+            align-items:center;
+            padding:16px 18px 8px;
+            border-bottom:0;
+        }
+        .participation-records-panel .card-head h2 {
+            padding-left:0;
+            border-left:0;
+            font-size:1.05rem;
+        }
+        .participation-records-header-icon {
+            display:grid;
+            place-items:center;
+            width:38px;
+            height:38px;
+            border-radius:10px;
+            background:var(--mem-brand-soft)!important;
+            color:var(--mem-brand)!important;
+            flex:none;
+        }
+        .participation-records-panel .card-pad {
+            padding:10px 18px 18px;
+        }
+        .participation-records-toolbar {
+            display:flex;
+            align-items:flex-end;
+            gap:10px;
+            margin-bottom:10px;
+        }
+        .participation-records-toolbar .search-wrap {
+            flex:1 1 280px;
+        }
+        .participation-records-toolbar .status-wrap {
+            width:210px;
+        }
+        .participation-records-toolbar .record-count {
+            min-height:40px;
+        }
+        .participation-records-panel .attendance-record-grid {
+            grid-template-columns:1fr;
+            max-height:330px;
+            gap:0;
+            border-top:1px solid var(--mem-line)!important;
+        }
+        .participation-records-panel .attendance-record-card {
+            border:0;
+            border-bottom:1px solid var(--mem-line)!important;
+            border-radius:0;
+            padding:11px 4px;
+            box-shadow:none;
+        }
+        .participation-records-panel .attendance-record-card:first-child {
+            border-top:0;
+        }
+        .participation-records-panel .attendance-record-card:hover {
+            transform:none;
+            box-shadow:none;
+            background:var(--mem-surface-alt)!important;
+        }
+        .participation-records-panel .attendance-date-chip {
+            width:48px;
+            height:48px;
+        }
+        .records-kpi {
+            padding:0;
+            border:1px solid var(--mem-line)!important;
+            background:var(--mem-surface)!important;
+            width:100%;
+            text-align:left;
+        }
+        .records-kpi .kpi-body {
+            padding:20px 22px;
+        }
+        .participation-records-modal .modal-dialog {
+            max-width:min(980px,calc(100vw - 2rem));
+        }
+        .participation-records-modal .modal-content {
+            border:1px solid var(--mem-line)!important;
+            border-radius:16px;
+            background:var(--mem-surface)!important;
+        }
+        .participation-records-modal .modal-header {
+            border-bottom:1px solid var(--mem-line)!important;
+        }
+        .participation-records-modal .modal-body {
+            padding:18px;
+        }
+        .participation-records-modal .attendance-record-grid {
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            max-height:65vh;
+            gap:10px;
+        }
+        .participation-records-modal .attendance-record-card {
+            border:1px solid var(--mem-line)!important;
+            border-radius:12px;
+            padding:12px;
+        }
+        .attendance-record-card {
+            display:flex;
+            align-items:center;
+            gap:12px;
+            min-width:0;
+            padding:12px;
+            border:1px solid var(--mem-line)!important;
+            border-radius:12px;
+            background:var(--mem-surface)!important;
+            text-decoration:none;
+            color:var(--mem-ink)!important;
+        }
+        .attendance-record-card:hover,
+        .attendance-record-card:focus-visible {
+            border-color:var(--mem-brand)!important;
+            outline:none;
+        }
+        .attendance-date-chip {
+            display:flex;
+            flex:none;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            width:52px;
+            height:52px;
+            border-radius:10px;
+            background:var(--mem-brand-soft)!important;
+            color:var(--mem-brand)!important;
+            font-size:.68rem;
+            font-weight:800;
+            text-transform:uppercase;
+            line-height:1.1;
+        }
+        .attendance-date-chip strong {
+            font-size:1.1rem;
+            margin-top:2px;
+        }
+        .attendance-record-info {
+            min-width:0;
+            flex:1;
+        }
+        .attendance-record-name {
+            display:block;
+            overflow:hidden;
+            color:var(--mem-ink)!important;
+            font-size:.92rem;
+            font-weight:800;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+        .attendance-record-event {
+            display:block;
+            overflow:hidden;
+            color:var(--mem-muted)!important;
+            font-size:.78rem;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+        .attendance-record-meta {
+            display:flex;
+            align-items:center;
+            gap:5px;
+            flex-wrap:wrap;
+            margin-top:6px;
+            color:var(--mem-muted)!important;
+            font-size:.72rem;
+        }
+        .attendance-record-status {
+            flex:none;
+        }
+        .attendance-record-arrow {
+            flex:none;
+            color:var(--mem-brand)!important;
+        }
+
         .member-roster-table{width:100%;border-collapse:separate;border-spacing:0 6px}
-        .member-roster-table th{padding:8px 10px;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;border:0}
-        .member-roster-table td{padding:10px;border-top:1px solid var(--p-border);border-bottom:1px solid var(--p-border);background:var(--p-card);vertical-align:middle}
-        .member-roster-table td:first-child{border-left:1px solid var(--p-border);border-radius:10px 0 0 10px}
-        .member-roster-table td:last-child{border-right:1px solid var(--p-border);border-radius:0 10px 10px 0;text-align:right}
-        .member-roster-name{display:block;font-weight:800;color:var(--p-text)}
-        .member-roster-no{display:block;font-size:.78rem;color:var(--muted)}
-        .member-roster-purok{color:var(--p-blue);font-weight:800}
+        .member-roster-table th{padding:8px 10px;color:var(--mem-muted)!important;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;border:0!important}
+        .member-roster-table td{padding:10px;border-top:1px solid var(--mem-line)!important;border-bottom:1px solid var(--mem-line)!important;background:var(--mem-surface)!important;vertical-align:middle;color:var(--mem-ink)!important}
+        .member-roster-table td:first-child{border-left:1px solid var(--mem-line)!important;border-radius:10px 0 0 10px}
+        .member-roster-table td:last-child{border-right:1px solid var(--mem-line)!important;border-radius:0 10px 10px 0;text-align:right}
+        .member-roster-name{display:block;font-weight:800;color:var(--mem-ink)!important}
+        .member-roster-no{display:block;font-size:.78rem;color:var(--mem-muted)!important}
+        .member-roster-purok{color:var(--mem-brand)!important;font-weight:800}
         .roster-action-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) minmax(190px,260px);align-items:end;gap:12px;margin:12px 0}
-        .roster-main-table-wrap{max-height:55vh;overflow:auto;border:1px solid var(--p-border);border-radius:10px}
+        .roster-main-table-wrap{max-height:55vh;overflow:auto;border:1px solid var(--mem-line)!important;border-radius:10px}
         .roster-main-table thead th{position:sticky;top:0;z-index:2}
         .roster-main-table td:last-child{text-align:left}
         .roster-main-table td{min-width:120px}
         .roster-main-table td:first-child{min-width:210px}
         .roster-main-table td:nth-child(2){min-width:110px}
         .roster-main-table td:nth-child(3){white-space:nowrap}
-        .attendance-status-select.is-staged{border-color:var(--p-blue);box-shadow:0 0 0 .15rem rgba(11,79,194,.13)}
+        .attendance-status-select.is-staged{border-color:var(--mem-brand)!important;box-shadow:0 0 0 .15rem var(--mem-brand-text-emphasis)!important}
         .roster-save-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
-        .roster-save-hint{color:var(--muted);font-size:.82rem}
-        .all-activities-summary{display:flex;align-items:center;gap:14px;padding:22px;border:1px solid var(--p-border);border-radius:10px;background:var(--p-blue-soft)}
-        .all-activities-summary-icon{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:13px;background:var(--p-blue);color:var(--p-on-blue);font-size:1.25rem}
+        .roster-save-hint{color:var(--mem-muted)!important;font-size:.82rem}
+        .all-activities-summary{display:flex;align-items:center;gap:14px;padding:22px;border:1px solid var(--mem-line)!important;border-radius:10px;background:var(--mem-brand-soft)!important}
+        .all-activities-summary-icon{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:13px;background:var(--mem-brand)!important;color:var(--mem-brand-text-emphasis)!important;font-size:1.25rem}
         .all-activities-summary-copy{flex:1}
-        .all-activities-summary-label{display:block;color:var(--p-text);font-size:.95rem;font-weight:800}
-        .all-activities-summary-note{display:block;margin-top:3px;color:var(--muted);font-size:.82rem}
-        .all-activities-summary-value{color:var(--p-blue);font-size:2rem;font-weight:900;line-height:1}
+        .all-activities-summary-label{display:block;color:var(--mem-ink)!important;font-size:.95rem;font-weight:800}
+        .all-activities-summary-note{display:block;margin-top:3px;color:var(--mem-muted)!important;font-size:.82rem}
+        .all-activities-summary-value{color:var(--mem-brand)!important;font-size:2rem;font-weight:900;line-height:1}
         .roster-section{margin-top:10px}
         .roster-section-title{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-        .roster-section-title h3{margin:0;font-size:.95rem;font-weight:800;color:var(--p-text)}
-        .roster-count{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:20px;background:var(--p-blue-soft);color:var(--p-blue);font-size:.78rem;font-weight:800}
+        .roster-section-title h3{margin:0;font-size:.95rem;font-weight:800;color:var(--mem-ink)!important}
+        .roster-count{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:20px;background:var(--mem-brand-soft)!important;color:var(--mem-brand)!important;font-size:.78rem;font-weight:800}
         .attendance-status-select{min-width:130px}
         .attendance-overview-layout{display:grid;grid-template-columns:1fr;gap:14px}
         .attendance-doughnut{height:270px}
         .attendance-overview-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;min-width:0}
-        .attendance-overview-item{display:grid;grid-template-columns:12px minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0;color:var(--muted);font-size:.88rem}
+        .attendance-overview-item{display:grid;grid-template-columns:12px minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0;color:var(--mem-muted)!important;font-size:.88rem}
         .attendance-overview-item>span:nth-child(2){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .attendance-overview-dot{width:12px;height:12px;border-radius:4px}
-        .attendance-overview-item strong{color:var(--p-text);white-space:nowrap}
+        .attendance-overview-item strong{color:var(--mem-ink)!important;white-space:nowrap}
         .member-roster-table .btn{white-space:nowrap}
         @media(max-width:767.98px){
             .member-roster-table{min-width:620px}
             .participation-hero{min-height:360px}
             .member-engagement-footer{align-items:flex-start;flex-direction:column}
-
             .attendance-doughnut{height:230px}
             .roster-action-toolbar{grid-template-columns:1fr}
             .roster-save-bar{align-items:stretch;flex-direction:column}
@@ -209,24 +861,99 @@
             .participation-records-toolbar{flex-wrap:wrap}
             .participation-records-toolbar .search-wrap,.participation-records-toolbar .status-wrap{width:100%;flex-basis:100%}
         }
-        .attendance-record-card{display:flex;align-items:center;gap:12px;min-width:0;padding:12px;border:1px solid var(--p-border);border-radius:12px;background:var(--p-card);text-decoration:none;color:var(--p-text)}
-        .attendance-record-card:hover,.attendance-record-card:focus-visible{border-color:var(--p-blue);outline:none}
-        .attendance-date-chip{display:flex;flex:none;flex-direction:column;align-items:center;justify-content:center;width:52px;height:52px;border-radius:10px;background:var(--p-blue-soft);color:var(--p-blue);font-size:.68rem;font-weight:800;text-transform:uppercase;line-height:1.1}
-        .attendance-date-chip strong{font-size:1.1rem;margin-top:2px}
-        .attendance-record-info{min-width:0;flex:1}
-        .attendance-record-name{display:block;overflow:hidden;color:var(--p-text);font-size:.92rem;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
-        .attendance-record-event{display:block;overflow:hidden;color:var(--muted);font-size:.78rem;text-overflow:ellipsis;white-space:nowrap}
-        .attendance-record-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px;color:var(--muted);font-size:.72rem}
-        .attendance-record-status{flex:none}
-        .attendance-record-arrow{flex:none;color:var(--p-blue)}
         @media(max-width:991.98px){.attendance-record-grid{grid-template-columns:1fr}}
-        .participation-page label.form-label{color:var(--muted)}
-        .footer-note{text-align:center;color:var(--muted);font-size:.85rem;padding:24px}
+        body.participation-page label.form-label{color:var(--mem-muted)!important}
+        .footer-note{text-align:center;color:var(--mem-muted)!important;font-size:.85rem;padding:24px}
 
         @media(max-width:767.98px){
             .header{padding:0 14px}
             body.participation-page>main.page-content>.content{padding:14px!important}
         }
+
+        /* Mobile table-to-cards pattern — max-width 575px */
+        @media(max-width:575px){
+            .participation-page .table-responsive,
+            .participation-page table.table{
+                display:block;
+                width:100%;
+            }
+            .participation-page table.table,
+            .participation-page table.table thead,
+            .participation-page table.table tbody,
+            .participation-page table.table tr,
+            .participation-page table.table th,
+            .participation-page table.table td{
+                display:block;
+            }
+            .participation-page table.table thead tr{
+                position:absolute;
+                top:-9999px;
+                left:-9999px;
+            }
+            .participation-page table.table tr{
+                margin-bottom:14px;
+            }
+            .participation-page table.table td{
+                text-align:right;
+                position:relative;
+                padding-left:50%;
+                border:0;
+                border-bottom:1px solid var(--mem-line)!important;
+            }
+            .participation-page table.table td:before{
+                content:attr(data-label);
+                position:absolute;
+                left:10px;
+                top:50%;
+                transform:translateY(-50%);
+                text-align:left;
+                width:45%;
+                padding-right:10px;
+                white-space:nowrap;
+                color:var(--mem-muted)!important;
+                font-size:.8rem;
+                font-weight:800;
+                text-transform:uppercase;
+                letter-spacing:.04em;
+            }
+            .participation-page table.table tr{
+                border:1px solid var(--mem-line)!important;
+                border-radius:10px;
+                background:var(--mem-surface)!important;
+                overflow:hidden;
+            }
+            .participation-page table.table tr td:last-child{
+                border-bottom:0;
+            }
+        }
+
+        @media(max-width:575px){
+            .heat-grid{
+                gap:4px;
+            }
+            .heat-cell{
+                min-width:14px;
+                min-height:14px;
+                font-size:.62rem;
+            }
+        }
+
+        @media(max-width:767.98px){
+            .member-roster-table{min-width:620px}
+            .participation-hero{min-height:360px}
+            .member-engagement-footer{align-items:flex-start;flex-direction:column}
+            .attendance-doughnut{height:230px}
+            .roster-action-toolbar{grid-template-columns:1fr}
+            .roster-save-bar{align-items:stretch;flex-direction:column}
+        }
+        @media(max-width:767.98px){
+            .participation-records-modal .attendance-record-grid{grid-template-columns:1fr}
+        }
+        @media(max-width:767.98px){
+            .participation-records-toolbar{flex-wrap:wrap}
+            .participation-records-toolbar .search-wrap,.participation-records-toolbar .status-wrap{width:100%;flex-basis:100%}
+        }
+        @media(max-width:991.98px){.attendance-record-grid{grid-template-columns:1fr}}
     </style>
 <?php include __DIR__ . '/init.php'; ?>
 <?php
@@ -416,7 +1143,7 @@ foreach ($participationEventsById as $eventId => $event) {
 <div class="top-strip"></div>
 
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=18"></script>
 
 <main class="main page-content">
 
@@ -429,7 +1156,6 @@ foreach ($participationEventsById as $eventId => $event) {
         </div>
     </div>
     <div class="header-account-area">
-        <a href="announcements.php" class="header-notification" aria-label="Notifications"><i class="bi bi-bell"></i></a>
         <div class="header-avatar"><?= e(uinit()) ?></div>
         <div class="d-none d-md-block header-identity">
             <div class="header-identity-name"><?= e(uname()) ?></div>
@@ -489,6 +1215,7 @@ foreach ($participationEventsById as $eventId => $event) {
                 <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#participationRecordsModal">
                     <i class="bi bi-clipboard-check me-1"></i>Open records
                 </button>
+                <a href="event-attendance.php" class="btn btn-primary"><i class="bi bi-qr-code me-1"></i>QR Scan Attendance</a>
                 <i class="bi bi-people-fill participation-hero-icon" aria-hidden="true"></i>
             </section>
         </div>

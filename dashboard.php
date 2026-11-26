@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <style>
         .dashboard-page{
             --dashboard-canvas:#eef4ff;
@@ -381,7 +381,7 @@
 <body class="dashboard-page">
 <div class="top-strip"></div>
 <script src="js/theme.js?v=3"></script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=18"></script>
 <script type="application/json" id="dashboardChartData"><?= $dashboardChartData ?></script>
 
 <div class="page-content">
@@ -399,10 +399,6 @@
                 <input class="form-control border-0 bg-transparent shadow-none p-0" type="search" id="dashboardSearch" placeholder="Search activities and expenses..." autocomplete="off">
             </label>
             <div class="ms-auto header-account-area">
-                <a class="header-notification" href="request.php" aria-label="<?= (int)$dashboardAttentionCount ?> requests need review">
-                    <i class="bi bi-bell" aria-hidden="true"></i>
-                    <?php if ($dashboardAttentionCount > 0): ?><span class="header-notification-count"><?= (int)$dashboardAttentionCount ?></span><?php endif; ?>
-                </a>
                 <span class="header-avatar"><?= e(uinit()) ?></span>
                 <div class="d-none d-md-block header-identity">
                     <div class="header-identity-name"><?= e(uname()) ?></div>

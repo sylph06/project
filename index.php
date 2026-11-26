@@ -65,6 +65,22 @@ function lp_ann_reschedule_banner($announcement) {
         '<i class="bi bi-arrow-right" aria-hidden="true"></i><strong class="lp-ann-rescheduled-new">' . e($newDateText) . '</strong></span></div>';
 }
 
+function lp_ann_interest_control($eventId, $response, $closed) {
+    if ($closed) {
+        return '<div class="lp-ann-interest"><span class="small text-muted"><i class="bi bi-lock me-1" aria-hidden="true"></i>Interest responses are closed.</span></div>';
+    }
+    $interested = $response === 'Interested';
+    $message = $interested
+        ? 'You marked this event as interesting.'
+        : ($response === 'Not interested'
+            ? 'You marked not interested. Tap to change your response.'
+            : 'Let the SK know; you can change this until interest closes.');
+    return '<div class="lp-ann-interest" data-ann-interest data-event-id="' . e($eventId) . '" data-current-response="' . ($interested ? 'Interested' : '') . '">' .
+        '<button type="button" class="btn btn-sm ' . ($interested ? 'btn-primary' : 'btn-outline-primary') . '" data-interest-toggle aria-pressed="' . ($interested ? 'true' : 'false') . '">' .
+        '<i class="bi bi-hand-thumbs-up me-1" aria-hidden="true"></i>Interested</button>' .
+        '<span class="small text-muted align-self-center" data-interest-message role="status" aria-live="polite">' . e($message) . '</span></div>';
+}
+
 $today = date('Y-m-d');
 $memberCount = 0;
 $annList = [];
@@ -281,7 +297,7 @@ $L_EVENTS   = '#announcements';
 
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <script src="js/theme.js?v=3"></script>
 
     <style>
@@ -370,7 +386,8 @@ $L_EVENTS   = '#announcements';
         .lp-ann-organizer strong{overflow:hidden;color:var(--bs-primary);font-size:.78rem;text-overflow:ellipsis;white-space:nowrap}
         .lp-ann-details-btn{flex:none;padding:.45rem .75rem;border:1px solid var(--bs-primary);border-radius:9px;background:#fff;color:var(--bs-primary);font-size:.8rem;font-weight:650;white-space:nowrap}
         .lp-ann-details-btn:hover,.lp-ann-details-btn:focus-visible{background:var(--bs-primary);border-color:var(--bs-primary);color:#fff}
-        .lp-ann-interest{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.25rem}
+        .lp-ann-interest{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:1.25rem}
+        .lp-ann-card>.lp-ann-interest{padding:0 1.1rem 1rem;margin-top:0}
         #annGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
         @media(max-width:767.98px){#annGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
         @media(max-width:479.98px){#annGrid{grid-template-columns:minmax(0,1fr)}}
@@ -479,7 +496,7 @@ window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;
 window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
 window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
-<script src="js/sidebar.js?v=16"></script>
+<script src="js/sidebar.js?v=18"></script>
 
 <div class="page-content lp-main">
     <nav class="lp-mobilebar navbar" aria-label="Landing page header">
@@ -827,6 +844,9 @@ window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP
                                 <div class="lp-ann-organizer"><small>Organized by</small><strong><?= e($ann['organizer'] ?? 'SK Office') ?></strong></div>
                                 <button type="button" class="lp-ann-details-btn" data-ann-open="annDetail<?= (int)$annIndex ?>">View details</button>
                             </div>
+                            <?php if ($hasMemberPortal && $annStatus === 'Upcoming'): ?>
+                                <?= lp_ann_interest_control((string)($ann['id'] ?? ''), $interestChoice, !empty($ann['interestClosed'])) ?>
+                            <?php endif; ?>
                         </article>
                         <template id="annDetail<?= (int)$annIndex ?>">
                             <div class="lp-ann-detail-wrap">
@@ -850,16 +870,8 @@ window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP
                                 <h3 class="h6 fw-bold">About this announcement</h3>
                                 <p class="lp-ann-text mb-0"><?= e(($ann['details'] ?? '') !== '' ? $ann['details'] : ($ann['description'] ?? '')) ?></p>
                                 <?php if (!empty($ann['notes'])): ?><div class="alert alert-warning mt-3 mb-0"><strong>Additional notes</strong><br><span class="lp-ann-text"><?= e($ann['notes']) ?></span></div><?php endif; ?>
-                                <?php if ($hasMemberPortal && in_array($annStatus, ['Upcoming', 'Ongoing'], true)): ?>
-                                    <div class="lp-ann-interest" data-ann-interest data-event-id="<?= e($ann['id'] ?? '') ?>" data-current-response="<?= e($interestChoice) ?>">
-                                        <button type="button" class="btn btn-sm <?= $interestChoice === 'Interested' ? 'btn-primary' : 'btn-outline-primary' ?>" data-interest-response="Interested" aria-pressed="<?= $interestChoice === 'Interested' ? 'true' : 'false' ?>">
-                                            <i class="bi bi-hand-thumbs-up me-1" aria-hidden="true"></i>Interested
-                                        </button>
-                                        <button type="button" class="btn btn-sm <?= $interestChoice === 'Not interested' ? 'btn-secondary' : 'btn-outline-secondary' ?>" data-interest-response="Not interested" aria-pressed="<?= $interestChoice === 'Not interested' ? 'true' : 'false' ?>">
-                                            <i class="bi bi-hand-thumbs-down me-1" aria-hidden="true"></i>Not interested
-                                        </button>
-                                        <span class="small text-muted align-self-center" data-interest-message role="status" aria-live="polite"><?= $interestChoice !== '' ? 'Your response: ' . e($interestChoice) : 'Choose one response.' ?></span>
-                                    </div>
+                                <?php if ($hasMemberPortal && $annStatus === 'Upcoming'): ?>
+                                    <?= lp_ann_interest_control((string)($ann['id'] ?? ''), $interestChoice, !empty($ann['interestClosed'])) ?>
                                 <?php endif; ?>
                             </div>
                         </template>
@@ -1006,17 +1018,30 @@ document.querySelectorAll('#sidebar a[href*="#"]').forEach(function (link) {
     });
 })();
 document.addEventListener('click', function (event) {
-    var button = event.target.closest('[data-interest-response]');
+    var button = event.target.closest('[data-interest-toggle]');
     if (!button) return;
     var group = button.closest('[data-ann-interest]');
     if (!group || button.disabled) return;
 
-    var response = button.dataset.interestResponse;
     var eventId = group.dataset.eventId;
-    var buttons = Array.prototype.slice.call(group.querySelectorAll('[data-interest-response]'));
-    var status = group.querySelector('[data-interest-message]');
-    buttons.forEach(function (item) { item.disabled = true; });
-    status.textContent = 'Saving your response...';
+    var groups = Array.prototype.slice.call(document.querySelectorAll('[data-ann-interest]')).filter(function (item) {
+        return item.dataset.eventId === eventId;
+    });
+    document.querySelectorAll('template').forEach(function (template) {
+        var item = template.content.querySelector('[data-ann-interest]');
+        if (item && item.dataset.eventId === eventId) groups.push(item);
+    });
+    var response = group.dataset.currentResponse === 'Interested' ? 'Not interested' : 'Interested';
+    var buttons = [];
+    groups.forEach(function (item) {
+        var itemButton = item.querySelector('[data-interest-toggle]');
+        if (itemButton) {
+            itemButton.disabled = true;
+            buttons.push(itemButton);
+        }
+        var itemStatus = item.querySelector('[data-interest-message]');
+        if (itemStatus) itemStatus.textContent = 'Saving your response...';
+    });
 
     fetch('api.php?action=event_interest', {
         method: 'POST',
@@ -1037,19 +1062,29 @@ document.addEventListener('click', function (event) {
             return result;
         });
     }).then(function (result) {
-        group.dataset.currentResponse = result.response;
-        buttons.forEach(function (item) {
-            var selected = item.dataset.interestResponse === result.response;
-            var interested = item.dataset.interestResponse === 'Interested';
-            item.classList.toggle('btn-primary', selected && interested);
-            item.classList.toggle('btn-outline-primary', !selected && interested);
-            item.classList.toggle('btn-secondary', selected && !interested);
-            item.classList.toggle('btn-outline-secondary', !selected && !interested);
-            item.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        groups.forEach(function (item) {
+            var itemButton = item.querySelector('[data-interest-toggle]');
+            var itemStatus = item.querySelector('[data-interest-message]');
+            var interested = result.response === 'Interested';
+            item.dataset.currentResponse = interested ? 'Interested' : '';
+            if (itemButton) {
+                itemButton.classList.toggle('btn-primary', interested);
+                itemButton.classList.toggle('btn-outline-primary', !interested);
+                itemButton.setAttribute('aria-pressed', interested ? 'true' : 'false');
+            }
+            if (itemStatus) {
+                itemStatus.textContent = interested
+                    ? 'You marked this event as interesting.'
+                    : 'Interest withdrawn.';
+            }
         });
-        status.textContent = 'Your response: ' + result.response;
     }).catch(function (error) {
-        status.textContent = error && error.message ? error.message : 'Could not save your response.';
+        groups.forEach(function (item) {
+            var itemStatus = item.querySelector('[data-interest-message]');
+            if (itemStatus) {
+                itemStatus.textContent = error && error.message ? error.message : 'Could not save your response.';
+            }
+        });
     }).finally(function () {
         buttons.forEach(function (item) { item.disabled = false; });
     });

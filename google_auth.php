@@ -19,10 +19,13 @@ function google_oauth_configured() {
 
 function google_oauth_schema_ready($pdo = null) {
     $pdo = $pdo ?: db();
-    $statement = $pdo->prepare("SELECT COUNT(*) FROM information_schema.TABLES
-        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'google_account_links'");
+    $statement = $pdo->prepare("SELECT
+            (SELECT COUNT(*) FROM information_schema.TABLES
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'google_account_links')
+            + (SELECT COUNT(*) FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'google_sub')");
     $statement->execute();
-    return (int)$statement->fetchColumn() === 1;
+    return (int)$statement->fetchColumn() === 2;
 }
 
 function google_oauth_link_requests_schema_ready($pdo = null) {
@@ -89,6 +92,33 @@ function google_auth_load_members($pdo, $lock = false) {
     return $members;
 }
 
+function google_auth_save_member($pdo, $member, $updatedBy, $members = null) {
+    if (!is_array($member) || !isset($member['id'])) {
+        throw new RuntimeException('The KK member profile is invalid.');
+    }
+    if (USE_MEMBERS_TABLE) {
+        return kk_member_upsert($pdo, $member, $updatedBy);
+    }
+
+    $members = is_array($members) ? $members : google_auth_load_members($pdo, true);
+    $found = false;
+    foreach ($members as $index => $existingMember) {
+        if (is_array($existingMember) && (string)($existingMember['id'] ?? '') === (string)$member['id']) {
+            $members[$index] = $member;
+            $found = true;
+            break;
+        }
+    }
+    if (!$found) throw new RuntimeException('The KK member profile could not be found.');
+
+    $pdo->prepare("UPDATE app_data SET data_value = ?, updated_by = ? WHERE data_key = 'kkMembers'")
+        ->execute([
+            json_encode($members, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR),
+            $updatedBy,
+        ]);
+    return 'updated';
+}
+
 function google_auth_changed_email_is_unique($members, $memberId, $email) {
     $normalizedEmail = google_auth_normalize_email($email);
     if ($normalizedEmail === null) return false;
@@ -97,6 +127,29 @@ function google_auth_changed_email_is_unique($members, $memberId, $email) {
         if (google_auth_normalize_email($member['email'] ?? null) === $normalizedEmail) return false;
     }
     return true;
+}
+
+function google_auth_profile_email_binding_state($profileEmail, $googleEmail) {
+    $normalizedGoogleEmail = google_auth_normalize_email($googleEmail);
+    if ($normalizedGoogleEmail === null) return 'invalid_google_email';
+    $profileEmail = is_string($profileEmail) ? trim($profileEmail) : '';
+    if ($profileEmail === '') return 'set_profile_email';
+    return google_auth_normalize_email($profileEmail) === $normalizedGoogleEmail
+        ? 'already_matches'
+        : 'replace_profile_email';
+}
+
+function google_auth_member_email_matches($members, $memberId, $email) {
+    $normalizedEmail = google_auth_normalize_email($email);
+    if ($normalizedEmail === null || !is_array($members)) return false;
+    foreach ($members as $member) {
+        if (!is_array($member)) return false;
+        if ((string)($member['id'] ?? '') !== (string)$memberId) continue;
+        return ($member['status'] ?? 'Active') === 'Active'
+            && google_auth_normalize_email($member['email'] ?? null) === $normalizedEmail
+            && google_auth_changed_email_is_unique($members, $memberId, $normalizedEmail);
+    }
+    return false;
 }
 
 function google_auth_account_is_member_linked($account) {
@@ -149,8 +202,8 @@ function google_registration_popup_result($ok, $message, $ticket = null, $email 
     ];
     $json = json_encode($result, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     echo '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
-        . '<title>Google account verification</title><body><p>' . htmlspecialchars((string)$message, ENT_QUOTES, 'UTF-8')
-        . '</p><p>You can close this window and return to the form or member profile.</p>'
+        . '<title>Bind Google account</title><body><p>' . htmlspecialchars((string)$message, ENT_QUOTES, 'UTF-8')
+        . '</p><p>Return to Settings to finish binding your account.</p>'
         . '<script>if (window.opener && !window.opener.closed) { window.opener.postMessage('
         . $json . ', window.location.origin); window.close(); }</script></body></html>';
     exit;
@@ -158,6 +211,7 @@ function google_registration_popup_result($ok, $message, $ticket = null, $email 
 
 function google_auth_password_login_status($pdo, $account) {
     if (!google_auth_account_is_member_linked($account)) return 'allowed';
+    if (kk_effective_role($account) !== 'KK Member') return 'allowed';
     if (!google_oauth_schema_ready($pdo)) {
         return GOOGLE_KK_LOGIN_REQUIRED ? 'setup_missing' : 'allowed';
     }
@@ -199,6 +253,46 @@ function google_oauth_request_json($url, $method, $fields = null, $accessToken =
     return $data;
 }
 
+function google_oauth_verify_id_token($idToken) {
+    if (!is_string($idToken) || $idToken === '' || strlen($idToken) > 8192) {
+        throw new RuntimeException('Google did not provide a valid ID token.');
+    }
+    $claims = google_oauth_request_json(
+        'https://oauth2.googleapis.com/tokeninfo?id_token=' . rawurlencode($idToken),
+        'GET'
+    );
+    return google_oauth_validate_id_token_claims($claims, GOOGLE_OAUTH_CLIENT_ID);
+}
+
+function google_oauth_validate_id_token_claims($claims, $clientId) {
+    if (!is_array($claims) || !is_string($clientId) || $clientId === '') {
+        throw new RuntimeException('Google ID token verification failed.');
+    }
+    $issuer = $claims['iss'] ?? '';
+    $audience = $claims['aud'] ?? '';
+    $expiresAt = filter_var($claims['exp'] ?? null, FILTER_VALIDATE_INT);
+    $issuedAt = filter_var($claims['iat'] ?? null, FILTER_VALIDATE_INT);
+    $verified = ($claims['email_verified'] ?? false) === true
+        || ($claims['email_verified'] ?? null) === 'true';
+    if (!in_array($issuer, ['accounts.google.com', 'https://accounts.google.com'], true)
+        || !is_string($audience) || !hash_equals($clientId, $audience)
+        || $expiresAt === false || $expiresAt <= time()
+        || $issuedAt === false || $issuedAt > time() + 60
+        || !$verified) {
+        throw new RuntimeException('Google ID token verification failed.');
+    }
+    $subject = $claims['sub'] ?? null;
+    $email = google_auth_normalize_email($claims['email'] ?? null);
+    if (!is_string($subject) || $subject === '' || strlen($subject) > 255 || $email === null) {
+        throw new RuntimeException('Google ID token identity is invalid.');
+    }
+    return [
+        'sub' => $subject,
+        'email' => $email,
+        'email_verified' => true,
+    ];
+}
+
 function google_oauth_fetch_profile($code) {
     $tokens = google_oauth_request_json('https://oauth2.googleapis.com/token', 'POST', [
         'code' => $code,
@@ -207,9 +301,5 @@ function google_oauth_fetch_profile($code) {
         'redirect_uri' => GOOGLE_OAUTH_REDIRECT_URI,
         'grant_type' => 'authorization_code',
     ]);
-    $accessToken = $tokens['access_token'] ?? null;
-    if (!is_string($accessToken) || $accessToken === '') {
-        throw new RuntimeException('Google did not provide an access token.');
-    }
-    return google_oauth_request_json('https://openidconnect.googleapis.com/v1/userinfo', 'GET', null, $accessToken);
+    return google_oauth_verify_id_token($tokens['id_token'] ?? null);
 }

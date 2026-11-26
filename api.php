@@ -25,6 +25,7 @@ $routes = [
     /* Authentication */
     'login'                   => 'api/auth.php',
     'password'                => 'api/auth.php',
+    'password_google_set'     => 'api/auth.php',
 
     /* Retired public registration */
     'register'                => 'api/registration.php',
@@ -34,6 +35,9 @@ $routes = [
     'event_interest'          => 'api/events.php',
     'event_attendance'        => 'api/events.php',
     'event_walkin'            => 'api/events.php',
+    'event_walkin_remove'     => 'api/events.php',
+    'event_walkin_restore'    => 'api/events.php',
+    'event_attendance_qr'     => 'api/events.php',
 
     /* Meeting minutes */
     'meeting_minutes_save'    => 'api/meetings.php',
@@ -54,16 +58,20 @@ $routes = [
     /* Member accounts */
     'accounts_unlinked'       => 'api/accounts.php',
     'account_link'            => 'api/accounts.php',
-    'account_link_google_request' => 'api/accounts.php',
-    'account_google_links_pending' => 'api/accounts.php',
-    'account_link_google_approve' => 'api/accounts.php',
-    'account_link_google_reject' => 'api/accounts.php',
+    'account_self_link_google'  => 'api/member-account.php',
     'account_create'          => 'api/accounts.php',
     'account_reset'           => 'api/accounts.php',
     'account_reset_member'    => 'api/accounts.php',
+    'account_reset_official'  => 'api/accounts.php',
     'account_username_member' => 'api/accounts.php',
     'account_deactivate'      => 'api/accounts.php',
-
+    'account_google_unbind'   => 'api/accounts.php',
+    'account_google_clear_email' => 'api/accounts.php',
+    'permission_grant'        => 'api/permissions.php',
+    'permission_revoke'       => 'api/permissions.php',
+    'permission_list'         => 'api/permissions.php',
+    'official_recovery_code_generate' => 'api/permissions.php',
+    'official_recovery_code_reset' => 'api/auth.php',
     /* KK members (members table) */
     'member_add'              => 'api/members.php',
     'member_update'           => 'api/members.php',

@@ -10,6 +10,8 @@ if (empty($user['must_change_password'])) {
     exit;
 }
 $changePasswordDestination = $user['role'] === 'KK Member' ? 'member-portal.php' : 'dashboard.php';
+$passwordResetNotice = $_SESSION['password_reset_notice'] ?? null;
+unset($_SESSION['password_reset_notice']);
 if (($_GET['next'] ?? '') === 'announcements.php') {
     $changePasswordDestination = 'announcements.php?view=public';
     $eventId = (string)($_GET['eventId'] ?? '');
@@ -25,7 +27,7 @@ if (($_GET['next'] ?? '') === 'announcements.php') {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Change Password | KK Youth Profiling System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <script src="js/theme.js"></script>
 </head>
 <body class="bg-light">
@@ -34,6 +36,9 @@ if (($_GET['next'] ?? '') === 'announcements.php') {
         <div class="card-body p-4">
             <h1 class="h4 fw-bold">Change your temporary password</h1>
             <p class="text-muted">Choose a new password to continue to the system.</p>
+            <?php if (is_string($passwordResetNotice) && $passwordResetNotice !== ''): ?>
+                <div class="alert alert-warning" role="status"><?= e($passwordResetNotice) ?></div>
+            <?php endif; ?>
             <div id="message" class="alert d-none" role="alert"></div>
             <form id="passwordForm">
                 <label class="form-label" for="current">Temporary or current password</label>

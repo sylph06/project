@@ -30,6 +30,8 @@ $googleErrorMessages = [
     'member_account_missing' => 'There is no login account for this KK profile yet. Contact the SK office.',
     'google_link_conflict' => 'This Google account is already linked to another member profile. Contact the SK office.',
     'account_already_linked' => 'This member profile is linked to a different Google account. Contact the SK office.',
+    'google_account_not_bound' => 'This Google account is not bound to a KK member login. Sign in with your password and bind it from Settings.',
+    'official_password_required' => 'SK officials must sign in with their official username and password.',
 ];
 $googleError = $googleErrorMessages[(string)($_GET['google_error'] ?? '')] ?? '';
 $existingUser = current_user();
@@ -48,7 +50,7 @@ if ($existingUser) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
 
     <style>
         /* Uses only Bootstrap's own colours, same as the rest of the system */
@@ -372,8 +374,24 @@ if ($existingUser) {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Please contact the <b>SK Chairperson</b> or the <b>SK Secretary</b> at the Barangay Hall. After verifying your identity, they can look up your username or reset an unlinked account password from your member profile.</p>
-                <p class="text-muted small mb-0">KK accounts linked to Google must use their verified Google email instead of a password reset. Usernames are not looked up publicly.</p>
+                <p class="mb-2">Please contact the <b>SK Chairperson</b> or the <b>SK Secretary</b> at the Barangay Hall. After verifying your identity, they can look up your username or reset your KK member account from your member profile.</p>
+                <p class="text-muted small">If your KK account is bound to Google, sign in with that Google account and set a new password in Settings. Public email reset links are not available yet.</p>
+                <details class="border rounded p-3">
+                    <summary class="fw-semibold">Emergency recovery for SK officials</summary>
+                    <p class="small text-muted mt-2">Use the one-time offline code only if both the SK Chairperson and Secretary are locked out.</p>
+                    <form id="officialRecoveryForm" novalidate>
+                        <label class="form-label small" for="recoveryUsername">Official username</label>
+                        <input class="form-control mb-2" id="recoveryUsername" autocomplete="username" required>
+                        <label class="form-label small" for="recoveryCode">Emergency code</label>
+                        <input class="form-control mb-2" id="recoveryCode" type="password" autocomplete="off" required>
+                        <label class="form-label small" for="recoveryNewPassword">New password</label>
+                        <input class="form-control mb-2" id="recoveryNewPassword" type="password" minlength="8" maxlength="100" autocomplete="new-password" required>
+                        <label class="form-label small" for="recoveryConfirmPassword">Confirm new password</label>
+                        <input class="form-control mb-2" id="recoveryConfirmPassword" type="password" minlength="8" maxlength="100" autocomplete="new-password" required>
+                        <button class="btn btn-outline-danger btn-sm" type="submit">Reset official password</button>
+                        <div id="officialRecoveryStatus" class="small mt-2" aria-live="polite"></div>
+                    </form>
+                </details>
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-login" data-bs-dismiss="modal">Okay</button>
@@ -532,13 +550,56 @@ if ($existingUser) {
                 else localStorage.removeItem("skRememberUser");
             } catch (err) {}
 
-            $("loginOkText").textContent = "Welcome, " + found.name + "! Opening the dashboard...";
+            $("loginOkText").textContent = res.passwordResetNotice
+                ? res.passwordResetNotice + " Choose a new password to continue."
+                : "Welcome, " + found.name + "! Opening the dashboard...";
             $("loginOk").classList.remove("d-none");
             $("loginBtnText").innerHTML = '<i class="bi bi-check-lg me-2"></i>Success';
             setTimeout(function () {
                 location.href = found.must_change_password ? <?= json_encode($changePasswordUrl) ?> :
                     (found.role === "KK Member" && NEXT_PAGE === "dashboard.php" ? "member-portal.php" : NEXT_PAGE);
             }, 900);
+        });
+    });
+
+    var officialRecoveryForm = $("officialRecoveryForm");
+    officialRecoveryForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var newPassword = $("recoveryNewPassword").value;
+        var status = $("officialRecoveryStatus");
+        if (newPassword.length < 8 || newPassword.length > 100
+            || newPassword !== $("recoveryConfirmPassword").value) {
+            status.className = "small mt-2 text-danger";
+            status.textContent = "Enter the same new password twice; it must be 8 to 100 characters.";
+            return;
+        }
+        status.className = "small mt-2 text-muted";
+        status.textContent = "Checking recovery details...";
+        fetch("api.php?action=official_recovery_code_reset", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+            },
+            body: JSON.stringify({
+                username: $("recoveryUsername").value.trim(),
+                recoveryCode: $("recoveryCode").value,
+                new: newPassword
+            })
+        }).then(function (response) {
+            return response.json().then(function (result) {
+                if (!response.ok || !result.ok) throw new Error(result.error || "Recovery could not be completed.");
+                return result;
+            });
+        }).then(function (result) {
+            status.className = "small mt-2 text-success";
+            status.textContent = result.message;
+            $("username").value = $("recoveryUsername").value.trim();
+            $("password").value = "";
+            officialRecoveryForm.reset();
+        }).catch(function (error) {
+            status.className = "small mt-2 text-danger";
+            status.textContent = error.message || "Recovery could not be completed.";
         });
     });
 })();

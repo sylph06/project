@@ -1,9 +1,18 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/role_store.php';
 require_official();
 if (!can_view_background_history()) {
     http_response_code(403);
     exit('You do not have permission to view the audit log.');
+}
+$auditViewer = current_user();
+if (is_array($GLOBALS['SK_ACTIVE_DELEGATION'] ?? null)) {
+    $auditTarget = isset($_GET['detail']) && is_scalar($_GET['detail'])
+        ? 'audit:' . substr((string)$_GET['detail'], 0, 20) : null;
+    sk_audit(db(), $auditViewer, $auditTarget, 'audit_log_viewed', null, [
+        'view' => array_key_exists('detail', $_GET) ? 'entry_detail' : 'audit_list',
+    ]);
 }
 
 if (array_key_exists('detail', $_GET)) {
@@ -49,7 +58,7 @@ $auditError = '';
     <title>Audit Log | KK Youth Profiling System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <style>
         :root { --line:var(--ui-line); --muted:var(--ui-muted); }
         * { box-sizing:border-box; }
@@ -148,7 +157,7 @@ $auditError = '';
 <body>
 <div class="top-strip"></div>
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=18"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">
@@ -320,6 +329,10 @@ $auditError = '';
         google_account_link_requested: 'Requested a Google account link',
         google_account_link_approved: 'Approved a Google account link',
         google_account_link_rejected: 'Rejected a Google account link',
+        google_profile_email_updated: 'Updated a KK profile email during Google binding',
+        google_profile_email_cleared: 'Cleared a KK profile email',
+        google_account_unbound: 'Unbound a Google account',
+        google_account_email_updated: 'Updated the linked Google email',
         account_linked: 'Linked a member account',
         account_created: 'Created a member login account',
         account_username_retrieved: 'Retrieved a member username',
@@ -364,6 +377,9 @@ $auditError = '';
         api_account_link_google_request: 'Requested a Google account link',
         api_account_link_google_approve: 'Approved a Google account link',
         api_account_link_google_reject: 'Rejected a Google account link',
+        google_account_linked_self_service: 'Bound a Google account to their own KK profile',
+        api_account_google_unbind: 'Unbound a member Google account',
+        api_account_google_clear_email: 'Cleared a member profile email and unbound Google',
         api_account_create: 'Created a member login account',
         api_account_reset: 'Reset an account password',
         api_account_reset_member: 'Reset a member password',
@@ -405,6 +421,8 @@ $auditError = '';
         salnYear: 'SALN year',
         guardian_consent: 'Guardian consent recorded',
         google_account_linked: 'Google account linked',
+        google_email: 'Google email',
+        email: 'Profile email',
         google_sign_in_required: 'Google sign-in required',
         email_verified: 'Email verified',
         is_active: 'Account active',

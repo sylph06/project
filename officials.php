@@ -134,7 +134,7 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <script src="js/theme.js"></script>
 
     <style>
@@ -206,7 +206,7 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;
 window.SK_MEMBER_PORTAL = <?= !empty($selfUser['legacy_id']) ? 'true' : 'false' ?>;
 </script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=18"></script>
 
 <main class="main page-content">
 
@@ -220,9 +220,6 @@ window.SK_MEMBER_PORTAL = <?= !empty($selfUser['legacy_id']) ? 'true' : 'false' 
     </div>
     <div class="header-account-area">
         <?php if (current_user()): ?>
-            <a href="announcements.php" class="header-notification" aria-label="Notifications">
-                <i class="bi bi-bell"></i><span class="header-notification-count">3</span>
-            </a>
             <div class="header-avatar"><?= e(uinit()) ?></div>
             <div class="d-none d-md-block header-identity">
                 <div class="header-identity-name"><?= e(uname()) ?></div>

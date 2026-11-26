@@ -139,19 +139,25 @@ if ($action === 'event_interest') {
             $pdo->rollBack();
             out(['ok' => false, 'error' => 'This event is not available for responses.'], 404);
         }
+        if (!empty($announcement['interestClosed'])) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'Interest responses for this event have been closed by the SK.'], 409);
+        }
         $eventDate = (string)($announcement['date'] ?? '');
+        $startTime = (string)($announcement['startTime'] ?? $announcement['time'] ?? '');
         $endTime = (string)($announcement['endTime'] ?? '');
         if (!empty($announcement['cancelled'])
             || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $eventDate)
             || !checkdate((int)substr($eventDate, 5, 2), (int)substr($eventDate, 8, 2), (int)substr($eventDate, 0, 4))
+            || (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $startTime) && $startTime !== '')
             || (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $endTime) && $endTime !== '')) {
             $pdo->rollBack();
             out(['ok' => false, 'error' => 'This event is not available for responses.'], 400);
         }
-        $eventEnd = strtotime($eventDate . ' ' . ($endTime !== '' ? $endTime . ':00' : '23:59:59'));
-        if ($eventEnd === false || $eventEnd < time()) {
+        require_once __DIR__ . '/../participation_logic.php';
+        if (!participation_event_interest_is_open($announcement)) {
             $pdo->rollBack();
-            out(['ok' => false, 'error' => 'This event has already ended.'], 400);
+            out(['ok' => false, 'error' => 'Interest responses close when the event starts.'], 400);
         }
 
         $pdo->prepare("INSERT INTO app_data (data_key, data_value, updated_by)
@@ -194,7 +200,7 @@ $user = require_officer();
 
 /* ---------- event attendance ---------- */
 if ($action === 'event_attendance') {
-    if (!can_write_app_data()) out(['ok' => false, 'error' => 'Your account role cannot record event attendance.'], 403);
+    if (!can('record_attendance')) out(['ok' => false, 'error' => 'You do not have permission to record event attendance.'], 403);
     $eventId = (string)($in['eventId'] ?? '');
     $registrationId = (string)($in['registrationId'] ?? '');
     $status = (string)($in['status'] ?? '');
@@ -253,7 +259,7 @@ if ($action === 'event_attendance') {
 
 /* ---------- walk-in attendance ---------- */
 if ($action === 'event_walkin') {
-    if (!can_write_app_data()) out(['ok' => false, 'error' => 'Your account role cannot record event attendance.'], 403);
+    if (!can('record_attendance')) out(['ok' => false, 'error' => 'You do not have permission to record event attendance.'], 403);
     $eventId = (string)($in['eventId'] ?? '');
     $memberId = (string)($in['memberId'] ?? '');
     if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $eventId)
@@ -354,6 +360,228 @@ if ($action === 'event_walkin') {
         if ($pdo->inTransaction()) $pdo->rollBack();
         error_log('Walk-in event attendance update failed: ' . $ex->getMessage());
         out(['ok' => false, 'error' => 'Could not save walk-in attendance.'], 500);
+    }
+}
+
+/* ---------- QR scan attendance ---------- */
+if ($action === 'event_attendance_qr') {
+    $user = current_user();
+    if (!$user || !can('record_attendance')) out(['ok' => false, 'error' => 'You do not have permission to record event attendance.'], 403);
+    $eventId = (string)($in['eventId'] ?? '');
+    $value = (string)($in['value'] ?? '');
+    $memberId = (string)($in['memberId'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $eventId)) {
+        out(['ok' => false, 'error' => 'Choose a valid event.'], 400);
+    }
+    if ($value !== '' && $memberId !== '') {
+        out(['ok' => false, 'error' => 'Provide either a scanned KK ID or a member, not both.'], 400);
+    }
+    if ($value === '' && $memberId === '') {
+        out(['ok' => false, 'error' => 'Scan a KK ID or choose a member to mark attendance.'], 400);
+    }
+
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $lockAnnouncements = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skAnnouncements' FOR UPDATE");
+        $lockAnnouncements->execute();
+        $announcements = json_decode((string)$lockAnnouncements->fetchColumn(), true);
+        if (!is_array($announcements)) throw new RuntimeException('Announcement data is invalid.');
+        $event = null;
+        foreach ($announcements as $announcement) {
+            if (is_array($announcement) && (string)($announcement['id'] ?? '') === $eventId) {
+                $event = $announcement;
+                break;
+            }
+        }
+        if (!$event || !empty($event['cancelled'])) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'The selected event was not found or was cancelled.'], 404);
+        }
+
+        // Resolve memberId from QR scan token, or use the manually chosen memberId.
+        if ($value !== '') {
+            require_once __DIR__ . '/../kk_id_logic.php';
+            $token = kk_id_token_from_scan($value);
+            if ($token === null) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'The QR code is not a valid KK ID.'], 400);
+            }
+            require_once __DIR__ . '/../kk_id_schema.php';
+            kk_id_ensure_schema($pdo);
+            $tokenRow = $pdo->prepare('SELECT member_id FROM kk_member_id_tokens WHERE token = ?');
+            $tokenRow->execute([$token]);
+            $memberId = (string)$tokenRow->fetchColumn();
+            if ($memberId === false) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'This KK ID could not be verified.'], 404);
+            }
+        }
+        if (!preg_match('/^[A-Za-z0-9_-]{1,100}$/', $memberId)) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'Choose a valid KK member.'], 400);
+        }
+
+        if (USE_MEMBERS_TABLE) {
+            $memberQuery = $pdo->prepare('SELECT status FROM members WHERE legacy_id = ? FOR UPDATE');
+            $memberQuery->execute([$memberId]);
+            $memberStatus = $memberQuery->fetchColumn();
+        } else {
+            $lockMembers = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'kkMembers' FOR UPDATE");
+            $lockMembers->execute();
+            $members = json_decode((string)$lockMembers->fetchColumn(), true);
+            if (!is_array($members)) throw new RuntimeException('KK member data is invalid.');
+            $memberStatus = false;
+            foreach ($members as $member) {
+                if (is_array($member) && (string)($member['id'] ?? '') === $memberId) {
+                    $memberStatus = $member['status'] ?? 'Active';
+                    break;
+                }
+            }
+        }
+        if ($memberStatus !== 'Active') {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'Only active KK members can be marked as attendees.'], 400);
+        }
+
+        $lockRegistrations = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skEventRegistrations' FOR UPDATE");
+        $lockRegistrations->execute();
+        $registrationsRaw = $lockRegistrations->fetchColumn();
+        $registrations = $registrationsRaw === false ? [] : json_decode((string)$registrationsRaw, true);
+        if (!is_array($registrations)) throw new RuntimeException('Event registration data is invalid.');
+        foreach ($registrations as $registration) {
+            if (is_array($registration)
+                && (string)($registration['eventId'] ?? '') === $eventId
+                && (string)($registration['memberId'] ?? '') === $memberId) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'This member already has a sign-up for the event. Record attendance on that sign-up instead.'], 409);
+            }
+        }
+
+        $pdo->prepare("INSERT INTO app_data (data_key, data_value, updated_by)
+                       VALUES ('skEventAttendance', '[]', ?)
+                       ON DUPLICATE KEY UPDATE data_key = VALUES(data_key)")
+            ->execute([$user['username']]);
+        $lockAttendance = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skEventAttendance' FOR UPDATE");
+        $lockAttendance->execute();
+        $attendance = json_decode((string)$lockAttendance->fetchColumn(), true);
+        if (!is_array($attendance)) throw new RuntimeException('Event walk-in attendance data is invalid.');
+        foreach ($attendance as $record) {
+            if (is_array($record)
+                && (string)($record['eventId'] ?? '') === $eventId
+                && (string)($record['memberId'] ?? '') === $memberId) {
+                $pdo->rollBack();
+                out(['ok' => false, 'error' => 'This member is already recorded as attending this event.'], 409);
+            }
+        }
+        $member = null;
+        if (!USE_MEMBERS_TABLE) {
+            foreach ($members as $m) {
+                if (is_array($m) && (string)($m['id'] ?? '') === $memberId) {
+                    $member = $m;
+                    break;
+                }
+            }
+        }
+        $memberName = $member ? trim(implode(' ', array_filter([
+            $member['firstName'] ?? '', $member['middleName'] ?? '', $member['lastName'] ?? '', $member['suffix'] ?? '',
+        ], function ($part) { return is_string($part) && trim($part) !== ''; }))) : '';
+        $record = [
+            'id' => 'q' . round(microtime(true) * 1000) . substr(bin2hex(random_bytes(3)), 0, 5),
+            'eventId' => $eventId,
+            'eventTitle' => mb_substr((string)($event['title'] ?? 'Untitled event'), 0, 150),
+            'memberId' => $memberId,
+            'memberName' => $memberName,
+            'attendanceStatus' => 'Attended',
+            'attendanceMarkedAt' => gmdate('c'),
+            'attendanceMarkedBy' => $user['username'],
+            'source' => $value !== '' ? 'qr_scan' : 'manual',
+        ];
+        $attendance[] = $record;
+        $pdo->prepare('UPDATE app_data SET data_value = ?, updated_by = ? WHERE data_key = ?')
+            ->execute([
+                json_encode($attendance, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
+                $user['username'],
+                'skEventAttendance',
+            ]);
+        sk_audit($pdo, $user, $memberId, 'event_attendance_qr', null, [
+            'eventId' => $eventId, 'memberId' => $memberId, 'source' => $record['source'],
+        ]);
+        $pdo->commit();
+        out(['ok' => true, 'record' => $record]);
+    } catch (Throwable $ex) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log('QR event attendance failed: ' . $ex->getMessage());
+        out(['ok' => false, 'error' => 'Could not mark attendance.'], 500);
+    }
+}
+
+if ($action === 'event_walkin_remove' || $action === 'event_walkin_restore') {
+    require_once __DIR__ . '/../participation_logic.php';
+    if (!can_manage_sk_roles()) out(['ok' => false, 'error' => 'Attendance record removal cannot be delegated.'], 403);
+    $eventId = (string)($in['eventId'] ?? '');
+    $recordId = (string)($in['recordId'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $eventId)
+        || !preg_match('/^[A-Za-z0-9_-]{1,80}$/', $recordId)) {
+        out(['ok' => false, 'error' => 'Choose a valid event and walk-in record.'], 400);
+    }
+
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $attendanceQuery = $pdo->prepare("SELECT data_value FROM app_data WHERE data_key = 'skEventAttendance' FOR UPDATE");
+        $attendanceQuery->execute();
+        $rawAttendance = $attendanceQuery->fetchColumn();
+        if ($rawAttendance === false) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'The walk-in attendance record was not found.'], 404);
+        }
+        $attendance = json_decode((string)$rawAttendance, true);
+        if (!is_array($attendance)) throw new RuntimeException('Walk-in attendance data is invalid.');
+
+        $updated = null;
+        foreach ($attendance as &$record) {
+            if (!is_array($record)
+                || (string)($record['id'] ?? '') !== $recordId
+                || (string)($record['eventId'] ?? '') !== $eventId) continue;
+
+            if ($action === 'event_walkin_remove') {
+                if (!participation_walkin_is_active($record)) {
+                    $pdo->rollBack();
+                    out(['ok' => false, 'error' => 'This walk-in record has already been removed.'], 409);
+                }
+                $record['removedAt'] = gmdate('c');
+                $record['removedBy'] = $user['username'];
+            } else {
+                if (participation_walkin_is_active($record)) {
+                    $pdo->rollBack();
+                    out(['ok' => false, 'error' => 'This walk-in record is already active.'], 409);
+                }
+                unset($record['removedAt'], $record['removedBy']);
+                $record['attendanceStatus'] = 'Attended';
+                $record['attendanceMarkedAt'] = gmdate('c');
+                $record['attendanceMarkedBy'] = $user['username'];
+            }
+            $updated = $record;
+            break;
+        }
+        unset($record);
+
+        if ($updated === null) {
+            $pdo->rollBack();
+            out(['ok' => false, 'error' => 'The walk-in attendance record was not found.'], 404);
+        }
+        $save = $pdo->prepare("UPDATE app_data SET data_value = ?, updated_by = ? WHERE data_key = 'skEventAttendance'");
+        $save->execute([
+            json_encode($attendance, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
+            $user['username'],
+        ]);
+        $pdo->commit();
+        out(['ok' => true, 'record' => $updated]);
+    } catch (Throwable $ex) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log('Walk-in event attendance update failed: ' . $ex->getMessage());
+        out(['ok' => false, 'error' => 'Could not update walk-in attendance.'], 500);
     }
 }
 

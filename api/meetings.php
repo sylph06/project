@@ -16,8 +16,11 @@ if (!in_array($action, [
 
 $pdo = db();
 if ($action === 'meeting_attendance_save' || $action === 'meeting_attendance_delete') {
-    if (!can_manage_sk_roles()) {
-        out(['ok' => false, 'error' => 'Only the SK Chairman or SK Secretary can manage official attendance.'], 403);
+    if ($action === 'meeting_attendance_delete' && !can_manage_sk_roles()) {
+        out(['ok' => false, 'error' => 'Attendance record removal cannot be delegated.'], 403);
+    }
+    if ($action === 'meeting_attendance_save' && !can('record_attendance')) {
+        out(['ok' => false, 'error' => 'You do not have permission to manage official attendance.'], 403);
     }
     $meetingId = (string)($in['meetingId'] ?? '');
     $expected = $in['expected'] ?? null;

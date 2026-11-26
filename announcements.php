@@ -8,7 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <script src="js/theme.js"></script>
     <script>
         window.ANN_MODE = "<?= is_limited_viewer() ? 'public' : 'official' ?>";
@@ -1037,6 +1037,37 @@ html[data-bs-theme="dark"] .announcements-main{
 .announcements-welcome .hero-copy{max-width:620px}
 .announcements-welcome h2{color:#fff;font-size:clamp(1.35rem,2.4vw,1.9rem)}
 .announcements-welcome p{max-width:620px;color:rgba(255,255,255,.82)}
+.interest-analytics{
+    padding:1.1rem 1.2rem;
+    border:1px solid var(--dashboard-outline);
+    border-radius:18px;
+    background:var(--dashboard-card);
+    box-shadow:var(--dashboard-shadow);
+}
+.interest-analytics-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.75rem}
+.interest-analytics h2{margin:0;color:var(--bs-emphasis-color);font-size:1rem;font-weight:800}
+.interest-analytics p{margin:.25rem 0 0;color:var(--bs-secondary-color);font-size:.8rem}
+.interest-chart{display:grid;gap:.7rem}
+.interest-chart-row{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(100px,2fr) 2.5rem;align-items:center;gap:.75rem}
+.interest-chart-label{min-width:0}
+.interest-chart-label strong,.interest-chart-label span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.interest-chart-label strong{color:var(--bs-emphasis-color);font-size:.82rem}
+.interest-chart-label span{color:var(--bs-secondary-color);font-size:.7rem}
+.interest-chart-track{height:.65rem;overflow:hidden;border-radius:999px;background:var(--dashboard-blue-light)}
+.interest-chart-bar{height:100%;border-radius:inherit;background:rgba(13,110,253,var(--interest-level));transition:width .25s ease}
+.interest-chart-count{text-align:right;color:var(--bs-emphasis-color);font-size:.85rem;font-weight:800}
+.interest-member-panel{padding:.9rem 1rem;border:1px solid var(--dashboard-outline);border-radius:13px;background:var(--dashboard-blue-light)}
+.interest-member-panel h3{font-size:.9rem;font-weight:800}
+.interest-member-list{display:flex;flex-wrap:wrap;gap:.4rem;margin:0;padding:0;list-style:none}
+.interest-member-list li{padding:.3rem .6rem;border:1px solid var(--dashboard-outline);border-radius:999px;background:var(--dashboard-card);font-size:.78rem}
+html.dark-mode .interest-analytics{background:var(--dashboard-card);border-color:var(--dashboard-outline)}
+html.dark-mode .interest-chart-track{background:#293b58}
+html.dark-mode .interest-member-panel{background:#293b58;border-color:#35435d}
+html.dark-mode .interest-member-list li{background:#222d40;border-color:#35435d}
+@media(max-width:575.98px){
+    .interest-chart-row{grid-template-columns:minmax(100px,1.1fr) minmax(60px,1fr) 2rem;gap:.5rem}
+    .interest-analytics-head{flex-direction:column}
+}
 .toolbar-box{
     padding:1.1rem;
     border-color:var(--dashboard-outline);
@@ -1144,7 +1175,7 @@ html.dark-mode .reschedule-history{background:var(--dashboard-blue-light);color:
 <script>
 window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($memberFlagUser['legacy_id'])) ? 'true' : 'false' ?>;
 </script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=18"></script>
 
 <div class="page-content">
 
@@ -1168,13 +1199,6 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
             </div>
 
             <div class="ms-auto header-account-area">
-
-                <a href="announcements.php"
-                   class="header-notification"
-                   aria-label="Notifications">
-                    <i class="bi bi-bell"></i>
-                    <span id="bellCount" class="header-notification-count">0</span>
-                </a>
 
                 <span class="header-avatar"><?= e(uinit()) ?></span>
 
@@ -1275,6 +1299,21 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
                     </button>
                 </div>
             </div>
+        </section>
+
+        <section class="interest-analytics mb-4" id="interestAnalytics" aria-labelledby="interestAnalyticsTitle">
+            <div class="interest-analytics-head">
+                <div>
+                    <h2 id="interestAnalyticsTitle"><i class="bi bi-fire text-primary me-1" aria-hidden="true"></i>Event interest by COP</h2>
+                    <p>Upcoming published events ranked by active KK members who marked interest. Names are visible to SK members only.</p>
+                </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="refreshInterestData">
+                        <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Refresh
+                    </button>
+            </div>
+            <div class="interest-chart" id="interestChart" role="list" aria-label="Interested members by event and Center of Participation"></div>
+            <div class="small text-danger mt-2 d-none" id="interestChartError" role="alert"></div>
+            <div class="small text-muted mt-2" id="interestChartNote" role="status"></div>
         </section>
 
         <!-- UPCOMING EVENTS -->
@@ -1511,6 +1550,9 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         "Emergency": "Peace-Building and Security", "Other": "Governance" };
 
     var announcements = [];
+    var eventInterestRecords = [];
+    var eventInterestMembers = Object.create(null);
+    var eventInterestError = "";
     var currentFilter = "All";   // All / Upcoming / Ongoing / Completed / Cancelled
     var viewingId = null;
     var lastSig = "";
@@ -1667,6 +1709,7 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         a.details = a.details || ""; a.description = a.description || "";
         a.venue = a.venue || ""; a.organizer = a.organizer || "";
         a.cancelled = !!a.cancelled;
+        a.interestClosed = !!a.interestClosed;
         a.publishState = ["Draft", "Published", "Unpublished"].indexOf(a.publishState) === -1 ? "Published" : a.publishState;
         a.publishDate = a.publishDate || "";
         a.rescheduledFrom = typeof a.rescheduledFrom === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.rescheduledFrom)
@@ -1714,6 +1757,49 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         }
     }
     function find(id) { return announcements.filter(function (a) { return a.id === id; })[0]; }
+    function readStoredArray(key) {
+        var saved = DB.getItem(key);
+        if (saved === null || saved === "") return [];
+        var parsed;
+        try { parsed = JSON.parse(saved); }
+        catch (error) { throw new Error("Saved " + key + " data is not valid JSON."); }
+        if (!Array.isArray(parsed)) throw new Error("Saved " + key + " data must be a list.");
+        return parsed;
+    }
+    function loadEventInterestData() {
+        eventInterestRecords = [];
+        eventInterestMembers = Object.create(null);
+        eventInterestError = "";
+        if (!OFFICIAL) return;
+        try {
+            eventInterestRecords = readStoredArray("skEventInterests");
+            readStoredArray("kkMembers").forEach(function (member) {
+                if (!member || member.id == null || member.status !== "Active") return;
+                var name = [member.firstName, member.middleName, member.lastName, member.suffix]
+                    .filter(function (part) { return typeof part === "string" && part.trim() !== ""; })
+                    .join(" ").trim();
+                if (name) eventInterestMembers[String(member.id)] = name;
+            });
+        } catch (error) {
+            eventInterestError = error && error.message ? error.message : "Could not load event interest data.";
+            console.error(eventInterestError);
+        }
+    }
+    function interestedMembersFor(eventId) {
+        if (eventInterestError) return [];
+        var responses = Object.create(null);
+        eventInterestRecords.forEach(function (record) {
+            if (!record || String(record.eventId) !== String(eventId)
+                || ["Interested", "Not interested"].indexOf(record.response) === -1) return;
+            var memberId = String(record.memberId || "");
+            if (memberId) responses[memberId] = record.response;
+        });
+        return Object.keys(responses).filter(function (memberId) {
+            return responses[memberId] === "Interested" && eventInterestMembers[memberId];
+        }).map(function (memberId) {
+            return eventInterestMembers[memberId];
+        }).sort(function (a, b) { return a.localeCompare(b); });
+    }
 
     /* ---------- pieces of HTML ---------- */
     function placeholder() { return '<div class="ann-banner-empty"><i class="bi bi-megaphone-fill"></i></div>'; }
@@ -1874,13 +1960,61 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         setText("countCompleted", c.Completed);
         setText("countCancelled", c.Cancelled);
         setText("countRescheduled", c.Rescheduled);
-        var bell = $("bellCount");
-        if (bell) {
-            var n = visible.filter(function (a) { return a.publishState === "Published" && !a.cancelled; })
-                .filter(function (a) { var s = getStatus(a); return s === "Upcoming" || s === "Ongoing"; }).length;
-            bell.textContent = n;
-            bell.style.display = n === 0 ? "none" : "";
+    }
+
+    function renderInterestAnalytics() {
+        var chart = $("interestChart");
+        var note = $("interestChartNote");
+        var error = $("interestChartError");
+        if (!chart || !OFFICIAL) return;
+        if (eventInterestError) {
+            chart.innerHTML = "";
+            error.textContent = eventInterestError + " Reload the page after correcting the saved data.";
+            error.classList.remove("d-none");
+            note.textContent = "";
+            return;
         }
+        error.textContent = "";
+        error.classList.add("d-none");
+        var rows = [];
+        announcements.filter(function (a) {
+            return isPublic(a) && getStatus(a) === "Upcoming" && !a.cancelled;
+        }).forEach(function (announcement) {
+            var centers = Array.isArray(announcement.centers) && announcement.centers.length
+                ? announcement.centers : [announcement.category];
+            var memberNames = interestedMembersFor(announcement.id);
+            centers.forEach(function (center) {
+                if (CATEGORIES.indexOf(center) === -1) return;
+                rows.push({
+                    title:announcement.title,
+                    date:announcement.date,
+                    center:center,
+                    count:memberNames.length
+                });
+            });
+        });
+        rows.sort(function (a, b) {
+            return b.count - a.count || a.date.localeCompare(b.date) || a.title.localeCompare(b.title) || a.center.localeCompare(b.center);
+        });
+        if (!rows.length) {
+            chart.innerHTML = '<div class="small text-muted py-2">No published upcoming events to summarize.</div>';
+            note.textContent = "";
+            return;
+        }
+        var maxCount = rows.reduce(function (max, row) { return Math.max(max, row.count); }, 0);
+        chart.innerHTML = rows.map(function (row) {
+            var percent = maxCount ? Math.round(row.count / maxCount * 100) : 0;
+            var intensity = maxCount ? (0.2 + row.count / maxCount * 0.8).toFixed(2) : "0.2";
+            return '<div class="interest-chart-row" role="listitem">' +
+                '<div class="interest-chart-label"><strong title="' + escapeHtml(row.title) + '">' + escapeHtml(row.title) +
+                '</strong><span>' + escapeHtml(row.center) + ' \u2022 ' + escapeHtml(formatDate(row.date)) + '</span></div>' +
+                '<div class="interest-chart-track" role="img" aria-label="' + row.count + ' interested KK members">' +
+                '<div class="interest-chart-bar" style="width:' + percent + '%;--interest-level:' + intensity + '"></div></div>' +
+                '<div class="interest-chart-count">' + row.count + '</div></div>';
+        }).join("");
+        note.textContent = maxCount === 0
+            ? "No active KK members have marked interest yet."
+            : "Bar length and blue intensity reflect relative interest. For events assigned to multiple COPs, each response appears under each selected COP.";
     }
 
     function render() {
@@ -1915,13 +2049,15 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         }
         renderUpcoming();
         renderCounts();
+        renderInterestAnalytics();
         lastSig = signature();
         updateCountdowns();
     }
 
     function signature() {
         return announcements.map(function (a) {
-            return a.id + getStatus(a) + (canSee(a) ? 1 : 0) + ":" + a.rescheduleHistory.length + ":" + a.date + a.startTime;
+            return a.id + getStatus(a) + (canSee(a) ? 1 : 0) + (a.interestClosed ? 1 : 0) + ":" +
+                a.rescheduleHistory.length + ":" + a.date + a.startTime;
         }).join("|");
     }
 
@@ -1988,9 +2124,34 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
         if (a.notes) {
             html += '<div class="alert alert-warning mt-3 mb-0"><strong>Additional notes</strong><br><span class="detail-text">' + escapeHtml(a.notes) + '</span></div>';
         }
+        if (OFFICIAL && isPublic(a) && status === "Upcoming") {
+            var interested = interestedMembersFor(a.id);
+            html += '<section class="interest-member-panel mt-4" aria-labelledby="interestedMembersTitle">' +
+                '<div class="d-flex justify-content-between align-items-center gap-2 mb-2">' +
+                '<h3 class="mb-0" id="interestedMembersTitle"><i class="bi bi-people-fill text-primary me-1" aria-hidden="true"></i>Interested KK members</h3>' +
+                '<span class="badge text-bg-primary">' + interested.length + '</span></div>';
+            if (eventInterestError) {
+                html += '<p class="small text-danger mb-0">' + escapeHtml(eventInterestError) + '</p>';
+            } else if (!interested.length) {
+                html += '<p class="small text-muted mb-0">No active KK members have marked interest yet.</p>';
+            } else {
+                html += '<ul class="interest-member-list">';
+                interested.forEach(function (name) { html += '<li>' + escapeHtml(name) + '</li>'; });
+                html += '</ul>';
+            }
+            html += '<p class="small text-muted mt-2 mb-0">' +
+                (a.interestClosed ? 'Interest responses are closed.' : 'Interest responses are open; close them when seat planning is complete.') +
+                '</p></section>';
+        }
         html += '</div>';
         $("detailBody").innerHTML = html;
         $("detailFooter").innerHTML = '<button type="button" class="btn btn-outline-success" data-bs-dismiss="modal">Close</button>' +
+            (OFFICIAL && window.SK_CAN_EDIT_MEMBERS && isPublic(a) && status === "Upcoming"
+                ? '<button type="button" class="btn ' + (a.interestClosed ? 'btn-outline-primary' : 'btn-primary') +
+                    '" data-act="toggleInterest" data-id="' + escapeHtml(a.id) + '">' +
+                    '<i class="bi ' + (a.interestClosed ? 'bi-unlock' : 'bi-lock') + ' me-1" aria-hidden="true"></i>' +
+                    (a.interestClosed ? 'Reopen interest' : 'Close interest') + '</button>'
+                : "") +
             (OFFICIAL ? '<button type="button" class="btn btn-success" data-act="edit" data-id="' + escapeHtml(a.id) + '"><i class="bi bi-pencil-square me-1"></i> Edit</button>' : "");
         updateCountdowns();
     }
@@ -2017,6 +2178,7 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
 
     function init() {
         load();
+        loadEventInterestData();
         injectModals();
         var cat = $("categoryFilter");
         CATEGORIES.forEach(function (c) { var o = document.createElement("option"); o.value = c; o.textContent = c; cat.appendChild(o); });
@@ -2037,6 +2199,8 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
             setFilter("Upcoming");
             $("allAnnouncementsHead").scrollIntoView({ behavior: "smooth" });
         });
+        var refreshInterestButton = $("refreshInterestData");
+        if (refreshInterestButton) refreshInterestButton.addEventListener("click", function () { window.location.reload(); });
 
         document.addEventListener("click", function (e) {
             if (e.target.closest("#closePosterBtn") || e.target.id === "posterLightbox") { closePoster(); return; }
@@ -2460,6 +2624,42 @@ window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($mem
 
     /* ---------- card buttons ---------- */
     Core.actions.edit = openEdit;
+
+    Core.actions.toggleInterest = function (id) {
+        const a = Core.find(id);
+        if (!a || Core.getStatus(a) !== "Upcoming") return;
+        if (a.publishState !== "Published" || (a.publishDate && a.publishDate > Core.todayISO())) {
+            Core.toast("Only published events can accept interest responses.");
+            return;
+        }
+        const closing = !a.interestClosed;
+        Core.closeDetails();
+        ask({
+            icon:closing ? "bi-lock" : "bi-unlock",
+            title:closing ? "Close event interest?" : "Reopen event interest?",
+            name:a.title,
+            text:closing
+                ? "KK members will no longer be able to change their response. You can reopen interest later."
+                : "KK members will be able to mark or withdraw their interest again.",
+            ok:closing ? "Close interest" : "Reopen interest",
+            danger:false
+        }, function () {
+            const previousClosed = !!a.interestClosed;
+            const previousUpdatedAt = a.updatedAt;
+            a.interestClosed = closing;
+            a.updatedAt = new Date().toISOString();
+            if (Core.save()) {
+                Core.render();
+                Core.openDetails(id);
+                Core.toast(closing ? "Interest responses closed." : "Interest responses reopened.");
+            } else {
+                a.interestClosed = previousClosed;
+                a.updatedAt = previousUpdatedAt;
+                Core.render();
+                Core.openDetails(id);
+            }
+        });
+    };
 
     Core.actions.delete = function (id) {
         const a = Core.find(id);

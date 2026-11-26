@@ -10,40 +10,242 @@ require_viewer();
     <title>Archives | KK Youth Profiling System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <style>
-        :root { --line:var(--bs-border-color); --muted:var(--bs-secondary-color); }
-        * { box-sizing:border-box; }
-        body { margin:0; background:var(--bs-tertiary-bg); color:var(--bs-body-color); font-family:Arial,sans-serif; }
-        .top-strip { height:7px; background:var(--bs-primary); }
-        .header { min-height:70px; background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 26px; gap:14px; }
-        .header-title { font-size:20px; font-weight:800; }
-        .user-area { display:flex; align-items:center; gap:10px; }
-        .avatar { width:38px; height:38px; border-radius:50%; background:var(--bs-primary); display:flex; align-items:center; justify-content:center; font-weight:800; }
-        .content { padding:26px; max-width:1500px; margin:0 auto; }
-        .hero { background:#fff; border:1px solid var(--line); border-radius:16px; padding:25px; margin-bottom:20px; }
-        .hero h1 { font-weight:900; font-size:28px; margin:0 0 6px; }
-        .hero p { color:var(--muted); margin:0; }
-        .summary-card, .records-card { background:#fff; border:1px solid var(--line); border-radius:14px; }
-        .summary-card { width:100%; padding:18px; height:100%; text-align:left; color:inherit; cursor:pointer; transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
-        .summary-card:hover { transform:translateY(-2px); border-color:var(--bs-primary); }
-        .summary-card:focus-visible { outline:3px solid var(--bs-primary); outline-offset:2px; }
-        .summary-card.selected { border-color:var(--bs-primary); box-shadow:0 0 0 2px var(--bs-primary); }
-        .summary-card .count { font-size:27px; font-weight:900; }
-        .summary-card .label { color:var(--muted); font-size:14px; }
-        .records-card { overflow:hidden; }
-        .records-heading { padding:17px 20px; border-bottom:1px solid var(--line); font-weight:800; }
-        .records-body { padding:18px 20px; }
-        .table { font-size:14px; }
-        .table th { white-space:nowrap; background:var(--bs-primary-bg-subtle); color:var(--bs-secondary-color); font-size:12px; text-transform:uppercase; }
-        .table td, .table th { padding:12px; vertical-align:middle; }
-        .footer-note { text-align:center; color:var(--muted); font-size:13px; padding:24px; }
-        @media(max-width:767px) {
-            .content { padding:16px; }
-            .header { padding:0 16px; }
-            .records-body { padding:14px; }
-        }
-    </style>
+:root {
+    --mem-bg: var(--ui-bg, #f8fafc);
+    --mem-surface: var(--ui-paper, #ffffff);
+    --mem-surface-alt: var(--ui-surface, #f1f5f9);
+    --mem-ink: var(--ui-ink, #1e293b);
+    --mem-muted: var(--ui-ink-muted, #64748b);
+    --mem-brand: var(--ui-brand, #1e40af);
+    --mem-brand-soft: rgba(30,64,175,.1);
+    --mem-brand-rgb: 30,64,175;
+    --mem-brand-text-emphasis: var(--ui-brand-text-emphasis, rgba(30,64,175,.75));
+    --mem-radius: var(--ui-radius, 12px);
+    --mem-line: var(--ui-line, #e2e8f0);
+}
+
+html[data-bs-theme="dark"] {
+    --mem-bg: #111827;
+    --mem-surface: #1f2937;
+    --mem-surface-alt: #374151;
+    --mem-ink: #f9fafb;
+    --mem-muted: #9ca3af;
+    --mem-brand: #3b82f6;
+    --mem-brand-soft: rgba(59,130,246,.1);
+    --mem-brand-rgb: 59,130,246;
+    --mem-brand-text-emphasis: rgba(59,130,246,.8);
+    --mem-line: #374151;
+}
+
+* { box-sizing:border-box; }
+
+body {
+    margin:0;
+    background:var(--mem-bg)!important;
+    color:var(--mem-ink)!important;
+    font-family:Arial,sans-serif;
+}
+
+.top-strip {
+    height:7px;
+    background:var(--mem-brand)!important;
+}
+
+.header {
+    min-height:70px;
+    background:#fff!important;
+    border-bottom:1px solid var(--mem-line)!important;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 26px;
+    gap:14px;
+}
+.header-title {
+    font-size:20px;
+    font-weight:800;
+}
+.user-area {
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.avatar {
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    background:var(--mem-brand)!important;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+}
+.content {
+    padding:26px!important;
+    max-width:1500px;
+    margin:0 auto;
+}
+.hero {
+    background:#fff!important;
+    border:1px solid var(--mem-line)!important;
+    border-radius:16px!important;
+    padding:25px!important;
+    margin-bottom:20px;
+}
+.hero h1 {
+    font-weight:900;
+    font-size:28px;
+    color:var(--mem-ink)!important;
+    margin:0 0 6px;
+}
+.hero p {
+    color:var(--mem-muted)!important;
+    margin:0;
+}
+.summary-card, .records-card {
+    background:#fff!important;
+    border:1px solid var(--mem-line)!important;
+    border-radius:14px!important;
+}
+.summary-card {
+    width:100%;
+    padding:18px;
+    height:100%;
+    text-align:left;
+    color:inherit;
+    cursor:pointer;
+    transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.summary-card:hover {
+    transform:translateY(-2px);
+    border-color:var(--mem-brand)!important;
+}
+.summary-card:focus-visible {
+    outline:3px solid var(--mem-brand);
+    outline-offset:2px;
+}
+.summary-card.selected {
+    border-color:var(--mem-brand)!important;
+    box-shadow:0 0 0 2px var(--mem-brand)!important;
+}
+.summary-card .count {
+    font-size:27px;
+    font-weight:900;
+}
+.summary-card .label {
+    color:var(--mem-muted)!important;
+    font-size:14px;
+}
+.records-card {
+    overflow:hidden;
+}
+.records-heading {
+    padding:17px 20px;
+    border-bottom:1px solid var(--mem-line)!important;
+    font-weight:800;
+}
+.records-body {
+    padding:18px 20px;
+}
+.table {
+    font-size:14px;
+}
+.table th {
+    white-space:nowrap;
+    background:rgba(var(--mem-brand-rgb),.08)!important;
+    color:var(--mem-muted)!important;
+    font-size:12px;
+    text-transform:uppercase;
+}
+.table td, .table th {
+    padding:12px;
+    vertical-align:middle;
+}
+.table-hover {
+    border-collapse:collapse;
+}
+.table-hover tr:hover {
+    background:rgba(var(--mem-brand-rgb),.08)!important;
+}
+.footer-note {
+    text-align:center;
+    color:var(--mem-muted)!important;
+    font-size:13px;
+    padding:24px;
+}
+@media(max-width:767px) {
+    .content {
+        padding:16px;
+    }
+    .header {
+        padding:0 16px;
+    }
+    .records-body {
+        padding:14px;
+    }
+}
+
+/* ---- mobile card view for archive table rows ---- */
+@media(max-width:575px) {
+    .table-responsive { overflow:visible; }
+    .table-responsive table { width:100%; }
+    .table-responsive thead { display:none; }
+    .table-responsive tbody tr {
+        display:block;
+        margin-bottom:14px;
+        border:1px solid var(--mem-line);
+        border-radius:var(--mem-radius);
+        background:var(--mem-surface);
+        overflow:hidden;
+    }
+    .table-responsive tbody tr td {
+        display:block;
+        padding:10px 14px;
+        width:100%;
+        border:none;
+        border-bottom:1px solid var(--mem-line);
+    }
+    .table-responsive tbody tr td:last-child { border-bottom:none; }
+    .table-responsive tbody tr td.text-nowrap { text-align:left; }
+    .table-responsive tbody tr td.text-muted { color:var(--mem-muted)!important; }
+
+    /* dark mode on header/hero backgrounds */
+    html[data-bs-theme="dark"] .header,
+    html[data-bs-theme="dark"] .records-heading {
+        background:var(--mem-surface)!important;
+        border-color:var(--mem-line)!important;
+    }
+    html[data-bs-theme="dark"] .hero,
+    html[data-bs-theme="dark"] .summary-card,
+    html[data-bs-theme="dark"] .records-card {
+        background:var(--mem-surface)!important;
+        border-color:var(--mem-line)!important;
+    }
+    html[data-bs-theme="dark"] .hero h1 { color:var(--mem-ink)!important; }
+    html[data-bs-theme="dark"] .hero p { color:var(--mem-muted)!important; }
+    html[data-bs-theme="dark"] .summary-card,
+    html[data-bs-theme="dark"] .summary-card .label { color:var(--mem-ink)!important; }
+    html[data-bs-theme="dark"] .footer-note { color:var(--mem-muted)!important; }
+    html[data-bs-theme="dark"] .badge.text-bg-secondary {
+        background:var(--mem-surface-alt)!important;
+        color:var(--mem-ink)!important;
+        border:1px solid var(--mem-line)!important;
+    }
+    html[data-bs-theme="dark"] .btn-outline-primary,
+    html[data-bs-theme="dark"] .btn-outline-secondary {
+        border-color:var(--mem-line)!important;
+        color:var(--mem-ink)!important;
+    }
+    html[data-bs-theme="dark"] .btn-outline-primary:hover,
+    html[data-bs-theme="dark"] .btn-outline-secondary:hover {
+        background:rgba(var(--mem-brand-rgb),.1)!important;
+        border-color:var(--mem-brand)!important;
+        color:var(--mem-brand)!important;
+    }
+}
+</style>
 <?php include __DIR__ . '/init.php'; ?>
 <?php
 $archiveRequestItems = json_decode($__data['kkEditRequests'] ?? '[]', true);
@@ -197,7 +399,7 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
 <body>
 <div class="top-strip"></div>
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=16"></script>
+<script src="js/sidebar.js?v=18"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">
@@ -205,10 +407,6 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
             <div><div class="header-title">Archives</div><small>KK Youth Profiling System</small></div>
         </div>
         <div class="header-account-area">
-            <a href="<?= $archiveLimitedViewer ? 'announcements.php' : 'request.php' ?>" class="header-notification" aria-label="<?= $archiveLimitedViewer ? 'View announcements' : (int)$archiveAttentionCount . ' requests need review' ?>">
-                <i class="bi bi-bell" aria-hidden="true"></i>
-                <?php if (!$archiveLimitedViewer && $archiveAttentionCount > 0): ?><span class="header-notification-count"><?= (int)$archiveAttentionCount ?></span><?php endif; ?>
-            </a>
             <div class="header-avatar"><?= e(uinit()) ?></div>
             <div class="d-none d-md-block header-identity">
                 <div class="header-identity-name"><?= e(uname()) ?></div>

@@ -19,6 +19,13 @@ $assert(participation_signup_age('18') === 18, 'A valid sign-up age must be reta
 $assert(participation_signup_age(121) === false, 'An age above the allowed maximum must be rejected.');
 $assert(participation_signup_age(-1) === false, 'A negative age must be rejected.');
 $assert(participation_signup_age('18.5') === false, 'A fractional age must be rejected.');
+$assert(participation_walkin_is_active(['id' => 'walkin-1']), 'Walk-ins without a removal marker must be active.');
+$assert(!participation_walkin_is_active(['id' => 'walkin-1', 'removedAt' => '2026-11-23T12:00:00Z']), 'Removed walk-ins must be inactive.');
+$assert(!participation_walkin_is_active(null), 'Invalid walk-in records must be inactive.');
+$assert(participation_event_interest_is_open(['date' => '2026-01-01', 'startTime' => '11:00'], strtotime('2026-01-01 10:00:00')), 'Interest must remain open before the event starts.');
+$assert(!participation_event_interest_is_open(['date' => '2026-01-01', 'startTime' => '11:00'], strtotime('2026-01-01 11:00:00')), 'Interest must close at the event start time.');
+$assert(!participation_event_interest_is_open(['date' => '2026-01-01', 'startTime' => '11:00', 'interestClosed' => true], strtotime('2026-01-01 10:00:00')), 'SK-closed interest must not accept responses.');
+$assert(!participation_event_interest_is_open(['date' => 'not-a-date', 'startTime' => '11:00'], strtotime('2026-01-01 10:00:00')), 'Invalid event dates must not accept responses.');
 $assert(participation_age_group(14) === 'Outside ages 15-30', 'Ages below the youth range must be grouped separately.');
 $assert(participation_age_group(15) === '15-17', 'Age 15 must be in the first age group.');
 $assert(participation_age_group(17) === '15-17', 'Age 17 must be in the first age group.');

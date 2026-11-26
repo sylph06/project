@@ -180,25 +180,67 @@ function can_write_app_data() {
 
 function can_manage_sk_roles() {
     $user = current_user();
-    return $user && google_member_link_role_can_approve($user['role'] ?? '');
+    return $user && in_array($user['role'] ?? '', ['SK Chairman', 'SK Chairperson', 'SK Secretary'], true);
 }
 
-function google_member_link_role_can_approve($role) {
-    return in_array($role, ['SK Chairman', 'SK Chairperson', 'SK Secretary'], true);
-}
+function can($permission) {
+    $permissions = [
+        'unbind_google',
+        'reset_member_password',
+        'record_attendance',
+        'edit_members',
+        'manage_projects',
+        'view_audit_log',
+    ];
+    if (!is_string($permission) || !in_array($permission, $permissions, true)) return false;
 
-function google_member_link_role_can_request($role) {
-    return in_array($role, ['SK Kagawad', 'SK Chairman', 'SK Chairperson', 'SK Secretary'], true);
-}
-
-function can_request_google_member_links() {
     $user = current_user();
-    return $user && google_member_link_role_can_request($user['role'] ?? '');
+    if (!$user) return false;
+    $GLOBALS['SK_ACTIVE_DELEGATION'] = null;
+
+    $role = (string)($user['role'] ?? '');
+    $principalPermissions = ['unbind_google', 'reset_member_password', 'record_attendance', 'edit_members', 'manage_projects', 'view_audit_log'];
+    if (in_array($role, ['SK Chairman', 'SK Chairperson', 'SK Secretary'], true)
+        && in_array($permission, $principalPermissions, true)) {
+        return true;
+    }
+
+    $existingRolePermissions = ['record_attendance', 'edit_members', 'manage_projects'];
+    if (in_array($role, APP_WRITE_ROLES, true)
+        && in_array($permission, $existingRolePermissions, true)) {
+        return true;
+    }
+
+    if (!in_array($role, ['SK Treasurer', 'SK Kagawad', 'SK Vice Chairperson'], true)) return false;
+    $memberId = trim((string)($user['legacy_id'] ?? ''));
+    if ($memberId === '') return false;
+    $permissionsTable = db()->prepare("SELECT COUNT(*) FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_permissions'");
+    $permissionsTable->execute();
+    if ((int)$permissionsTable->fetchColumn() !== 1) return false;
+    $statement = db()->prepare("SELECT p.id, p.granted_by, p.granted_at, u.username AS grantor_username,
+            u.full_name AS grantor_name
+        FROM user_permissions p
+        LEFT JOIN users u ON u.id = p.granted_by
+        WHERE p.member_id = ? AND p.permission = ? AND p.revoked_at IS NULL
+          AND (p.expires_at IS NULL OR p.expires_at > NOW())
+        ORDER BY p.granted_at DESC, p.id DESC LIMIT 1");
+    $statement->execute([$memberId, $permission]);
+    $grant = $statement->fetch(PDO::FETCH_ASSOC);
+    if (!$grant) return false;
+    $GLOBALS['SK_ACTIVE_DELEGATION'] = [
+        'grant_id' => (int)$grant['id'],
+        'permission' => $permission,
+        'granted_by_user_id' => (int)$grant['granted_by'],
+        'granted_by_username' => (string)($grant['grantor_username'] ?? ''),
+        'granted_by_name' => (string)($grant['grantor_name'] ?? ''),
+        'granted_at' => (string)$grant['granted_at'],
+    ];
+    return true;
 }
 
 function can_view_background_history() {
-    $user = current_user();
-    return $user && in_array($user['role'] ?? '', BACKGROUND_HISTORY_ROLES, true);
+    return can('view_audit_log');
 }
 
 /* a visitor who clicked "Continue as Public Viewer" (view only) */
@@ -215,7 +257,9 @@ function is_limited_viewer() {
 }
 
 function limited_viewer_can_open_page($page) {
-    return in_array(basename((string)$page), ['index.php', 'announcements.php', 'officials.php', 'registration.php', 'archives.php'], true);
+    $page = basename((string)$page);
+    if ($page === 'settings.php') return is_limited_member();
+    return in_array($page, ['index.php', 'announcements.php', 'officials.php', 'registration.php', 'archives.php'], true);
 }
 
 /* Limited viewers can open public information pages and the registration notice. */

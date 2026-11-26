@@ -250,6 +250,18 @@ function sk_audit_client_metadata() {
 }
 
 function sk_audit($pdo, $actor, $targetLegacyId, $action, $oldValue, $newValue) {
+    $delegation = $GLOBALS['SK_ACTIVE_DELEGATION'] ?? null;
+    if (is_array($delegation)) {
+        if (!is_array($newValue)) $newValue = ['value' => $newValue];
+        $newValue['delegation'] = [
+            'grant_id' => $delegation['grant_id'],
+            'permission' => $delegation['permission'],
+            'delegated_by_user_id' => $delegation['granted_by_user_id'],
+            'delegated_by_username' => $delegation['granted_by_username'],
+            'delegated_by_name' => $delegation['granted_by_name'],
+            'granted_at' => $delegation['granted_at'],
+        ];
+    }
     $encode = function ($value) {
         return $value === null ? null : json_encode(
             $value,

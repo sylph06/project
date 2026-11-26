@@ -24,11 +24,12 @@
             ['officials.php',     'bi-person-badge',              'SK Officials']
         ]},
         { title: 'KK Youth', items: [
-            ['request.php',       'bi-inbox-fill',                'Review Requests', 'request-count'],
+            ['request.php',       'bi-inbox-fill',                'Review Requests', 'review_requests'],
             ['members.php',       'bi-people',                    'Member List'],
             ['archives.php',      'bi-archive',                   'Archives'],
-            ['announcements.php', 'bi-megaphone',                 'Announcements'],
+            ['announcements.php', 'bi-megaphone',                 'Announcements', 'announcements'],
             ['participation.php', 'bi-graph-up-arrow',            'Participation Tracking'],
+            ['event-attendance.php', 'bi-qr-code',               'Event Attendance'],
             ['reports.php',       'bi-file-earmark-bar-graph',    'Reports']
         ]},
         { title: 'System', items: [
@@ -47,6 +48,7 @@
         landing.push(memberHome
             ? ['member-portal.php', 'bi-grid-1x2-fill', 'Dashboard']
             : ['index.php#home', 'bi-house-door', 'Home']);
+        if (memberHome) landing.push(['settings.php', 'bi-gear-fill', 'Settings']);
         landing.push(['index.php#officials',     'bi-people',       'SK officials']);
         landing.push(['index.php#expenses',      'bi-receipt',      'Recorded expenses']);
         landing.push(['index.php#budget',        'bi-shield-check', 'Project transparency']);
@@ -84,18 +86,14 @@
         var links = group.items.map(function (it) {
             var href = it[0];
             var active = isActive(href);
-            var badge = '';
-            if (it[3] === 'request-count') {
-                var data = window.__DB || {};
-                var editRequests = [];
-                var publicRegistrations = [];
-                try { editRequests = JSON.parse(data.kkEditRequests || '[]'); } catch (e) {}
-                try { publicRegistrations = JSON.parse(data.kkPendingRegistrations || '[]'); } catch (e) {}
-                var editCount = Array.isArray(editRequests) ? editRequests.filter(function (item) { return item && item.status === 'Edit Request'; }).length : 0;
-                var publicCount = Array.isArray(publicRegistrations) ? publicRegistrations.filter(function (item) { return item && item.status === 'Pending'; }).length : 0;
-                var total = editCount + publicCount;
-                badge = '<span class="sidebar-request-count' + (total ? ' has-pending' : '') + '" aria-label="' + total + ' pending requests">' + total + '</span>';
-            }
+            var alerts = window.SK_SIDEBAR_NOTICES || {};
+            var alertKeys = it[3] === 'announcements'
+                ? ['announcements', 'interested']
+                : (it[3] ? [it[3]] : []);
+            var hasNew = alertKeys.some(function (key) { return alerts[key] === true; });
+            var badge = hasNew
+                ? '<span class="sidebar-new-dot" aria-hidden="true"></span><span class="sidebar-visually-hidden">New</span>'
+                : '';
             return '<li class="nav-item">' +
                    '<a class="nav-link' + (active ? ' active' : '') + '" href="' + href + '"' +
                    (active ? ' aria-current="page"' : '') + '>' +

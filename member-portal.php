@@ -10,7 +10,7 @@ $memberPortalUser = require_member_account();
     <title>KK Youth Profiling System | Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <link href="css/kk-id.css?v=1" rel="stylesheet">
     <link href="css/participation-heatmap.css?v=1" rel="stylesheet">
     <style>
@@ -174,7 +174,7 @@ $memberPortalUser = require_member_account();
     window.SK_MEMBER_PORTAL = true;
 </script>
 <script src="js/theme.js?v=3"></script>
-<script src="js/sidebar.js?v=16"></script>
+<script src="js/sidebar.js?v=18"></script>
 
 <div class="page-content">
     <header class="bg-white border-bottom sticky-top">

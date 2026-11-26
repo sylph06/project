@@ -10,7 +10,7 @@ require_official();
     <title>Review Requests | KK Youth Profiling System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
-    <link href="css/sidebar.css?v=32" rel="stylesheet">
+    <link href="css/sidebar.css?v=33" rel="stylesheet">
     <style>
         :root { --line:var(--bs-border-color); --muted:var(--bs-secondary-color); }
         * { box-sizing:border-box; }
@@ -145,7 +145,7 @@ require_official();
 <body class="review-requests-page">
 <div class="top-strip"></div>
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=15"></script>
+<script src="js/sidebar.js?v=18"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">
@@ -153,10 +153,6 @@ require_official();
             <div><div class="header-title">Review Requests</div><small>KK Youth Profiling System</small></div>
         </div>
         <div class="header-account-area">
-            <a href="request.php" class="header-notification" aria-label="<?= (int)$requestAttentionCount ?> requests need review">
-                <i class="bi bi-bell" aria-hidden="true"></i>
-                <?php if ($requestAttentionCount > 0): ?><span class="header-notification-count"><?= (int)$requestAttentionCount ?></span><?php endif; ?>
-            </a>
             <span class="header-avatar"><?= e(uinit()) ?></span>
             <div class="d-none d-md-block header-identity"><div class="header-identity-name"><?= e(uname()) ?></div><div class="header-identity-role"><?= e(strtoupper(urole())) ?></div></div>
             <a href="logout.php" class="btn btn-sm header-logout"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>

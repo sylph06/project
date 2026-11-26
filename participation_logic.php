@@ -34,6 +34,25 @@ function participation_signup_age($value) {
     return $age > 0 ? $age : null;
 }
 
+function participation_walkin_is_active($record) {
+    return is_array($record) && empty($record['removedAt']);
+}
+
+function participation_event_interest_is_open($announcement, $now = null) {
+    if (!is_array($announcement) || !empty($announcement['cancelled']) || !empty($announcement['interestClosed'])) {
+        return false;
+    }
+    $eventDateText = (string)($announcement['date'] ?? '');
+    $eventDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $eventDateText)
+        ? participation_date($eventDateText) : null;
+    $startTime = (string)($announcement['startTime'] ?? $announcement['time'] ?? '');
+    if (!$eventDate || ($startTime !== '' && !preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $startTime))) {
+        return false;
+    }
+    $eventStart = strtotime($eventDate->format('Y-m-d') . ' ' . ($startTime !== '' ? $startTime : '00:00') . ':00');
+    return $eventStart !== false && $eventStart > ($now === null ? time() : (int)$now);
+}
+
 function participation_walkin_should_count($eventId, $memberId, $attendedSignupMemberEvents, $walkinMemberEvents) {
     if ($memberId === '') return true;
     $key = $eventId . ':' . $memberId;

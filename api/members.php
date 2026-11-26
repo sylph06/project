@@ -17,7 +17,11 @@ if (!in_array($action, ['member_add', 'member_update', 'member_delete', 'member_
     out(['ok' => false, 'error' => 'Unknown action.'], 400);
 }
 
-if (!can_write_app_data()) out(['ok' => false, 'error' => 'Your account role cannot change KK member records.'], 403);
+if (in_array($action, ['member_delete', 'member_restore'], true)) {
+    if (!can_manage_sk_roles()) out(['ok' => false, 'error' => 'Member deletion and restoration cannot be delegated.'], 403);
+} elseif (!can('edit_members')) {
+    out(['ok' => false, 'error' => 'You do not have permission to edit KK member records.'], 403);
+}
 $pdo = db();
 
 if ($action === 'member_data_save') {
@@ -415,34 +419,16 @@ if ($action === 'member_register') {
         || ($member['status'] ?? '') !== 'Active') {
         out(['ok' => false, 'error' => 'A complete active member profile is required.'], 400);
     }
-    $submittedGoogleTicket = $in['googleRegistrationTicket'] ?? null;
-    $hasGoogleTicket = is_string($submittedGoogleTicket) && $submittedGoogleTicket !== '';
-    $memberEmail = '';
-    $googleIdentity = null;
-    if ($hasGoogleTicket) {
-        if (!google_oauth_schema_ready($pdo)) {
-            out(['ok' => false, 'error' => 'The Google account-link table is not ready. Contact the administrator.'], 503);
-        }
-        $memberEmail = google_auth_normalize_email($member['email'] ?? null);
-        if ($memberEmail === null) {
-            out(['ok' => false, 'error' => 'Verify a valid, non-placeholder Google email before registering.'], 400);
-        }
-        $googleIdentity = google_auth_registration_ticket(
-            $_SESSION['google_registration_ticket'] ?? null,
-            $submittedGoogleTicket,
-            $memberEmail,
-            'registration'
-        );
-        if ($googleIdentity === null) {
-            out(['ok' => false, 'error' => 'Verify this member\'s Google account in the profiling form before registering.'], 403);
-        }
-        $member['email'] = $memberEmail;
-    } else {
-        if (trim((string)($member['email'] ?? '')) !== '') {
-            out(['ok' => false, 'error' => 'Use Google verification to save an email address, or leave it blank to request a Google link later.'], 400);
-        }
-        $member['email'] = '';
+    $emailInput = $member['email'] ?? '';
+    if (!is_string($emailInput)) {
+        out(['ok' => false, 'error' => 'The member email must be text or left blank.'], 400);
     }
+    $submittedEmail = trim($emailInput);
+    $memberEmail = $submittedEmail === '' ? null : google_auth_normalize_email($submittedEmail);
+    if ($submittedEmail !== '' && $memberEmail === null) {
+        out(['ok' => false, 'error' => 'Enter a valid, non-placeholder email address or leave it blank.'], 400);
+    }
+    $member['email'] = $memberEmail ?? '';
     try {
         $member['disabilityType'] = kk_member_normalize_disability_types($member['disabilityType'] ?? []);
     } catch (RuntimeException $exception) {
@@ -526,18 +512,11 @@ if ($action === 'member_register') {
         if ($accountCheck->fetchColumn() !== false) {
             throw new DomainException('An account already exists for this member number or profile.');
         }
-        if ($googleIdentity !== null) {
-            $googleAccountCheck = $pdo->prepare('SELECT user_id FROM google_account_links WHERE google_subject = ? FOR UPDATE');
-            $googleAccountCheck->execute([$googleIdentity['subject']]);
-            if ($googleAccountCheck->fetchColumn() !== false) {
-                throw new DomainException('This Google account is already linked to another login.');
-            }
-        }
-
         if (USE_MEMBERS_TABLE) {
             $existingMembers = google_auth_load_members($pdo, true);
             foreach ($existingMembers as $existingMember) {
-                if (google_auth_normalize_email($existingMember['email'] ?? null) === $memberEmail) {
+                if ($memberEmail !== null
+                    && google_auth_normalize_email($existingMember['email'] ?? null) === $memberEmail) {
                     throw new DomainException('That email address is already assigned to another member profile.');
                 }
             }
@@ -568,7 +547,8 @@ if ($action === 'member_register') {
                 if ((string)($existingMember['memberNo'] ?? '') === (string)$member['memberNo']) {
                     throw new DomainException('That member number is already assigned. Reload the page and try again.');
                 }
-                if (google_auth_normalize_email($existingMember['email'] ?? null) === $memberEmail) {
+                if ($memberEmail !== null
+                    && google_auth_normalize_email($existingMember['email'] ?? null) === $memberEmail) {
                     throw new DomainException('That email address is already assigned to another member profile.');
                 }
                 if (strtolower((string)($existingMember['firstName'] ?? '')) === strtolower((string)($member['firstName'] ?? ''))
@@ -601,23 +581,17 @@ if ($action === 'member_register') {
                 $member['guardianConsentVersion'], $user['id'],
             ]);
         $accountId = (int)$pdo->lastInsertId();
-        if ($googleIdentity !== null) {
-            $pdo->prepare('INSERT INTO google_account_links (user_id, google_subject, google_email)
-                VALUES (?, ?, ?)')->execute([$accountId, $googleIdentity['subject'], $googleIdentity['email']]);
-        }
         sk_audit($pdo, $user, (string)$member['id'], 'member_registered', null, [
             'member_no' => $member['memberNo'], 'account_username' => $username,
-            'guardian_consent' => $guardianConsent, 'google_account_linked' => $googleIdentity !== null,
+            'guardian_consent' => $guardianConsent, 'email_provided' => $memberEmail !== null,
         ]);
         $pdo->commit();
-        unset($_SESSION['google_registration_ticket']);
         out([
             'ok' => true,
             'member' => $member,
             'registration' => $registrationId !== null ? $pending[$pendingIndex] : null,
             'username' => $username,
             'googleSignInRequired' => true,
-            'googleAccountLinked' => $googleIdentity !== null,
         ]);
     } catch (DomainException $ex) {
         if ($pdo->inTransaction()) $pdo->rollBack();

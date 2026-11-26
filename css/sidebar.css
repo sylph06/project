@@ -573,6 +573,33 @@ html.dark-mode .dashboard-panel .list-group-item{
     transition:background-color .15s ease,color .15s ease;
 }
 
+.sidebar-new-dot{
+    width:9px;
+    height:9px;
+    flex:none;
+    margin-left:auto;
+    border-radius:50%;
+    background:var(--bs-primary);
+    box-shadow:0 0 0 2px var(--ui-surface);
+}
+
+.sidebar .nav-link.active .sidebar-new-dot{
+    background:var(--bs-primary-text-emphasis);
+    box-shadow:0 0 0 2px var(--bs-primary-bg-subtle);
+}
+
+.sidebar-visually-hidden{
+    position:absolute!important;
+    width:1px!important;
+    height:1px!important;
+    padding:0!important;
+    margin:-1px!important;
+    overflow:hidden!important;
+    clip:rect(0,0,0,0)!important;
+    white-space:nowrap!important;
+    border:0!important;
+}
+
 .sidebar .sidebar-brand{
     margin-bottom:1rem!important;
 }
@@ -1129,6 +1156,27 @@ body:not(.dashboard-page) .page-content .table-responsive{
     body:not(.dashboard-page) .page-content .hero,
     body:not(.dashboard-page) .page-content .dashboard-hero{
         padding:1.35rem;
+    }
+
+    /* Make attendance page cards full-width on small screens */
+    body.attendance-page .row > div{
+        flex:1 1 100%;
+        max-width:100%;
+    }
+
+    /* Scanner viewport - adapt aspect ratio on mobile */
+    body.attendance-page .scanner-container{
+        aspect-ratio: auto;
+        min-height: 200px;
+        max-height: initial;
+    }
+
+    /* Make scanner video fill the container properly */
+    body.attendance-page video{
+        width:100%;
+        height:auto;
+        max-height:300px;
+        object-fit:contain;
     }
 }
 
