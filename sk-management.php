@@ -571,7 +571,7 @@ html{
 <div class="top-strip"></div>
 
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 
 
 <div class="page-content">

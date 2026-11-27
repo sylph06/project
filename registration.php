@@ -44,14 +44,14 @@ if (is_limited_viewer()) {
  
     <style>
         :root {
-            --kk-primary: var(--bs-primary);
-            --kk-primary-dark: var(--bs-primary-text-emphasis);
-            --kk-primary-soft: rgba(var(--bs-primary-rgb),.12);
-            --black: var(--bs-body-color);
-            --dark: var(--bs-primary-text-emphasis);
-            --cream: var(--bs-tertiary-bg);
-            --line: var(--bs-border-color);
-            --muted: var(--bs-secondary-color);
+            --kk-primary: var(--mem-brand);
+            --kk-primary-dark: var(--mem-brand-text-emphasis);
+            --kk-primary-soft: var(--mem-brand-soft);
+            --black: var(--mem-ink);
+            --dark: var(--mem-brand-text-emphasis);
+            --cream: var(--mem-bg);
+            --line: var(--mem-line);
+            --muted: var(--mem-muted);
             --white: #ffffff;
         }
  
@@ -62,13 +62,13 @@ if (is_limited_viewer()) {
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: var(--cream);
-            color: var(--black);
+            background: var(--mem-bg);
+            color: var(--mem-ink);
         }
  
         .top-strip {
             height: 7px;
-            background:var(--bs-primary);
+            background:var(--mem-brand);
         }
  
         .main {
@@ -77,8 +77,8 @@ if (is_limited_viewer()) {
  
         .header {
             height: 70px;
-            background: white;
-            border-bottom: 1px solid var(--line);
+            background: var(--mem-surface);
+            border-bottom: 1px solid var(--mem-line);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -107,7 +107,7 @@ if (is_limited_viewer()) {
         .avatar {
             width: 38px;
             height: 38px;
-            background:var(--bs-primary);
+            background:var(--mem-brand);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -121,7 +121,7 @@ if (is_limited_viewer()) {
         }
  
         .hero {
-            background:var(--bs-primary);
+            background:var(--mem-brand);
             border-radius: 16px;
             padding: 28px;
             margin-bottom: 25px;
@@ -135,20 +135,20 @@ if (is_limited_viewer()) {
  
         .hero p {
             margin: 0;
-            color: var(--bs-primary-text-emphasis);
+            color: var(--mem-brand-text-emphasis);
             font-size: 16px;
         }
  
         .card-box {
-            background: white;
-            border: 1px solid var(--line);
+            background: var(--mem-surface);
+            border: 1px solid var(--mem-line);
             border-radius: 14px;
             margin-bottom: 22px;
             overflow: hidden;
         }
 
         .card-header {
-            background:var(--bs-primary-text-emphasis);
+            background:var(--mem-brand-text-emphasis);
             color: white;
             padding: 15px 20px;
             font-size: 16px;
@@ -173,34 +173,34 @@ if (is_limited_viewer()) {
         .form-control,
         .form-select {
             height: 42px;
-            border: 1px solid var(--bs-border-color);
+            border: 1px solid var(--mem-line);
             border-radius: 7px;
             font-size: 15px;
         }
  
         .form-control:focus,
         .form-select:focus {
-            border-color: var(--kk-primary-dark);
-            box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), .2);
+            border-color: var(--mem-brand-text-emphasis);
+            box-shadow: 0 0 0 3px rgba(var(--mem-brand-rgb), .2);
         }
  
         .required {
-            color: var(--bs-danger);
+            color: var(--mem-brand-text-emphasis);
         }
  
         .info-box {
-            background: rgba(var(--bs-primary-rgb),.08);
-            border: 1px solid var(--bs-border-color);
-            border-left: 4px solid var(--kk-primary);
+            background: rgba(var(--mem-brand-rgb),.08);
+            border: 1px solid var(--mem-line);
+            border-left: 4px solid var(--mem-brand);
             padding: 14px;
             border-radius: 8px;
             font-size: 14px;
-            color: var(--bs-secondary-color);
+            color: var(--mem-muted);
             margin-bottom: 20px;
         }
  
         .summary {
-            background:var(--bs-primary-text-emphasis);
+            background:var(--mem-brand-text-emphasis);
             color: white;
             border-radius: 14px;
             padding: 22px;
@@ -217,12 +217,12 @@ if (is_limited_viewer()) {
             display: flex;
             justify-content: space-between;
             padding: 10px 0;
-            border-bottom: 1px solid rgba(var(--bs-white-rgb), .18);
+            border-bottom: 1px solid rgba(var(--mem-brand-rgb), .18);
             font-size: 14px;
         }
  
         .summary-item span:first-child {
-            color: rgba(var(--bs-white-rgb), .78);
+            color: rgba(var(--mem-brand-rgb), .78);
         }
  
         .summary-item span:last-child {
@@ -230,8 +230,8 @@ if (is_limited_viewer()) {
         }
  
         .action-bar {
-            background: white;
-            border: 1px solid var(--line);
+            background: var(--mem-surface);
+            border: 1px solid var(--mem-line);
             border-radius: 14px;
             padding: 15px 20px;
             display: flex;
@@ -241,7 +241,7 @@ if (is_limited_viewer()) {
         }
  
         .btn-black {
-            background:var(--bs-primary-text-emphasis);
+            background:var(--mem-brand-text-emphasis);
             color: white;
             border: none;
             padding: 10px 18px;
@@ -251,12 +251,12 @@ if (is_limited_viewer()) {
         }
  
         .btn-black:hover {
-            background: var(--bs-primary);
+            background: var(--mem-brand);
             color: white;
         }
  
         .btn-primary {
-            background:var(--bs-primary);
+            background:var(--mem-brand);
             color: var(--black);
             border: none;
             padding: 10px 18px;
@@ -266,13 +266,13 @@ if (is_limited_viewer()) {
         }
  
         .btn-primary:hover {
-            background: var(--kk-primary-dark);
+            background: var(--mem-brand-text-emphasis);
         }
  
         .btn-outline {
-            background: white;
-            color: var(--black);
-            border: 1px solid var(--bs-border-color);
+            background: var(--mem-surface);
+            color: var(--mem-ink);
+            border: 1px solid var(--mem-line);
             padding: 10px 18px;
             border-radius: 7px;
             font-size: 15px;
@@ -286,11 +286,11 @@ if (is_limited_viewer()) {
         }
  
         .check-item {
-            border: 1px solid var(--bs-border-color);
+            border: 1px solid var(--mem-line);
             padding: 9px 12px;
             border-radius: 7px;
             font-size: 14px;
-            background: #fff;
+            background: var(--mem-surface);
         }
  
         .check-item input {
@@ -373,12 +373,12 @@ if (is_limited_viewer()) {
 
         .interest-card:hover,
         .interest-card.is-selected {
-            border-color: var(--bs-primary);
-            background: rgba(var(--bs-primary-rgb), .08);
+            border-color: var(--mem-brand);
+            background: rgba(var(--mem-brand-rgb), .08);
         }
 
         .interest-card:focus-within {
-            outline: 2px solid var(--bs-primary);
+            outline: 2px solid var(--mem-brand);
             outline-offset: 2px;
         }
 
@@ -396,10 +396,10 @@ if (is_limited_viewer()) {
             width: 100%;
             min-height: 54px;
             padding: 8px 11px;
-            border: 1px solid var(--bs-border-color);
+            border: 1px solid var(--mem-line);
             border-radius: 7px;
-            background: var(--bs-body-bg);
-            color: var(--bs-body-color);
+            background: var(--mem-surface);
+            color: var(--mem-ink);
             font-size: 14px;
             font-weight: 600;
             text-align: left;
@@ -407,8 +407,8 @@ if (is_limited_viewer()) {
 
         #centerPrograms .center-nav-button:hover,
         #centerPrograms .center-nav-button.is-active {
-            border-color: var(--bs-primary);
-            background: rgba(var(--bs-primary-rgb), .08);
+            border-color: var(--mem-brand);
+            background: rgba(var(--mem-brand-rgb), .08);
         }
 
         #centerPrograms .center-nav-name {
@@ -430,15 +430,15 @@ if (is_limited_viewer()) {
             height: 22px;
             padding: 1px 6px;
             border-radius: 12px;
-            background: var(--bs-secondary-bg);
-            color: var(--bs-secondary-color);
+            background: var(--mem-surface-alt);
+            color: var(--mem-muted);
             font-size: 12px;
             text-align: center;
         }
 
         #centerPrograms .center-nav-chevron {
             flex: none;
-            color: var(--bs-secondary-color);
+            color: var(--mem-muted);
             transition: transform .18s ease;
         }
 
@@ -450,9 +450,9 @@ if (is_limited_viewer()) {
             max-height: 2400px;
             margin-bottom: 12px;
             padding: 16px;
-            border: 1px solid var(--bs-border-color);
+            border: 1px solid var(--mem-line);
             border-radius: 8px;
-            background: var(--bs-body-bg);
+            background: var(--mem-surface);
             opacity: 1;
             overflow: hidden;
             transition: max-height .22s ease, opacity .18s ease, padding .22s ease, margin .22s ease, border-color .22s ease, visibility 0s linear .22s;
@@ -517,7 +517,7 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
 <div class="top-strip"></div>
  
 <script src="js/theme.js?v=3"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
  
 <main class="main page-content">
  
@@ -1155,7 +1155,7 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header bg-dark text-white">
-                <h6 class="modal-title fw-bold"><i class="bi bi-person-lines-fill me-2" style="color:var(--bs-primary-border-subtle);"></i>Youth Details</h6>
+                <h6 class="modal-title fw-bold"><i class="bi bi-person-lines-fill me-2" style="color:var(--mem-brand);"></i>Youth Details</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="detailsBody"></div>
@@ -1169,7 +1169,7 @@ $registrationAttentionCount = count($registrationEditRequests) + count($registra
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-dark text-white">
-                <h6 class="modal-title fw-bold"><i class="bi bi-archive-fill me-2" style="color:var(--bs-primary-border-subtle);"></i>Archive Youth Record</h6>
+                <h6 class="modal-title fw-bold"><i class="bi bi-archive-fill me-2" style="color:var(--mem-brand);"></i>Archive Youth Record</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

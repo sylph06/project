@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/backup_restore.php';
 require_once __DIR__ . '/google_auth.php';
+require_once __DIR__ . '/role_store.php';
 $settingsUser = current_user();
 $googleAuthenticatedAt = (int)($_SESSION['google_authenticated_at'] ?? 0);
 $googlePasswordRecoveryMode = $settingsUser !== null
@@ -10,6 +11,62 @@ $googlePasswordRecoveryMode = $settingsUser !== null
     && $googleAuthenticatedAt >= time() - 600
     && $googleAuthenticatedAt <= time() + 60;
 if (!$googlePasswordRecoveryMode) require_viewer();
+$committeePreferenceRole = null;
+$committeePreferenceValues = [];
+$committeePreferenceNames = [];
+$assignedCommitteeNames = [];
+$committeeVolunteerNames = [];
+$committeeVolunteerEvents = [];
+if (($settingsUser['role'] ?? '') === 'KK Member' && !empty($settingsUser['legacy_id'])) {
+    $committeeVolunteerNames = sk_committee_names(db());
+    $eventsQuery = db()->query("SELECT data_value FROM app_data WHERE data_key = 'skAnnouncements'");
+    $eventsRaw = $eventsQuery->fetchColumn();
+    $eventsData = $eventsRaw === false ? [] : json_decode((string)$eventsRaw, true);
+    if (is_array($eventsData)) {
+        foreach ($eventsData as $event) {
+            if (!is_array($event) || ($event['publishState'] ?? '') !== 'Published' || !empty($event['cancelled'])) continue;
+            if (!empty($event['publishDate']) && $event['publishDate'] > date('Y-m-d')) continue;
+            if (!empty($event['date']) && $event['date'] < date('Y-m-d')) continue;
+            $eventId = (string)($event['id'] ?? '');
+            $eventTitle = trim((string)($event['title'] ?? ''));
+            if ($eventId !== '' && $eventTitle !== '') {
+                $committeeVolunteerEvents[] = ['id' => $eventId, 'title' => $eventTitle];
+            }
+        }
+    }
+}
+if ($settingsUser && !is_super_admin() && !empty($settingsUser['legacy_id'])) {
+    $committeePreferenceNames = sk_committee_names(db());
+    $memberRecord = sk_member_for_role_change(db(), (string)$settingsUser['legacy_id']);
+    if ($memberRecord && ($memberRecord['status'] ?? 'Active') === 'Active') {
+        foreach (sk_role_rows(db()) as $candidateRole) {
+            if ((string)($candidateRole['kkId'] ?? '') === (string)$settingsUser['legacy_id']
+                && sk_role_is_current($candidateRole)) {
+                $committeePreferenceRole = $candidateRole;
+                break;
+            }
+        }
+    }
+    if ($committeePreferenceRole) {
+        $committeePreferenceValues = sk_role_preferred_committees($committeePreferenceRole);
+        $membershipQuery = db()->prepare("SELECT data_value FROM app_data WHERE data_key = 'skCommitteeMembers'");
+        $membershipQuery->execute();
+        $membershipRaw = $membershipQuery->fetchColumn();
+        $hasCommitteeMemberships = $membershipRaw !== false;
+        $membershipData = json_decode((string)($membershipRaw === false ? '{}' : $membershipRaw), true);
+        if (is_array($membershipData)) {
+            foreach ($membershipData as $committee => $roleIds) {
+                if (is_array($roleIds) && in_array((string)$committeePreferenceRole['id'], array_map('strval', $roleIds), true)) {
+                    $assignedCommitteeNames[] = (string)$committee;
+                }
+            }
+        }
+        if (!$hasCommitteeMemberships && !empty($committeePreferenceRole['committee'])
+            && !in_array($committeePreferenceRole['committee'], $assignedCommitteeNames, true)) {
+            $assignedCommitteeNames[] = (string)$committeePreferenceRole['committee'];
+        }
+    }
+}
 $passwordResetNotice = $_SESSION['password_reset_notice'] ?? null;
 unset($_SESSION['password_reset_notice']);
 $canManageBackups = can_manage_sk_roles();
@@ -59,31 +116,100 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
 
     <style>
         :root {
-            --kk-primary:var(--bs-primary);
-            --black:var(--bs-body-color);
-            --cream:var(--bs-tertiary-bg);
-            --line:var(--bs-border-color);
-            --muted:var(--bs-secondary-color);
+            --mem-bg: #eef4ff;
+            --mem-surface: #fff;
+            --mem-surface-alt: #dce7fb;
+            --mem-brand: #1558c7;
+            --mem-brand-soft: #e9f1ff;
+            --mem-brand-rgb: 21,88,199;
+            --mem-brand-text-emphasis: rgba(21,88,199,.75);
+            --mem-line: #dce7fb;
+            --mem-muted: #6b7a94;
+            --mem-ink: #1f2a3d;
+            --mem-radius: 20px;
         }
-
+        html[data-bs-theme="dark"] {
+            --mem-bg: #171d2d;
+            --mem-surface: #222d40;
+            --mem-surface-alt: #35435d;
+            --mem-brand: #82aaff;
+            --mem-brand-soft: #293b58;
+            --mem-brand-rgb: 130,170,255;
+            --mem-brand-text-emphasis: rgba(130,170,255,.8);
+            --mem-line: #35435d;
+            --mem-muted: #aeb8c7;
+            --mem-ink: #e8edf5;
+        }
+        .settings-page{
+            --kk-primary:var(--mem-brand);
+            --black:var(--mem-ink);
+            --cream:var(--mem-bg);
+            --line:var(--mem-line);
+            --muted:var(--mem-muted);
+            background:var(--mem-bg);
+            color:var(--mem-ink);
+        }
+        .committee-preference-option{
+            display:flex;
+            align-items:center;
+            gap:.75rem;
+            min-height:76px;
+            padding:1rem;
+            border:1px solid var(--mem-line);
+            border-radius:14px;
+            background:var(--mem-surface);
+            color:var(--mem-ink);
+            cursor:pointer;
+            transition:border-color .15s ease,background-color .15s ease,box-shadow .15s ease;
+        }
+        .committee-preference-option:hover,
+        .committee-preference-option.is-selected{
+            border-color:var(--mem-brand);
+            background:var(--mem-brand-soft);
+        }
+        .committee-preference-option:focus-within{
+            outline:3px solid rgba(var(--mem-brand-rgb),.25);
+            outline-offset:2px;
+        }
+        .committee-preference-option input{
+            width:1.15rem;
+            height:1.15rem;
+            margin:0;
+            flex:0 0 auto;
+            accent-color:var(--mem-brand);
+        }
+        .committee-preference-rank{
+            display:none;
+            flex:0 0 1.75rem;
+            width:1.75rem;
+            height:1.75rem;
+            align-items:center;
+            justify-content:center;
+            border-radius:50%;
+            background:var(--mem-brand);
+            color:#fff;
+            font-size:.8rem;
+            font-weight:700;
+        }
+        .committee-preference-option.is-selected .committee-preference-rank{display:inline-flex}
+        .committee-preference-name{font-weight:600;line-height:1.4}
         * { box-sizing:border-box; }
-
         body {
             margin:0;
             font-family:Arial,sans-serif;
-            background:var(--cream);
-            color:var(--bs-body-color);
+            background:var(--mem-bg);
+            color:var(--mem-ink);
         }
 
         .top-strip {
             height:7px;
-            background:var(--bs-primary);
+            background:var(--mem-brand);
         }
 
         .header {
             height:70px;
-            background:white;
-            border-bottom:1px solid var(--line);
+            background:var(--mem-surface);
+            border-bottom:1px solid var(--mem-line);
             display:flex;
             justify-content:space-between;
             align-items:center;
@@ -93,10 +219,11 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
         .header-title {
             font-weight:bold;
             font-size:20px;
+            color:var(--mem-ink);
         }
 
         .header small {
-            color:var(--muted);
+            color:var(--mem-muted);
             font-size:14px;
         }
 
@@ -109,12 +236,13 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
         .avatar {
             width:38px;
             height:38px;
-            background:var(--bs-primary);
+            background:var(--mem-brand);
             border-radius:50%;
             display:flex;
             justify-content:center;
             align-items:center;
             font-weight:bold;
+            color:#fff;
         }
 
         .content {
@@ -124,7 +252,7 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
         }
 
         .hero {
-            background: linear-gradient(135deg, var(--bs-primary) 0%, #15459b 100%);
+            background: linear-gradient(135deg, var(--mem-brand) 0%, #1249a8 100%);
             border-radius: 18px;
             padding: 24px clamp(20px, 3vw, 32px);
             margin-bottom: 25px;
@@ -146,12 +274,12 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
         }
 
         .card-box {
-            background: var(--ui-surface, white);
-            border: 1px solid var(--line);
+            background: var(--mem-surface);
+            border: 1px solid var(--mem-line);
             border-radius: 16px;
             margin-bottom: 24px;
             overflow: hidden;
-            box-shadow: var(--ui-shadow, 0 4px 20px rgba(0,0,0,.04));
+            box-shadow: 0 4px 20px rgba(0,0,0,.04);
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -159,10 +287,10 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
 
         .card-header {
             padding: 16px 20px;
-            border-bottom: 1px solid var(--line);
+            border-bottom: 1px solid var(--mem-line);
             font-weight: 700;
-            background: var(--ui-surface, white);
-            color: var(--bs-body-color);
+            background: var(--mem-surface);
+            color: var(--mem-ink);
             display: flex;
             align-items: center;
             gap: 8px;
@@ -174,8 +302,8 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
         }
 
         .stat {
-            background:white;
-            border:1px solid var(--line);
+            background:var(--mem-surface);
+            border:1px solid var(--mem-line);
             border-radius:13px;
             padding:20px;
         }
@@ -184,21 +312,23 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
             display:flex;
             width:42px;
             height:42px;
-            background:var(--bs-primary);
+            background:var(--mem-brand);
             border-radius:9px;
             align-items:center;
             justify-content:center;
             font-size:23px;
             margin-bottom:12px;
+            color:#fff;
         }
 
         .number {
             font-size:29px;
             font-weight:800;
+            color:var(--mem-ink);
         }
 
         .label {
-            color:var(--muted);
+            color:var(--mem-muted);
             font-size:14px;
         }
 
@@ -212,7 +342,7 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
         }
 
         .table th {
-            background:var(--bs-primary-text-emphasis);
+            background:var(--mem-brand);
             color:white;
             font-size:13px;
             padding:13px;
@@ -226,16 +356,16 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
 
         .progress {
             height:8px;
-            background:var(--bs-border-color);
+            background:var(--mem-line);
         }
 
         .progress-bar {
-            background:var(--bs-primary);
+            background:var(--mem-brand);
         }
 
         .footer-note {
             text-align:center;
-            color:var(--muted);
+            color:var(--mem-muted);
             font-size:13px;
             padding:25px;
         }
@@ -252,7 +382,7 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
         }
 
         .label {
-            color:var(--muted);
+            color:var(--mem-muted);
             font-size:0.9rem;
         }
 
@@ -282,12 +412,12 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
 <?php include __DIR__ . '/init.php'; ?>
 </head>
 
-<body>
+<body class="settings-page">
 
 <div class="top-strip"></div>
 
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 
 <main class="main page-content">
 
@@ -360,6 +490,85 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
                 </div>
             </div>
         </div>
+
+        <?php if ($committeePreferenceRole): ?>
+        <div class="col-12">
+            <div class="card-box">
+                <div class="card-header"><i class="bi bi-diagram-3 me-2"></i>Committee Preference</div>
+                <div class="card-body">
+                    <p class="small text-muted">Choose one or two preferred committees. The SK Chairperson or Secretary will review them and assign your actual committee memberships.</p>
+                    <div class="row g-2 mb-3" id="committeePreferenceOptions">
+                        <?php foreach ($committeePreferenceNames as $committeeName): ?>
+                            <?php $preferenceRank = array_search($committeeName, $committeePreferenceValues, true); ?>
+                            <div class="col-md-6">
+                                <label class="committee-preference-option<?= $preferenceRank !== false ? ' is-selected' : '' ?>">
+                                    <input type="checkbox" class="committee-preference-choice" value="<?= e($committeeName) ?>"<?= $preferenceRank !== false ? ' checked' : '' ?> aria-label="<?= e($committeeName) ?>">
+                                    <span class="committee-preference-rank" aria-hidden="true"><?= $preferenceRank !== false ? (int)$preferenceRank + 1 : '' ?></span>
+                                    <span class="committee-preference-name"><?= e($committeeName) ?></span>
+                                </label>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div>
+                            <div class="small text-muted">Select up to two committees. The numbered badges show your preference order.</div>
+                            <div class="small fw-semibold mt-1" id="committeePreferenceCount" aria-live="polite"></div>
+                        </div>
+                        <div>
+                            <input type="hidden" id="preferredCommitteeExpected" value="<?= e(json_encode($committeePreferenceValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]') ?>">
+                            <button type="button" class="btn btn-primary" id="saveCommitteePreferenceBtn">Save preferences</button>
+                        </div>
+                    </div>
+                    <div class="small mt-3">Assigned committee<?= count($assignedCommitteeNames) === 1 ? '' : 's' ?>:
+                        <strong><?= $assignedCommitteeNames ? e(implode(', ', $assignedCommitteeNames)) : 'Not assigned yet' ?></strong>
+                    </div>
+                    <div id="committeePreferenceStatus" class="small mt-2" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if (($settingsUser['role'] ?? '') === 'KK Member' && !empty($settingsUser['legacy_id'])): ?>
+        <div class="col-12">
+            <div class="card-box">
+                <div class="card-header"><i class="bi bi-heart-fill me-2"></i>My Volunteering</div>
+                <div class="card-body">
+                    <p class="small text-muted">Apply to join a committee or volunteer for an event. The SK Chairperson or Secretary will review your application.</p>
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold" for="volCommittee">Committee</label>
+                            <select class="form-select" id="volCommittee" required>
+                                <option value="">Select committee</option>
+                                <?php foreach ($committeeVolunteerNames as $committeeName): ?>
+                                    <option value="<?= e($committeeName) ?>"><?= e($committeeName) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold" for="volEvent">Event (optional)</label>
+                            <select class="form-select" id="volEvent">
+                                <option value="">Committee only</option>
+                                <?php foreach ($committeeVolunteerEvents as $event): ?>
+                                    <option value="<?= e($event['id']) ?>"><?= e($event['title']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button type="button" class="btn btn-success" id="applyVolunteerBtn"><i class="bi bi-send me-1"></i>Apply</button>
+                        </div>
+                    </div>
+                    <div id="volunteerStatus" class="small mb-3" aria-live="polite"></div>
+                    <h6 class="fw-semibold">My Applications</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead><tr><th>Committee</th><th>Event</th><th>Role</th><th>Status</th><th>Applied</th><th>Reviewed</th></tr></thead>
+                            <tbody id="volunteerHistoryBody"><tr><td colspan="6" class="text-muted">Loading applications...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <?php if (current_user()): ?>
         <div class="col-lg-6">
@@ -544,6 +753,18 @@ $latestSafetyBackup = $canManageBackups ? kk_backup_latest_safety(db()) : null;
         </div>
         <?php endif; ?>
 
+        <?php if (is_super_admin()): ?>
+        <div class="col-12">
+            <div class="card-box">
+                <div class="card-header"><i class="bi bi-shield-lock me-2"></i>Admin</div>
+                <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <p class="mb-0">Manage privileged account overrides, application data, audit history, and maintenance mode.</p>
+                    <a class="btn btn-primary" href="super-admin.php"><i class="bi bi-gear me-1"></i>Open Admin Panel</a>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
     </div>
 
     <div class="footer-note">
@@ -568,6 +789,167 @@ sel.addEventListener("change", function () {
     try { localStorage.setItem("kkTextSize", sel.value); } catch (e) {}
     location.reload();
 });
+
+var saveCommitteePreferenceBtn = document.getElementById("saveCommitteePreferenceBtn");
+var preferenceInputs = Array.from(document.querySelectorAll(".committee-preference-choice"));
+var preferenceOrder = [];
+var preferenceExpected = document.getElementById("preferredCommitteeExpected");
+try {
+    preferenceOrder = JSON.parse(preferenceExpected ? preferenceExpected.value : "[]");
+    if (!Array.isArray(preferenceOrder)) preferenceOrder = [];
+} catch (error) {
+    preferenceOrder = [];
+}
+preferenceOrder = preferenceOrder.filter(function (value) {
+    return preferenceInputs.some(function (input) { return input.value === value && input.checked; });
+});
+function refreshCommitteePreferenceChoices() {
+    preferenceInputs.forEach(function (input) {
+        var index = preferenceOrder.indexOf(input.value);
+        var card = input.closest(".committee-preference-option");
+        var rank = card.querySelector(".committee-preference-rank");
+        input.checked = index >= 0;
+        input.disabled = index < 0 && preferenceOrder.length >= 2;
+        card.classList.toggle("is-selected", index >= 0);
+        rank.textContent = index >= 0 ? String(index + 1) : "";
+    });
+    var count = document.getElementById("committeePreferenceCount");
+    if (count) count.textContent = preferenceOrder.length + " of 2 selected";
+}
+preferenceInputs.forEach(function (input) {
+    input.addEventListener("change", function () {
+        if (input.checked && preferenceOrder.indexOf(input.value) < 0) {
+            if (preferenceOrder.length >= 2) {
+                input.checked = false;
+                return;
+            }
+            preferenceOrder.push(input.value);
+        } else if (!input.checked) {
+            preferenceOrder = preferenceOrder.filter(function (value) { return value !== input.value; });
+        }
+        refreshCommitteePreferenceChoices();
+    });
+});
+refreshCommitteePreferenceChoices();
+
+if (saveCommitteePreferenceBtn) saveCommitteePreferenceBtn.addEventListener("click", function () {
+    var status = document.getElementById("committeePreferenceStatus");
+    var expected = document.getElementById("preferredCommitteeExpected");
+    saveCommitteePreferenceBtn.disabled = true;
+    status.className = "small mt-2 text-muted";
+    var preferences = preferenceOrder.slice(0, 2);
+    if (preferences.length < 1) {
+        status.className = "small mt-2 text-danger";
+        status.textContent = "Select at least one committee preference.";
+        saveCommitteePreferenceBtn.disabled = false;
+        return;
+    }
+    status.textContent = "Saving preferences...";
+    try {
+        DB.saveCommitteePreference(preferences, expected.value);
+        expected.value = JSON.stringify(preferences);
+        status.className = "small mt-2 text-success";
+        status.textContent = "Preferences saved. The Chairperson or Secretary can now review your assignment.";
+    } catch (error) {
+        status.className = "small mt-2 text-danger";
+        status.textContent = error.message || "Could not save your committee preference.";
+    } finally {
+        saveCommitteePreferenceBtn.disabled = false;
+    }
+});
+
+function committeeVolunteerRequest(action, payload) {
+    return fetch("api/committee-volunteers.php?action=" + encodeURIComponent(action), {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+        },
+        body: JSON.stringify(payload || {})
+    }).then(function (response) {
+        return response.json().then(function (result) {
+            if (!response.ok || !result.ok) throw new Error(result.error || "Could not process the volunteer application.");
+            return result;
+        });
+    });
+}
+
+function volunteerDate(value) {
+    if (!value) return "—";
+    var parsed = new Date(String(value).replace(" ", "T"));
+    return isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleDateString();
+}
+
+function loadVolunteerHistory() {
+    var body = document.getElementById("volunteerHistoryBody");
+    if (!body) return;
+    committeeVolunteerRequest("my_history", {}).then(function (result) {
+        body.innerHTML = "";
+        if (!result.history.length) {
+            var emptyRow = body.insertRow();
+            var emptyCell = emptyRow.insertCell();
+            emptyCell.colSpan = 6;
+            emptyCell.className = "text-muted";
+            emptyCell.textContent = "No volunteer applications yet.";
+            return;
+        }
+        result.history.forEach(function (application) {
+            var row = body.insertRow();
+            [
+                application.committee,
+                application.event_title || "Committee only",
+                application.role === "lead" ? "Lead" : "Member"
+            ].forEach(function (value) {
+                row.insertCell().textContent = value || "";
+            });
+            var statusCell = row.insertCell();
+            var badge = document.createElement("span");
+            badge.className = "badge bg-" + (application.status === "approved" ? "success"
+                : application.status === "pending" ? "warning text-dark" : "danger");
+            badge.textContent = application.status;
+            statusCell.appendChild(badge);
+            row.insertCell().textContent = volunteerDate(application.applied_at);
+            row.insertCell().textContent = volunteerDate(application.reviewed_at);
+        });
+    }).catch(function (error) {
+        body.innerHTML = "";
+        var errorRow = body.insertRow();
+        var errorCell = errorRow.insertCell();
+        errorCell.colSpan = 6;
+        errorCell.className = "text-danger";
+        errorCell.textContent = error.message || "Could not load volunteer history.";
+    });
+}
+
+var applyVolunteerButton = document.getElementById("applyVolunteerBtn");
+if (applyVolunteerButton) {
+    applyVolunteerButton.addEventListener("click", function () {
+        var committee = document.getElementById("volCommittee").value;
+        var eventId = document.getElementById("volEvent").value;
+        var status = document.getElementById("volunteerStatus");
+        if (!committee) {
+            status.className = "small mb-3 text-danger";
+            status.textContent = "Select a committee.";
+            return;
+        }
+        applyVolunteerButton.disabled = true;
+        status.className = "small mb-3 text-muted";
+        status.textContent = "Submitting application...";
+        committeeVolunteerRequest("submit", { committee: committee, event_id: eventId || null }).then(function () {
+            document.getElementById("volCommittee").value = "";
+            document.getElementById("volEvent").value = "";
+            status.className = "small mb-3 text-success";
+            status.textContent = "Application submitted. The Chairperson or Secretary will review it.";
+            loadVolunteerHistory();
+        }).catch(function (error) {
+            status.className = "small mb-3 text-danger";
+            status.textContent = error.message || "Could not submit the volunteer application.";
+        }).finally(function () {
+            applyVolunteerButton.disabled = false;
+        });
+    });
+    loadVolunteerHistory();
+}
 
 /* change password (officers only) */
 var btn = document.getElementById("savePassBtn");

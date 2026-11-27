@@ -102,14 +102,26 @@ header.sticky-top {
 }
 .member-hero h2{ color:#fff; font-weight:950; letter-spacing:-.7px; }
 .member-hero p{ color:rgba(255,255,255,.86); max-width:680px; }
+.member-hero .btn-outline-light{
+    border-color:rgba(255,255,255,.75);
+    color:#fff;
+    background:rgba(255,255,255,.12);
+}
+.member-hero .btn-outline-light:hover,
+.member-hero .btn-outline-light:focus-visible{
+    background:rgba(255,255,255,.22);
+    border-color:#fff;
+    color:#fff;
+}
 .member-hero .btn-dark{
     border-color:rgba(255,255,255,.75);
     background:#fff;
     color:#1558c7;
     font-weight:700;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
 }
 .member-hero .btn-dark:hover,
-.member-hero .btn-dark:focus-visible{ background:#edf4ff; color:#1249a8; }
+.member-hero .btn-dark:focus-visible{ background:#f8fafc; color:#1249a8; }
 
 .stat-card{
     height:100%;
@@ -133,7 +145,9 @@ header.sticky-top {
 }
 .stat-link{ cursor:pointer; }
 .stat-link:focus-visible{ outline:3px solid var(--mem-brand); outline-offset:2px; }
-.stat-link.selected{ border-color:var(--mem-brand); box-shadow:0 0 0 2px var(--mem-brand), 0 14px 28px rgba(0,0,0,.09); }
+.stat-link.selected{ background:var(--mem-brand-soft); border-color:var(--mem-brand); box-shadow:0 0 0 2px var(--mem-brand), 0 14px 28px rgba(0,0,0,.09); }
+.stat-link.selected .stat-number{ color:var(--mem-brand); }
+.stat-link.selected .stat-icon{ background:var(--mem-brand); color:#fff; }
 .stat-number{ font-size:1.8rem; font-weight:950; letter-spacing:-1px; color:var(--mem-ink); }
 
 /* overflow is visible so the Print / Manage dropdowns are not clipped */
@@ -200,7 +214,7 @@ textarea.form-control{ min-height:0; }
     box-shadow:0 0 0 3px rgba(var(--mem-brand-rgb),.28)!important;
 }
 
-.table{ --bs-table-hover-bg:rgba(var(--mem-brand-rgb),.08); }
+.table{ --bs-table-hover-bg:rgba(var(--mem-brand-rgb),.12); --bs-table-bg:transparent; }
 .table thead th{
     background:rgba(var(--mem-brand-rgb),.08);
     color:var(--mem-muted);
@@ -210,6 +224,10 @@ textarea.form-control{ min-height:0; }
     white-space:nowrap;
 }
 .table td{ font-size:.86rem; }
+.table-striped>tbody>tr:nth-of-type(even){ background:rgba(var(--mem-brand-rgb),.04); }
+.table-hover>tbody>tr:hover{ box-shadow:inset 0 0 0 999px rgba(var(--mem-brand-rgb),.06); transform:translateY(-1px); transition:all .15s ease; }
+.table-hover>tbody>tr:hover td{ border-color:var(--mem-line); }
+.table-bordered{ border-color:var(--mem-line); }
 
 .member-avatar{
     width:39px;
@@ -231,6 +249,7 @@ textarea.form-control{ min-height:0; }
 .status-pending,
 .status-inactive{ background:var(--mem-surface-alt); color:var(--mem-muted); }
 .status-archived{ background:var(--mem-line); color:#fff; }
+.table .badge{ font-size:.78rem; padding:.35rem .65rem; border-radius:999px; font-weight:700; }
 
 .action-btn{
     width:34px;
@@ -372,8 +391,8 @@ textarea.form-control{ min-height:0; }
 .mini-row{ display:flex; align-items:center; gap:8px; font-size:.76rem; margin-bottom:4px; min-width:0; }
 .mini-row i{ flex:none; width:22px; height:22px; border-radius:calc(var(--mem-radius)/3); background:var(--mem-brand); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:.72rem; }
 .mini-actions{ display:flex; gap:5px; margin-top:8px; }
-.mini-view{ flex:1; background:var(--mem-ink); color:#fff; font-weight:800; font-size:.78rem; border-radius:calc(var(--mem-radius)/2); padding:.3rem .5rem; }
-.mini-view:hover{ background:var(--mem-brand); color:#fff; }
+.mini-view{ flex:1; background:var(--mem-brand); color:#fff; font-weight:800; font-size:.82rem; border-radius:calc(var(--mem-radius)/2); padding:.4rem .5rem; text-align:center; }
+.mini-view:hover{ background:var(--mem-brand); filter:brightness(1.05); color:#fff; box-shadow:0 4px 12px rgba(var(--mem-brand-rgb),.3); }
 .mini-ico{ width:30px; height:30px; padding:0; border:1px solid var(--mem-ink); border-radius:50%; background:#fff; color:var(--mem-ink); font-size:.8rem; display:inline-flex; align-items:center; justify-content:center; }
 .mini-ico:hover{ background:var(--mem-brand); border-color:var(--mem-brand); color:#fff; }
 .mini-del{ border-color:var(--mem-line); color:var(--mem-muted); }
@@ -410,7 +429,7 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
 <div class="top-strip"></div>
 
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 
 <div class="page-content">
 
@@ -482,17 +501,17 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
             </p>
 
             <div class="d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-dark rounded-pill px-4" id="heroViewSk">
+                <button type="button" class="btn btn-outline-light rounded-pill px-4" id="heroViewSk">
                     <i class="bi bi-person-vcard me-2"></i>View SK Members
                 </button>
-                <button type="button" class="btn btn-dark rounded-pill px-4" id="heroViewKk">
+                <button type="button" class="btn btn-outline-light rounded-pill px-4" id="heroViewKk">
                     <i class="bi bi-people me-2"></i>View Regular KK Members
                 </button>
                 <button type="button" class="btn btn-dark rounded-pill px-4 admin-only role-manager-only" id="heroAssign">
                     <i class="bi bi-person-badge me-2"></i>Assign SK Member
                 </button>
-                <a href="registration.php" class="btn btn-dark rounded-pill px-4">
-                    <i class="bi bi-person-plus-fill me-2"></i>Register KK Youth
+                <a href="event-attendance.php" class="btn btn-outline-light rounded-pill px-4">
+                    <i class="bi bi-qr-code me-2"></i>QR Scan Attendance
                 </a>
             </div>
 
@@ -555,52 +574,7 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
 
         <div class="card-header p-3 p-lg-4 member-directory-header">
 
-            <div class="d-flex flex-column flex-xl-row gap-3 justify-content-between mb-3 member-directory-top">
-
-                <div class="member-directory-title">
-                    <h2 class="h6 fw-bold mb-1">Member Directory</h2>
-                    <div class="small text-muted" id="directorySub">Search, filter and manage member profiles</div>
-                </div>
-
-                <div class="d-flex flex-wrap gap-2 member-toolbar">
-
-                    <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="collapse" data-bs-target="#filterPanel" aria-expanded="true" aria-controls="filterPanel">
-                        <i class="bi bi-funnel me-1"></i>Filter
-                    </button>
-
-                    <div class="dropdown admin-only">
-                        <button class="btn btn-outline-success btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-printer me-1"></i>Print
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><button class="dropdown-item" type="button" id="printListBtn"><i class="bi bi-list-ul me-2"></i>Print member list</button></li>
-                        </ul>
-                    </div>
-
-                    <div class="dropdown">
-                        <button class="btn btn-outline-success btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-gear me-1"></i><?= is_public() ? 'Options' : 'Manage' ?>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="assignBtn"><i class="bi bi-person-badge me-2"></i>Assign SK member</button></li>
-                            <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="manageCommitteesBtn"><i class="bi bi-diagram-3 me-2"></i>Manage committees</button></li>
-                            <li class="admin-only"><button class="dropdown-item" type="button" id="scanKkIdBtn"><i class="bi bi-qr-code-scan me-2"></i>Scan KK ID</button></li>
-                            <li class="admin-only"><button class="dropdown-item" type="button" id="exportBtn"><i class="bi bi-filetype-csv me-2"></i>Export list (CSV)</button></li>
-                            <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="termCheckBtn"><i class="bi bi-calendar-check me-2"></i>Check ended SK terms</button></li>
-                            <li class="admin-only"><hr class="dropdown-divider"></li>
-                            <li><button class="dropdown-item" type="button" id="resetBtn"><i class="bi bi-arrow-counterclockwise me-2"></i>Reset filters</button></li>
-                        </ul>
-                    </div>
-
-                    <div class="btn-group btn-group-sm" role="group" aria-label="View mode">
-                        <button type="button" class="btn btn-outline-success" id="viewCards" title="Card view"><i class="bi bi-grid"></i></button>
-                        <button type="button" class="btn btn-outline-success" id="viewTable" title="Table view"><i class="bi bi-table"></i></button>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="row g-2">
+            <div class="row g-3 mb-3 member-directory-top">
                 <div class="col-12 col-md-4 col-xl-3">
                     <label class="form-label small fw-semibold mb-1" for="typeFilter">Member Type</label>
                     <select class="form-select" id="typeFilter">
@@ -614,6 +588,52 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
                     <div class="search-box member-search">
                         <i class="bi bi-search"></i>
                         <input type="text" class="form-control" id="searchInput" placeholder="Search name, SK position, contact, email, Purok, ID...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2">
+                <div class="col-12 col-xl-auto">
+                    <button type="button" class="btn btn-outline-success btn-sm w-100 w-md-auto" data-bs-toggle="collapse" data-bs-target="#filterPanel" aria-expanded="true" aria-controls="filterPanel">
+                        <i class="bi bi-funnel me-1"></i>Filter
+                    </button>
+                </div>
+                <div class="col-12 col-xl-auto">
+                    <div class="dropdown admin-only w-100 w-md-auto">
+                        <button class="btn btn-outline-success btn-sm dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-printer me-1"></i>Print
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><button class="dropdown-item" type="button" id="printListBtn"><i class="bi bi-list-ul me-2"></i>Print member list</button></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-12 col-xl-auto">
+                    <div class="dropdown w-100 w-md-auto">
+                        <button class="btn btn-outline-success btn-sm dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-gear me-1"></i><?= is_public() ? 'Options' : 'Manage' ?>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="assignBtn"><i class="bi bi-person-badge me-2"></i>Assign SK member</button></li>
+                            <li class="admin-only"><button class="dropdown-item" type="button" id="scanKkIdBtn"><i class="bi bi-qr-code-scan me-2"></i>Scan KK ID</button></li>
+                            <li class="admin-only"><button class="dropdown-item" type="button" id="exportBtn"><i class="bi bi-filetype-csv me-2"></i>Export list (CSV)</button></li>
+                            <li class="admin-only role-manager-only"><button class="dropdown-item" type="button" id="termCheckBtn"><i class="bi bi-calendar-check me-2"></i>Check ended SK terms</button></li>
+                            <li class="admin-only"><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item" type="button" id="resetBtn"><i class="bi bi-arrow-counterclockwise me-2"></i>Reset filters</button></li>
+                        </ul>
+                    </div>
+                </div>
+                <?php if (can_manage_sk_roles()): ?>
+                <div class="col-12 col-xl-auto">
+                    <button type="button" class="btn btn-primary btn-sm w-100 w-md-auto" id="manageCommitteesBtn">
+                        <i class="bi bi-diagram-3 me-1"></i>Manage Committees
+                    </button>
+                </div>
+                <?php endif; ?>
+                <div class="col-12 col-xl-auto d-flex justify-content-center">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="View mode">
+                        <button type="button" class="btn btn-outline-success" id="viewCards" title="Card view"><i class="bi bi-grid"></i></button>
+                        <button type="button" class="btn btn-outline-success" id="viewTable" title="Table view"><i class="bi bi-table"></i></button>
                     </div>
                 </div>
             </div>
@@ -803,11 +823,14 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="small text-muted">Assign an SK official as chairperson of each committee. One official may chair more than one committee.</p>
+                <p class="small text-muted">Select active SK officials to approve their committee membership. Only Kagawads can be chair or vice chair. Auto-assign ranks selected Kagawads by preference, position, term start, and name.</p>
                 <div id="committeeList" class="list-group mb-3"></div>
-                <button type="button" class="btn btn-primary mb-3" id="saveCommitteeChairsBtn">Save Chairpersons</button>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-outline-primary" id="autoAssignCommitteeLeadersBtn"><i class="bi bi-stars me-1"></i>Auto-Assign Leaders</button>
+                    <button type="button" class="btn btn-primary" id="saveCommitteeChairsBtn">Save Committee Assignments</button>
+                </div>
                 <hr>
-                <p class="small text-muted">Add or rename committees. Renaming updates committee memberships and chairperson assignments.</p>
+                <p class="small text-muted">Add or rename committees. Renaming updates preferences, memberships, and leadership assignments.</p>
                 <form id="committeeForm">
                     <input type="hidden" id="committeeOriginal">
                     <label class="form-label fw-semibold" for="committeeName">Committee name</label>
@@ -1040,7 +1063,7 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
         sel.innerHTML = (first !== undefined ? '<option value="">' + esc(first) + '</option>' : '') +
             list.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('');
     }
-    function reload() { D.load(); }
+    function reload() { D.load(); _recordCache = null; _recordCacheKey = null; }
 
     /* ---------- member records (one per KK member, SK info joined in) ---------- */
     function addrOf(m) { return [m.houseNo, m.street, m.purok, 'Brgy. ' + (m.barangay || BARANGAY), m.city || CITY, m.province || PROVINCE].filter(Boolean).join(', '); }
@@ -1080,10 +1103,25 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
     /* ---------- filters + list ---------- */
     var view = 'table', page = 1, loading = true;
 
+    /* buildRecords cache: invalidated whenever D.kk or D.roles change */
+    var _recordCache = null, _recordCacheKey = null;
+    function recordsCacheKey() {
+        var kk = D.kk.map(function (m) { return m.id + '|' + (m.status || '') + '|' + (m.createdAt || ''); }).join(',');
+        var roles = D.roles.map(function (r) { return r.id + '|' + r.kkId + '|' + r.position + '|' + r.status + '|' + (r.termStart || '') + '|' + (r.termEnd || ''); }).join(',');
+        return kk + '||' + roles;
+    }
+    function buildRecordsCached() {
+        var key = recordsCacheKey();
+        if (_recordCache !== null && _recordCacheKey === key) return _recordCache;
+        _recordCache = buildRecords();
+        _recordCacheKey = key;
+        return _recordCache;
+    }
+
     function filtered() {
         var q = norm($('searchInput').value), t = $('typeFilter').value, pos = $('positionFilter').value,
             st = $('statusFilter').value, pu = $('purokFilter').value, so = $('sortSelect').value;
-        var list = buildRecords().filter(function (r) {
+        var list = buildRecordsCached().filter(function (r) {
             if (t === 'SK' && !r.isSK) return false;
             if (t === 'KK' && r.isSK) return false;
             if (pos && r.position !== pos) return false;
@@ -1180,7 +1218,7 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
     }
 
     function tableHtml(list) {
-        return '<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr>' +
+        return '<div class="table-responsive"><table class="table table-striped table-hover align-middle mb-0"><thead><tr>' +
             '<th>Member</th><th>Age</th><th>Contact</th><th>Address / Purok</th><th>KK Status</th><th>SK Position</th><th>SK Status</th><th>Election / Term</th></tr></thead><tbody>' +
             list.map(function (r) {
                 return '<tr class="member-row" data-act="view" data-key="' + esc(r.key) + '" tabindex="0" role="button" aria-label="Open profile for ' + esc(r.name) + '"><td style="min-width:210px;"><div class="d-flex align-items-center gap-2">' + avatarHtml(r, 39) +
@@ -1238,11 +1276,13 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
     /* ---------- clickable summary cards: click one to show those members ---------- */
     function markStats() {
         var t = $('typeFilter').value, s = $('statusFilter').value;
-        var plain = !$('positionFilter').value && !$('purokFilter').value && !$('searchInput').value.trim();
+        var pos = $('positionFilter').value, pu = $('purokFilter').value, q = $('searchInput').value.trim();
         document.querySelectorAll('.stat-link').forEach(function (c) {
             var k = c.dataset.stat;
-            var on = plain && ((k === 'ALL' && t === 'ALL' && !s) || (k === 'SK' && t === 'SK' && !s) ||
-                               (k === 'KK' && t === 'KK' && !s) || (k === 'ACTIVE_SK' && t === 'SK' && s === 'Active'));
+            var on = (k === 'ALL' && t === 'ALL' && !s && !pos && !pu && !q) ||
+                     (k === 'SK' && t === 'SK' && !s && !pos && !pu && !q) ||
+                     (k === 'KK' && t === 'KK' && !s && !pos && !pu && !q) ||
+                     (k === 'ACTIVE_SK' && t === 'SK' && s === 'Active' && !pos && !pu && !q);
             c.classList.toggle('selected', on);
             c.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
@@ -1983,7 +2023,11 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
     });
 
     function resetPage() { page = 1; renderList(); }
-    $('searchInput').addEventListener('input', resetPage);
+    var searchDebounceTimer = null;
+    $('searchInput').addEventListener('input', function () {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(resetPage, 250);
+    });
     ['positionFilter', 'statusFilter', 'purokFilter', 'sortSelect', 'typeFilter'].forEach(function (id) { $(id).addEventListener('change', resetPage); });
 
     function jumpTo(type) {
@@ -2014,13 +2058,181 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
         }
     });
 
+    var committeeOfficialsById = {};
+    var committeePreferenceMap = {};
+    function committeePreferenceRank(role, committee) {
+        var savedPreferences = committeePreferenceMap[String(role.id)];
+        var rank = Array.isArray(savedPreferences) ? savedPreferences.indexOf(committee) : -1;
+        if (rank >= 0) return rank + 1;
+        var preferences = Array.isArray(role.preferredCommittees)
+            ? role.preferredCommittees
+            : (role.preferredCommittee ? [role.preferredCommittee] : []);
+        rank = preferences.indexOf(committee);
+        if (rank >= 0) return rank + 1;
+        return 999;
+    }
+    function committeePreferenceIcon(rank) {
+        return rank >= 1 && rank <= 3 ? ['1️⃣', '2️⃣', '3️⃣'][rank - 1] : '';
+    }
+    function committeeOfficialName(role) {
+        var member = D.kkById(role.kkId);
+        return D.kkName(member) + ' — ' + role.position;
+    }
+    function committeeMemberName(role) {
+        return D.kkName(D.kkById(role.kkId));
+    }
+    function leaderOption(role, committee) {
+        var rank = committeePreferenceRank(role, committee);
+        return '<option value="' + esc(role.id) + '">' + esc(committeeOfficialName(role)) +
+            (rank < 999 ? ' ' + committeePreferenceIcon(rank) + ' Preference ' + rank : '') + '</option>';
+    }
+    function isKagawad(role) {
+        return String(role && role.position || '').trim().toLowerCase() === 'sk kagawad';
+    }
+    function committeeVolunteerRequest(action, payload, committee) {
+        var url = 'api/committee-volunteers.php?action=' + encodeURIComponent(action);
+        if (committee) url += '&committee=' + encodeURIComponent(committee);
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': window.SK_CSRF_TOKEN || ''
+            },
+            body: JSON.stringify(payload || {})
+        }).then(function (response) {
+            return response.json().then(function (result) {
+                if (!response.ok || !result.ok) throw new Error(result.error || 'Could not process volunteer applications.');
+                return result;
+            });
+        });
+    }
+    function loadVolunteerPool(committee) {
+        var table = Array.from(document.querySelectorAll('[data-volunteer-pool]')).find(function (candidate) {
+            return candidate.dataset.volunteerPool === committee;
+        });
+        if (!table) return;
+        var body = table.querySelector('tbody');
+        body.innerHTML = '';
+        var loadingRow = body.insertRow();
+        var loadingCell = loadingRow.insertCell();
+        loadingCell.colSpan = 6;
+        loadingCell.className = 'text-muted small';
+        loadingCell.textContent = 'Loading volunteer applications...';
+        committeeVolunteerRequest('list', {}, committee).then(function (result) {
+            body.innerHTML = '';
+            if (!result.volunteers.length) {
+                var emptyRow = body.insertRow();
+                var emptyCell = emptyRow.insertCell();
+                emptyCell.colSpan = 6;
+                emptyCell.className = 'text-muted small';
+                emptyCell.textContent = 'No KK volunteer applications for this committee.';
+                return;
+            }
+            result.volunteers.forEach(function (volunteer) {
+                var row = body.insertRow();
+                [
+                    [volunteer.first_name, volunteer.last_name].filter(Boolean).join(' ') || 'Member record unavailable',
+                    volunteer.email || '—',
+                    volunteer.event_title || 'Committee only',
+                    volunteer.role === 'lead' ? 'Lead' : 'Member'
+                ].forEach(function (value) {
+                    row.insertCell().textContent = value;
+                });
+                var statusCell = row.insertCell();
+                var statusBadge = document.createElement('span');
+                statusBadge.className = 'badge bg-' + (volunteer.status === 'approved' ? 'success'
+                    : volunteer.status === 'pending' ? 'warning text-dark' : 'danger');
+                statusBadge.textContent = volunteer.status;
+                statusCell.appendChild(statusBadge);
+                var actionCell = row.insertCell();
+                if (volunteer.status === 'pending') {
+                    [['approved', 'Approve', 'btn-success'], ['declined', 'Decline', 'btn-outline-danger']].forEach(function (action) {
+                        var button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'btn btn-sm ' + action[2] + ' me-1 mb-1';
+                        button.dataset.volunteerReview = action[0];
+                        button.dataset.volunteerId = String(volunteer.id);
+                        button.dataset.volunteerCommittee = committee;
+                        button.textContent = action[1];
+                        actionCell.appendChild(button);
+                    });
+                } else {
+                    actionCell.textContent = 'Reviewed';
+                    actionCell.className = 'text-muted small';
+                }
+            });
+        }).catch(function (error) {
+            body.innerHTML = '';
+            var errorRow = body.insertRow();
+            var errorCell = errorRow.insertCell();
+            errorCell.colSpan = 6;
+            errorCell.className = 'text-danger small';
+            errorCell.textContent = error.message || 'Could not load volunteer applications.';
+        });
+    }
+    function reviewVolunteer(id, status, committee) {
+        committeeVolunteerRequest('review', { id: Number(id), status: status }).then(function () {
+            notify('success', status === 'approved' ? 'Volunteer application approved.' : 'Volunteer application declined.');
+            loadVolunteerPool(committee);
+        }).catch(function (error) {
+            notify('danger', error.message || 'Could not review the volunteer application.');
+        });
+    }
+    function refreshCommitteeLeaderOptions(row) {
+        var committee = row.dataset.committeeRow;
+        var memberSelect = row.querySelector('[data-committee-members]');
+        var selectedRoleIds = Array.from(memberSelect.selectedOptions).map(function (option) { return String(option.value); });
+        var selectedOfficials = selectedRoleIds.map(function (roleId) { return committeeOfficialsById[roleId]; })
+            .filter(isKagawad);
+        ['[data-committee-chair]', '[data-committee-vice]'].forEach(function (selector) {
+            var select = row.querySelector(selector);
+            var previous = select.value;
+            select.innerHTML = '<option value="">Unassigned</option>' + selectedOfficials.map(function (role) {
+                return leaderOption(role, committee);
+            }).join('');
+            select.value = selectedRoleIds.indexOf(String(previous)) >= 0 ? previous : '';
+        });
+    }
+    function leaderPositionHierarchy(role) {
+        var position = String(role.position || '').toLowerCase();
+        if (position.indexOf('kagawad') >= 0) return 7;
+        return 4;
+    }
+    function autoAssignLeaders() {
+        $('committeeList').querySelectorAll('[data-committee-row]').forEach(function (row) {
+            var committee = row.dataset.committeeRow;
+            var memberSelect = row.querySelector('[data-committee-members]');
+            var candidates = Array.from(memberSelect.selectedOptions).map(function (option) {
+                return committeeOfficialsById[String(option.value)];
+            }).filter(isKagawad);
+            candidates.sort(function (left, right) {
+                return committeePreferenceRank(left, committee) - committeePreferenceRank(right, committee)
+                    || leaderPositionHierarchy(right) - leaderPositionHierarchy(left)
+                    || String(left.termStart || '').localeCompare(String(right.termStart || ''))
+                    || committeeMemberName(left).localeCompare(committeeMemberName(right));
+            });
+            row.querySelector('[data-committee-chair]').value = candidates[0] ? String(candidates[0].id) : '';
+            row.querySelector('[data-committee-vice]').value = candidates[1] ? String(candidates[1].id) : '';
+        });
+    }
     function renderCommitteeList() {
         var savedChairs = {};
+        var savedViceChairs = {};
+        var savedMembers = {};
+        var hasSavedMembers = DB.getItem('skCommitteeMembers') !== null;
+        committeeOfficialsById = {};
+        committeePreferenceMap = {};
         try {
             savedChairs = JSON.parse(DB.getItem('skCommitteeChairs') || '{}');
             if (!savedChairs || typeof savedChairs !== 'object' || Array.isArray(savedChairs)) savedChairs = {};
+            savedViceChairs = JSON.parse(DB.getItem('skCommitteeViceChairs') || '{}');
+            if (!savedViceChairs || typeof savedViceChairs !== 'object' || Array.isArray(savedViceChairs)) savedViceChairs = {};
+            savedMembers = JSON.parse(DB.getItem('skCommitteeMembers') || '{}');
+            if (!savedMembers || typeof savedMembers !== 'object' || Array.isArray(savedMembers)) savedMembers = {};
+            committeePreferenceMap = JSON.parse(DB.getItem('skCommitteePreferences') || '{}');
+            if (!committeePreferenceMap || typeof committeePreferenceMap !== 'object' || Array.isArray(committeePreferenceMap)) committeePreferenceMap = {};
         } catch (error) {
-            notify('danger', 'Could not read committee chair assignments.');
+            notify('danger', 'Could not read committee assignments or preferences.');
         }
         var officials = D.roles.filter(function (role) {
             var today = todayISO();
@@ -2029,22 +2241,63 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
                 && (!role.termStart || role.termStart <= today)
                 && (!role.termEnd || role.termEnd >= today);
         });
+        officials.forEach(function (role) { committeeOfficialsById[String(role.id)] = role; });
         $('committeeList').innerHTML = COMMITTEES.length
             ? COMMITTEES.map(function (name) {
-                var options = '<option value="">Select an SK official</option>' + officials.map(function (role) {
-                    var member = D.kkById(role.kkId);
-                    var officialName = D.kkName(member) + ' — ' + role.position;
-                    return '<option value="' + esc(role.id) + '"' + (String(savedChairs[name] || '') === String(role.id) ? ' selected' : '') + '>' + esc(officialName) + '</option>';
+                var selectedMembers = Array.isArray(savedMembers[name]) ? savedMembers[name].map(String) : [];
+                if (!hasSavedMembers) {
+                    officials.forEach(function (role) {
+                        if (role.committee === name && selectedMembers.indexOf(String(role.id)) < 0) {
+                            selectedMembers.push(String(role.id));
+                        }
+                    });
+                }
+                [savedChairs[name], savedViceChairs[name]].forEach(function (leader) {
+                    if (leader != null && selectedMembers.indexOf(String(leader)) < 0) selectedMembers.push(String(leader));
+                });
+                var preferredOfficials = officials.filter(function (role) {
+                    return committeePreferenceRank(role, name) < 999;
+                });
+                var committeeOfficials = officials.slice().sort(function (left, right) {
+                    return committeePreferenceRank(left, name) - committeePreferenceRank(right, name)
+                        || committeeOfficialName(left).localeCompare(committeeOfficialName(right));
+                });
+                var preferenceBadges = preferredOfficials.length
+                    ? preferredOfficials.map(function (role) {
+                        var rank = committeePreferenceRank(role, name);
+                        return '<span class="badge rounded-pill bg-primary-subtle text-primary-emphasis me-1 mb-1"><span aria-hidden="true">' +
+                            committeePreferenceIcon(rank) + '</span> Preference ' +
+                            rank + ': ' + esc(committeeOfficialName(role)) + '</span>';
+                    }).join('')
+                    : '<span class="small text-muted">No preferences submitted</span>';
+                var memberOptions = committeeOfficials.map(function (role) {
+                    var rank = committeePreferenceRank(role, name);
+                    return '<option value="' + esc(role.id) + '"' + (selectedMembers.indexOf(String(role.id)) >= 0 ? ' selected' : '') + '>' +
+                        (rank < 999 ? committeePreferenceIcon(rank) + ' ' : '') + esc(committeeOfficialName(role)) +
+                        (rank < 999 ? ' — Preference ' + rank : '') + '</option>';
                 }).join('');
                 return '<div class="list-group-item d-flex justify-content-between align-items-center gap-2">' +
-                    '<div class="flex-grow-1"><div class="fw-semibold">' + esc(name) + '</div>' +
-                    '<label class="form-label small mt-2 mb-1" for="committee-chair-' + esc(name) + '">Chairperson</label>' +
-                    '<select class="form-select form-select-sm" id="committee-chair-' + esc(name) + '" data-committee-chair="' + esc(name) + '">' + options + '</select></div>' +
+                    '<div class="flex-grow-1" data-committee-row="' + esc(name) + '"><div class="fw-semibold">' + esc(name) + '</div>' +
+                    '<div class="small mt-2 mb-1">Preference requests: ' + preferenceBadges + '</div>' +
+                    '<label class="form-label small mt-2 mb-1" for="committee-members-' + esc(name) + '">Members (select multiple)</label>' +
+                    '<select class="form-select form-select-sm" multiple size="4" id="committee-members-' + esc(name) + '" data-committee-members="' + esc(name) + '">' + memberOptions + '</select>' +
+                    '<div class="row g-2 mt-1"><div class="col-md-6"><label class="form-label small mb-1" for="committee-chair-' + esc(name) + '">Chair (Kagawad required)</label>' +
+                    '<select class="form-select form-select-sm committee-leader" id="committee-chair-' + esc(name) + '" data-committee-chair="' + esc(name) + '"></select></div>' +
+                    '<div class="col-md-6"><label class="form-label small mb-1" for="committee-vice-' + esc(name) + '">Vice chair (Kagawad only, optional)</label>' +
+                    '<select class="form-select form-select-sm committee-leader" id="committee-vice-' + esc(name) + '" data-committee-vice="' + esc(name) + '"></select></div></div>' +
+                    '<hr class="my-3"><h6 class="fw-semibold"><i class="bi bi-people-fill me-1"></i>Volunteer Pool (KK Members)</h6>' +
+                    '<div class="table-responsive"><table class="table table-sm align-middle mb-0" data-volunteer-pool="' + esc(name) + '">' +
+                    '<thead><tr><th>Name</th><th>Email</th><th>Event</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>' +
+                    '<tbody><tr><td colspan="6" class="text-muted small">Loading volunteer applications...</td></tr></tbody></table></div></div>' +
                     (DEFAULT_COMMITTEES.indexOf(name) === -1
                         ? '<button type="button" class="btn btn-sm btn-outline-primary align-self-start" data-committee-edit="' + esc(name) + '">Rename</button>'
                         : '') + '</div>';
             }).join('')
             : '<div class="text-muted small">No committees are configured.</div>';
+        $('committeeList').querySelectorAll('[data-committee-row]').forEach(refreshCommitteeLeaderOptions);
+        $('committeeList').querySelectorAll('[data-volunteer-pool]').forEach(function (table) {
+            loadVolunteerPool(table.dataset.volunteerPool);
+        });
     }
     function resetCommitteeForm() {
         $('committeeForm').reset();
@@ -2053,13 +2306,25 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
         $('committeeCancelEditBtn').classList.add('d-none');
         clearErrs($('committeeForm'));
     }
-    $('manageCommitteesBtn').addEventListener('click', function () {
-        loadCommittees();
-        renderCommitteeList();
-        resetCommitteeForm();
-        modal('committeeModal').show();
-    });
+    var manageCommitteesButton = $('manageCommitteesBtn');
+    if (manageCommitteesButton) {
+        manageCommitteesButton.addEventListener('click', function () {
+            loadCommittees();
+            renderCommitteeList();
+            resetCommitteeForm();
+            modal('committeeModal').show();
+        });
+    }
     $('committeeList').addEventListener('click', function (event) {
+        var reviewButton = event.target.closest('[data-volunteer-review]');
+        if (reviewButton) {
+            reviewVolunteer(
+                reviewButton.dataset.volunteerId,
+                reviewButton.dataset.volunteerReview,
+                reviewButton.dataset.volunteerCommittee
+            );
+            return;
+        }
         var button = event.target.closest('[data-committee-edit]');
         if (!button) return;
         $('committeeOriginal').value = button.dataset.committeeEdit;
@@ -2069,17 +2334,33 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
         $('committeeName').focus();
     });
     $('committeeCancelEditBtn').addEventListener('click', resetCommitteeForm);
+    $('autoAssignCommitteeLeadersBtn').addEventListener('click', function () {
+        autoAssignLeaders();
+        notify('success', 'Leaders were assigned by preference, position, term start, and name. Review the selections before saving.');
+    });
     $('saveCommitteeChairsBtn').addEventListener('click', function () {
         var assignments = {};
+        var viceAssignments = {};
+        var memberAssignments = {};
         $('committeeList').querySelectorAll('[data-committee-chair]').forEach(function (select) {
             assignments[select.dataset.committeeChair] = select.value || null;
         });
+        $('committeeList').querySelectorAll('[data-committee-vice]').forEach(function (select) {
+            viceAssignments[select.dataset.committeeVice] = select.value || null;
+        });
+        $('committeeList').querySelectorAll('[data-committee-members]').forEach(function (select) {
+            memberAssignments[select.dataset.committeeMembers] = Array.from(select.selectedOptions).map(function (option) { return option.value; });
+        });
         try {
-            DB.saveCommitteeChairs(assignments, COMMITTEES);
-            notify('success', 'Committee chairpersons saved.');
+            DB.saveCommitteeChairs(assignments, viceAssignments, memberAssignments, COMMITTEES);
+            notify('success', 'Committee memberships and chair/vice-chair assignments saved.');
         } catch (error) {
-            notify('danger', error.message || 'Could not save committee chairpersons.');
+            notify('danger', error.message || 'Could not save committee assignments.');
         }
+    });
+    $('committeeList').addEventListener('change', function (event) {
+        var memberSelect = event.target.closest('[data-committee-members]');
+        if (memberSelect) refreshCommitteeLeaderOptions(memberSelect.closest('[data-committee-row]'));
     });
     $('committeeForm').addEventListener('submit', function (event) {
         event.preventDefault();
@@ -2112,7 +2393,6 @@ window.SK_CAN_RESET_MEMBER_PASSWORD = <?= can('reset_member_password') ? 'true' 
     /* ---------- start ---------- */
     var qType = new URLSearchParams(location.search).get('type');
     if (qType && /^(SK|KK|ALL)$/i.test(qType)) $('typeFilter').value = qType.toUpperCase();
-    renderList();
     setTimeout(function () { reload(); loading = false; renderAll(); }, 250);
 })();
 </script>

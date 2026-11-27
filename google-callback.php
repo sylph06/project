@@ -92,6 +92,115 @@ function google_callback_fail($reason, $destination = null) {
     exit;
 }
 
+function google_super_admin_sign_in($googleSubject, $email) {
+    $pdo = db();
+    $created = false;
+    $wasActive = false;
+    $oldRole = null;
+    $oldFullName = null;
+    try {
+        $pdo->beginTransaction();
+        $accountQuery = $pdo->prepare('SELECT id, username, full_name, email, role, is_active, legacy_id,
+                must_change_password, google_sub
+            FROM users WHERE email = ? LIMIT 1 FOR UPDATE');
+        $accountQuery->execute([$email]);
+        $account = $accountQuery->fetch(PDO::FETCH_ASSOC);
+
+        $subjectOwnerQuery = $pdo->prepare('SELECT id FROM users WHERE google_sub = ? LIMIT 1 FOR UPDATE');
+        $subjectOwnerQuery->execute([$googleSubject]);
+        $subjectOwner = $subjectOwnerQuery->fetchColumn();
+        if ($subjectOwner === false) {
+            $subjectLinkQuery = $pdo->prepare('SELECT user_id FROM google_account_links WHERE google_subject = ? LIMIT 1 FOR UPDATE');
+            $subjectLinkQuery->execute([$googleSubject]);
+            $subjectOwner = $subjectLinkQuery->fetchColumn();
+        }
+        if ($subjectOwner !== false && (!$account || (int)$subjectOwner !== (int)$account['id'])) {
+            throw new RuntimeException('This Google identity is already linked to a different login.');
+        }
+
+        if ($account) {
+            if ($account['legacy_id'] !== null) {
+                throw new RuntimeException('The Admin email is already linked to a member login.');
+            }
+            if (!empty($account['google_sub']) && !hash_equals((string)$account['google_sub'], $googleSubject)) {
+                throw new RuntimeException('The Admin email is already associated with another Google identity.');
+            }
+            $existingLinkQuery = $pdo->prepare('SELECT google_subject FROM google_account_links WHERE user_id = ? LIMIT 1 FOR UPDATE');
+            $existingLinkQuery->execute([(int)$account['id']]);
+            $existingLink = $existingLinkQuery->fetchColumn();
+            if ($existingLink !== false && !hash_equals((string)$existingLink, $googleSubject)) {
+                throw new RuntimeException('The Admin login has a conflicting Google account link.');
+            }
+            $wasActive = (bool)$account['is_active'];
+            $oldRole = (string)$account['role'];
+            $oldFullName = (string)$account['full_name'];
+            $pdo->prepare('UPDATE users SET email = ?, google_sub = ?, is_active = 1, role = ?, full_name = ? WHERE id = ?')
+                ->execute([$email, $googleSubject, SUPER_ADMIN_ROLE, 'Admin', (int)$account['id']]);
+            $account['email'] = $email;
+            $account['google_sub'] = $googleSubject;
+            $account['is_active'] = 1;
+            $account['role'] = SUPER_ADMIN_ROLE;
+            $account['full_name'] = 'Admin';
+        } else {
+            $baseUsername = 'admin_' . substr(hash('sha256', $email), 0, 16);
+            $username = $baseUsername;
+            for ($suffix = 1; ; $suffix++) {
+                $usernameQuery = $pdo->prepare('SELECT id FROM users WHERE username = ? LIMIT 1');
+                $usernameQuery->execute([$username]);
+                if ($usernameQuery->fetchColumn() === false) break;
+                if ($suffix > 100) throw new RuntimeException('A unique Admin username could not be generated.');
+                $username = $baseUsername . '_' . $suffix;
+            }
+            $passwordHash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
+            if (!is_string($passwordHash)) throw new RuntimeException('A secure login credential could not be generated.');
+            $pdo->prepare('INSERT INTO users
+                (username, password, full_name, email, role, is_active, legacy_id, must_change_password, google_sub)
+                VALUES (?, ?, ?, ?, ?, 1, NULL, 0, ?)')
+                ->execute([$username, $passwordHash, 'Admin', $email, SUPER_ADMIN_ROLE, $googleSubject]);
+            $account = [
+                'id' => (int)$pdo->lastInsertId(),
+                'username' => $username,
+                'full_name' => 'Admin',
+                'email' => $email,
+                'role' => SUPER_ADMIN_ROLE,
+                'is_active' => 1,
+                'legacy_id' => null,
+                'must_change_password' => 0,
+                'google_sub' => $googleSubject,
+            ];
+            $created = true;
+        }
+
+        sk_audit($pdo, [
+            'id' => (int)$account['id'],
+            'username' => (string)$account['username'],
+        ], null, 'super_admin_google_login', [
+            'created' => false,
+            'active' => $wasActive,
+            'role' => $oldRole,
+            'full_name' => $oldFullName,
+        ], [
+            'created' => $created,
+            'active' => true,
+            'role' => SUPER_ADMIN_ROLE,
+            'full_name' => 'Admin',
+            'email' => $email,
+            'google_identity_bound' => true,
+        ]);
+        $pdo->commit();
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log('Admin Google sign-in failed: ' . $error->getMessage());
+        google_callback_fail('google_failed');
+    }
+
+    session_regenerate_id(true);
+    unset($_SESSION['public']);
+    $_SESSION['user'] = ['id' => (int)$account['id']];
+    header('Location: ' . (!empty($account['must_change_password']) ? 'change-password.php' : 'super-admin.php'));
+    exit;
+}
+
 if (isset($_GET['state'], $_SESSION['google_registration_oauth']['state'])
     && is_string($_GET['state'])
     && hash_equals((string)$_SESSION['google_registration_oauth']['state'], $_GET['state'])) {
@@ -136,6 +245,7 @@ if (!is_string($googleSubject) || $googleSubject === '' || strlen($googleSubject
 }
 if ($emailVerified !== true) google_callback_fail('email_not_verified', $destination);
 if ($email === null) google_callback_fail('email_invalid', $destination);
+if (strtolower(trim($email)) === SUPER_ADMIN_EMAIL) google_super_admin_sign_in($googleSubject, $email);
 
 $pdo = db();
 $pdo->beginTransaction();

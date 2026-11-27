@@ -1,4 +1,12 @@
-<?php require_once __DIR__ . '/config.php'; require_viewer(); ?>
+<?php
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/role_store.php';
+require_once __DIR__ . '/committee_volunteer_store.php';
+require_viewer();
+$reportCommittees = sk_committee_names(db());
+committee_volunteers_ensure_schema(db());
+$approvedVolunteerCounts = committee_volunteers_approved_counts(db());
+?>
 <!DOCTYPE html>
 <html lang="en"<?= is_public() ? ' class="is-public"' : '' ?>>
 <head>
@@ -574,7 +582,7 @@
 <div class="top-strip"></div>
 
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 
 <main class="main page-content">
 
@@ -846,10 +854,10 @@
                         </div>
                         <div>
                             <label class="field-label" for="projectCommittee">Committee</label>
-                            <select id="projectCommittee" class="budget-select"></select>
+                            <select id="projectCommittee" name="committee" class="budget-select" required></select>
                         </div>
                         <div>
-                            <label class="field-label">Committee chairperson</label>
+                            <label class="field-label">Committee leadership</label>
                             <div id="projectChairperson" class="budget-input d-flex align-items-center" aria-live="polite">Not assigned</div>
                         </div>
                     </div>
@@ -865,7 +873,7 @@
                 <div class="table-scroll">
                     <table class="expense-table">
                         <thead>
-                            <tr><th>Project</th><th>Budget plan</th><th>Center of Participation</th><th>Committee</th><th>Committee chairperson</th><th>Budget (₱)</th><th>Spent (₱)</th><th>Remaining (₱)</th><th>Actions</th></tr>
+                            <tr><th>Project</th><th>Budget plan</th><th>Center of Participation</th><th>Committee</th><th>Committee leadership</th><th>Approved volunteers</th><th>Budget (₱)</th><th>Spent (₱)</th><th>Remaining (₱)</th><th>Actions</th></tr>
                         </thead>
                         <tbody id="projectTableBody"></tbody>
                     </table>
@@ -1002,17 +1010,11 @@ const BUDGET_KEY = 'skTransparencyBudget';
 const EXPENSE_KEY = 'skTransparencyExpenses';
 const COP_CATEGORIES = ['Health', 'Education', 'Economic Empowerment', 'Social Inclusion and Equity',
     'Peace-Building and Security', 'Governance', 'Active Citizenship', 'Environment', 'Global Mobility', 'Agriculture'];
-const DEFAULT_COMMITTEES = [
-    'Committee on Good Governance and Active Citizenship',
-    'Committee on Environment & Disaster Risk Resiliency',
-    'Committee on Anti-Drug Abuse and Social Protection',
-    'Committee on Education and Culture',
-    'Committee on Health and Sanitation',
-    'Committee on Youth and Sports Development',
-    'Committee on Budget and Appropriation'
-];
+const DEFAULT_COMMITTEES = <?= json_encode($reportCommittees, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
+const APPROVED_VOLUNTEER_COUNTS = <?= json_encode((object)$approvedVolunteerCounts, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 let committees = DEFAULT_COMMITTEES.slice();
 let committeeChairs = {};
+let committeeViceChairs = {};
 let officialsById = {};
 let budgetData = { fy:'2026-2027', projects:[] };
 let budgetsByYear = {};
@@ -1127,6 +1129,7 @@ function loadBudgetData() {
         const savedCommittees = storedArray('skCommittees');
         committees = Array.from(new Set(DEFAULT_COMMITTEES.concat(savedCommittees.filter(name => typeof name === 'string'))));
         committeeChairs = storedObject('skCommitteeChairs');
+        committeeViceChairs = storedObject('skCommitteeViceChairs');
         const roles = storedArray('skRoles');
         const members = storedArray('kkMembers');
         const memberById = {};
@@ -1195,10 +1198,30 @@ function renderProjectCommitteeOptions() {
 }
 
 function updateProjectChairperson() {
-    const roleId = committeeChairs[document.getElementById('projectCommittee').value];
-    const official = roleId ? officialsById[String(roleId)] : null;
-    document.getElementById('projectChairperson').textContent = official
-        ? official.name + ' — ' + official.position : 'Not assigned';
+    const committee = document.getElementById('projectCommittee').value;
+    const chairId = committeeChairs[committee];
+    const viceId = committeeViceChairs[committee];
+    const chair = chairId ? officialsById[String(chairId)] : null;
+    const vice = viceId ? officialsById[String(viceId)] : null;
+    const leadership = [];
+    if (chair) leadership.push('Chair: ' + chair.name + ' — ' + chair.position);
+    if (vice) leadership.push('Vice chair: ' + vice.name + ' — ' + vice.position);
+    document.getElementById('projectChairperson').textContent = leadership.length ? leadership.join(' | ') : 'Not assigned';
+}
+
+function projectCommitteeLeadership(committee) {
+    const chairId = committeeChairs[committee];
+    const viceId = committeeViceChairs[committee];
+    const chair = chairId ? officialsById[String(chairId)] : null;
+    const vice = viceId ? officialsById[String(viceId)] : null;
+    const leadership = [];
+    if (chair) leadership.push('Chair: ' + chair.name + ' — ' + chair.position);
+    if (vice) leadership.push('Vice chair: ' + vice.name + ' — ' + vice.position);
+    return leadership.length ? leadership.join(' | ') : 'Not assigned';
+}
+
+function approvedVolunteerCount(committee) {
+    return Number(APPROVED_VOLUNTEER_COUNTS[committee] || 0);
 }
 
 function renderExpenseProjectOptions(selectedId) {
@@ -1335,20 +1358,20 @@ function renderProjectTable() {
     const expenses = expensesForSelectedYear();
     const body = document.getElementById('projectTableBody');
     if (!budgetData.projects.length) {
-        body.innerHTML = '<tr><td colspan="9" class="empty-row">No project budgets in this year folder. Add each project with its own budget.</td></tr>';
+        body.innerHTML = '<tr><td colspan="10" class="empty-row">No project budgets in this year folder. Add each project with its own budget.</td></tr>';
         return;
     }
     body.innerHTML = budgetData.projects.map(project => {
         const spent = expenses.filter(expense => expense.projectId === project.id)
             .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-        const chairId = committeeChairs[project.committee];
-        const chair = chairId ? officialsById[String(chairId)] : null;
+        const volunteerCount = approvedVolunteerCount(project.committee);
         return '<tr><td><strong>' + escapeReportHtml(project.name) + '</strong>' +
             (project.legacy ? '<div class="small text-warning">Legacy total — review and split into projects</div>' : '') +
             (project.description ? '<div class="small text-muted">' + escapeReportHtml(project.description) + '</div>' : '') +
             '</td><td>' + escapeReportHtml(budgetTypeLabel(project.type)) + '</td><td>' + escapeReportHtml(project.cop || 'Not set') +
             '</td><td>' + escapeReportHtml(project.committee || 'Not set') + '</td><td>' +
-            escapeReportHtml(chair ? chair.name : 'Not assigned') + '</td><td>' + formatPeso(project.amount) +
+            escapeReportHtml(projectCommitteeLeadership(project.committee)) + '</td><td>' + volunteerCount + ' approved volunteer' +
+            (volunteerCount === 1 ? '' : 's') + '</td><td>' + formatPeso(project.amount) +
             '</td><td>' + formatPeso(spent) + '</td><td>' + formatPeso(project.amount - spent) + '</td><td>' +
             '<button class="table-action edit-btn" data-project-edit="' + escapeReportHtml(project.id) + '">Edit</button> ' +
             '<button class="table-action delete-btn" data-project-delete="' + escapeReportHtml(project.id) + '">Delete</button></td></tr>';
@@ -1797,12 +1820,12 @@ function generateBudgetPDF() {
     const projectRows = budgetData.projects.map(project => {
         const spent = selectedExpenses.filter(expense => expense.projectId === project.id)
             .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-        const chairId = committeeChairs[project.committee];
-        const chair = chairId ? officialsById[String(chairId)] : null;
+        const volunteerCount = approvedVolunteerCount(project.committee);
         return '<tr><td>' + escapeReportHtml(project.name) + '</td><td>' + escapeReportHtml(budgetTypeLabel(project.type)) +
             '</td><td>' + escapeReportHtml(project.cop || 'Not set') + '</td><td>' +
             escapeReportHtml(project.committee || 'Not set') + '</td><td>' +
-            escapeReportHtml(chair ? chair.name : 'Not assigned') + '</td><td class="right">' +
+            escapeReportHtml(projectCommitteeLeadership(project.committee)) + '</td><td>' + volunteerCount + ' approved volunteer' +
+            (volunteerCount === 1 ? '' : 's') + '</td><td class="right">' +
             formatPeso(project.amount) + '</td><td class="right">' + formatPeso(spent) +
             '</td><td class="right">' + formatPeso(project.amount - spent) + '</td></tr>';
     }).join('');
@@ -2027,12 +2050,12 @@ function generateBudgetPDF() {
                 <table>
                     <thead>
                         <tr>
-                            <th>Project</th><th>Plan</th><th>COP</th><th>Committee</th><th>Chairperson</th>
+                            <th>Project</th><th>Plan</th><th>COP</th><th>Committee</th><th>Committee leadership</th><th>Approved volunteers</th>
                             <th style="text-align:right;">Budget</th><th style="text-align:right;">Spent</th>
                             <th style="text-align:right;">Remaining</th>
                         </tr>
                     </thead>
-                    <tbody>${projectRows || `<tr><td colspan="8" class="center">No project budgets recorded.</td></tr>`}</tbody>
+                    <tbody>${projectRows || `<tr><td colspan="9" class="center">No project budgets recorded.</td></tr>`}</tbody>
                 </table>
 
                 <h2>Monthly Spending Summary</h2>

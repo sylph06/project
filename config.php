@@ -1,7 +1,8 @@
 <?php
 /* =========================================================
    SHARED SETTINGS  (every .php page loads this first)
-   - set KK_DB_HOST, KK_DB_NAME, KK_DB_USER, and KK_DB_PASS in the
+   - set KK_DB_HOST, KK_DB_NAME, KK_DB_USER, KK_DB_PASS, and
+     KK_SUPER_ADMIN_EMAIL in the
      web-server/PHP environment; development defaults support local XAMPP
    ========================================================= */
 function config_env($name, $default = null) {
@@ -35,6 +36,8 @@ const USE_SK_ROLES_TABLE = false;
 const APP_WRITE_ROLES = ['SK Chairman', 'SK Chairperson', 'SK Secretary', 'SK Treasurer', 'SK Kagawad', 'SK Vice Chairperson'];
 const MEMBER_DATA_ADMIN_ROLES = ['SK Chairman', 'SK Chairperson', 'SK Secretary'];
 const BACKGROUND_HISTORY_ROLES = ['SK Chairman', 'SK Chairperson', 'SK Secretary'];
+define('SUPER_ADMIN_EMAIL', strtolower(trim((string)config_env('KK_SUPER_ADMIN_EMAIL', ''))));
+const SUPER_ADMIN_ROLE = 'Admin';
 
 date_default_timezone_set('Asia/Manila');   // so dates match the barangay
 ini_set('display_errors', '0');
@@ -153,7 +156,7 @@ function current_user() {
     $sessionUser = $_SESSION['user'] ?? null;
     if (!$sessionUser || empty($sessionUser['id'])) return null;
 
-    $st = db()->prepare('SELECT id, username, full_name, role, is_active, legacy_id, must_change_password
+    $st = db()->prepare('SELECT id, username, full_name, email, role, is_active, legacy_id, must_change_password
                          FROM users WHERE id = ?');
     $st->execute([(int)$sessionUser['id']]);
     $account = $st->fetch(PDO::FETCH_ASSOC);
@@ -165,12 +168,21 @@ function current_user() {
         'id' => (int)$account['id'],
         'username' => $account['username'],
         'name' => $account['full_name'],
+        'email' => $account['email'],
         'role' => kk_effective_role($account),
         'legacy_id' => $account['legacy_id'],
         'must_change_password' => (bool)$account['must_change_password'],
     ];
     $_SESSION['user'] = ['id' => $user['id']];
     return $user;
+}
+
+function is_super_admin() {
+    $user = current_user();
+    return SUPER_ADMIN_EMAIL !== ''
+        && $user
+        && isset($user['email'])
+        && strtolower(trim((string)$user['email'])) === SUPER_ADMIN_EMAIL;
 }
 
 function can_write_app_data() {
@@ -249,7 +261,7 @@ function is_public() { return !current_user() && !empty($_SESSION['public']); }
 /* KK accounts without an active SK position have the same limited page access as public viewers. */
 function is_limited_member() {
     $user = current_user();
-    return $user && ($user['role'] ?? '') === 'KK Member';
+    return $user && !is_super_admin() && ($user['role'] ?? '') === 'KK Member';
 }
 
 function is_limited_viewer() {
@@ -327,3 +339,58 @@ function uinit() {
     foreach ($parts as $p) { if ($p !== '' && strlen($i) < 2) $i .= mb_strtoupper(mb_substr($p, 0, 1)); }
     return $i === '' ? '?' : $i;
 }
+
+function maintenance_mode_response($isApi, $message = 'The site is temporarily unavailable for maintenance.') {
+    http_response_code(503);
+    header('Retry-After: 300');
+    if ($isApi) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'error' => $message]);
+    } else {
+        header('Content-Type: text/html; charset=utf-8');
+        echo '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+            . '<title>Maintenance</title><body style="font:16px Arial,sans-serif;max-width:640px;margin:12vh auto;padding:24px;color:#1f2a3d">'
+            . '<h1>System maintenance</h1><p>' . e($message) . '</p></body></html>';
+    }
+    exit;
+}
+
+function enforce_maintenance_mode() {
+    if (PHP_SAPI === 'cli') return;
+
+    $script = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $page = basename($script);
+    $allowedPages = ['login.php', 'logout.php', 'change-password.php', 'google-login.php', 'google-callback.php'];
+    if (in_array($page, $allowedPages, true)
+        || ($page === 'api.php' && (string)($_GET['action'] ?? '') === 'login')) {
+        return;
+    }
+
+    $accept = strtolower((string)($_SERVER['HTTP_ACCEPT'] ?? ''));
+    $contentType = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? ''));
+    $isApi = strpos($script, '/api/') !== false || $page === 'api.php'
+        || strpos($accept, 'application/json') !== false
+        || strpos($contentType, 'application/json') !== false;
+
+    try {
+        $statement = db()->prepare("SELECT data_value FROM app_data WHERE data_key = 'maintenance_mode' LIMIT 1");
+        $statement->execute();
+        $stored = $statement->fetchColumn();
+    } catch (Throwable $error) {
+        error_log('Maintenance mode could not be checked: ' . $error->getMessage());
+        maintenance_mode_response($isApi, 'The system is temporarily unavailable. Please try again later.');
+    }
+    if ($stored === false) return;
+
+    $state = json_decode((string)$stored, true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($state) || !is_bool($state['enabled'] ?? null)) {
+        error_log('Maintenance mode data is invalid.');
+        if (is_super_admin()) return;
+        maintenance_mode_response($isApi, 'The system is temporarily unavailable. Please contact an administrator.');
+    }
+    if (!$state['enabled'] || is_super_admin()) return;
+
+    maintenance_mode_response($isApi);
+}
+
+enforce_maintenance_mode();

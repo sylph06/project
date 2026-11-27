@@ -11,21 +11,26 @@
     <link href="css/sidebar.css?v=33" rel="stylesheet">
     <style>
         .dashboard-page{
-            --dashboard-canvas:#eef4ff;
-            --dashboard-card:#fff;
-            --dashboard-outline:#dce7fb;
-            --dashboard-blue:#1558c7;
-            --dashboard-blue-light:#e9f1ff;
-            --dashboard-shadow:0 10px 28px rgba(37,76,151,.08);
-            background:var(--dashboard-canvas);
+            --mem-bg: #eef4ff;
+            --mem-surface: #fff;
+            --mem-surface-alt: #dce7fb;
+            --mem-brand: #1558c7;
+            --mem-brand-soft: #e9f1ff;
+            --mem-brand-rgb: 21,88,199;
+            --mem-brand-text-emphasis: rgba(21,88,199,.75);
+            --mem-line: #dce7fb;
+            --mem-radius: 20px;
+            background:var(--mem-bg);
         }
         html[data-bs-theme="dark"] .dashboard-page{
-            --dashboard-canvas:#171d2d;
-            --dashboard-card:#222d40;
-            --dashboard-outline:#35435d;
-            --dashboard-blue:#82aaff;
-            --dashboard-blue-light:#293b58;
-            --dashboard-shadow:0 10px 28px rgba(0,0,0,.2);
+            --mem-bg:#171d2d;
+            --mem-surface:#222d40;
+            --mem-surface-alt:#35435d;
+            --mem-brand:#82aaff;
+            --mem-brand-soft:#293b58;
+            --mem-brand-rgb:130,170,255;
+            --mem-brand-text-emphasis:rgba(130,170,255,.8);
+            --mem-line:#35435d;
         }
         html[data-bs-theme="dark"] .dashboard-stat-members{--stat-decoration:#293c5b}
         html[data-bs-theme="dark"] .dashboard-stat-events{--stat-decoration:#233d4b}
@@ -33,7 +38,7 @@
         html[data-bs-theme="dark"] .dashboard-stat-budget{--stat-decoration:#293b53}
         .dashboard-page main.container-fluid{
             min-height:calc(100vh - 68px);
-            background:var(--dashboard-canvas);
+            background:var(--mem-bg);
         }
         .dashboard-welcome{
             position:relative;
@@ -84,23 +89,23 @@
         .dashboard-welcome-action:hover{background:#edf4ff!important;color:#1249a8!important}
         .dashboard-toolbar{
             min-height:68px;
-            border-bottom:1px solid var(--ui-line);
+            border-bottom:1px solid var(--mem-line);
         }
         .dashboard-search{
             width:min(340px,38vw);
             min-height:40px;
-            border:1px solid var(--ui-line);
+            border:1px solid var(--mem-line);
             border-radius:999px;
-            background:var(--ui-paper);
+            background:var(--mem-surface);
         }
-        .dashboard-search:focus{background:var(--ui-surface)}
+        .dashboard-search:focus{background:var(--mem-surface-alt)}
         .dashboard-overview{padding-top:.25rem}
         .dashboard-stat,.dashboard-panel{
             height:100%;
-            background:var(--dashboard-card);
-            border:1px solid var(--dashboard-outline);
+            background:var(--mem-surface);
+            border:1px solid var(--mem-surface-alt);
             border-radius:18px;
-            box-shadow:var(--dashboard-shadow);
+            box-shadow:0 10px 28px rgba(0,0,0,.07);
         }
         .dashboard-stat{
             min-height:130px;
@@ -118,7 +123,7 @@
             border-radius:50%;background:var(--stat-decoration,#e9f1ff);
             content:"";pointer-events:none;
         }
-        .dashboard-stat:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(37,76,151,.13)}
+        .dashboard-stat:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.13)}
         .dashboard-stat>*{position:relative;z-index:1}
         .dashboard-stat-members{--stat-accent:#1765d6;--stat-decoration:#edf4ff}
         .dashboard-stat-events{--stat-accent:#1689b9;--stat-decoration:#e9f8ff}
@@ -131,8 +136,8 @@
             height:2.35rem;
             margin-bottom:.35rem;
             border-radius:50%;
-            color:var(--stat-accent,var(--dashboard-blue));
-            background:var(--stat-decoration,var(--dashboard-blue-light));
+            color:var(--stat-accent,var(--mem-brand));
+            background:var(--stat-decoration,var(--mem-brand-soft));
             font-size:1.05rem;
         }
         .dashboard-panel{padding:1.2rem 1.3rem;overflow:hidden}
@@ -143,16 +148,16 @@
             flex-wrap:wrap;
             gap:.65rem 1rem;
             padding:.7rem 1rem;
-            border:1px solid var(--ui-line);
+            border:1px solid var(--mem-line);
             border-radius:10px;
-            background:var(--ui-surface);
+            background:var(--mem-surface-alt);
         }
         .attention-pill{
             display:inline-flex;
             align-items:center;
             gap:.4rem;
-            background:var(--bs-warning-bg-subtle);
-            color:var(--bs-warning-text-emphasis);
+            background:var(--mem-brand-soft);
+            color:var(--mem-brand);
             padding:.25rem .55rem;
             border-radius:999px;
             font-size:.75rem;
@@ -162,12 +167,12 @@
             display:flex;
             align-items:center;
             gap:.45rem;
-            color:var(--ui-muted);
+            color:var(--mem-muted);
             font-size:.82rem;
         }
         .dashboard-queue-row .btn{padding:.2rem .55rem}
         .dashboard-stat .fs-2{
-            color:var(--bs-emphasis-color);
+            color:var(--mem-ink);
             font-size:clamp(1.2rem,2vw,1.65rem)!important;
             font-weight:700;
             letter-spacing:-.035em;
@@ -176,12 +181,12 @@
         .budget-stat{
             height:100%;
             padding:.6rem .8rem;
-            border-left:1px solid var(--ui-line);
+            border-left:1px solid var(--mem-line);
         }
-        .announcement-row+.announcement-row{border-top:1px solid var(--ui-line)}
+        .announcement-row+.announcement-row{border-top:1px solid var(--mem-line)}
         .dashboard-chart-wrap{position:relative;height:270px;min-height:220px}
         .dashboard-chart-wrap.dashboard-chart-gauge{height:175px;min-height:175px}
-        .dashboard-chart-fallback{font-size:.875rem;color:var(--bs-secondary-color)}
+        .dashboard-chart-fallback{font-size:.875rem;color:var(--mem-muted)}
         .dashboard-activity-table th{white-space:nowrap}
         .dashboard-activity-table td{vertical-align:middle}
         .dashboard-status{
@@ -189,8 +194,8 @@
             align-items:center;
             padding:.22rem .55rem;
             border-radius:999px;
-            color:var(--bs-primary-text-emphasis);
-            background:var(--bs-primary-bg-subtle);
+            color:var(--mem-brand-text-emphasis);
+            background:var(--mem-brand-soft);
             font-size:.72rem;
             font-weight:650;
             white-space:nowrap;
@@ -200,15 +205,15 @@
             text-align:center;
             pointer-events:none;
         }
-        .dashboard-budget-center strong{display:block;color:var(--bs-emphasis-color);font-size:1.35rem}
-        .dashboard-budget-center span{color:var(--bs-secondary-color);font-size:.75rem}
+        .dashboard-budget-center strong{display:block;color:var(--mem-ink);font-size:1.35rem}
+        .dashboard-budget-center span{color:var(--mem-muted);font-size:.75rem}
         .dashboard-stat-row>.col-6{min-width:0}
         @media(max-width:575.98px){
             .dashboard-welcome{min-height:0;padding:1.2rem;border-radius:16px}
             .dashboard-welcome-action{margin-top:.25rem}
             .dashboard-toolbar .dashboard-search{width:100%;order:3}
             .dashboard-toolbar{flex-wrap:wrap}
-            .budget-stat{border-left:0;border-top:1px solid var(--ui-line);padding:.75rem 0}
+            .budget-stat{border-left:0;border-top:1px solid var(--mem-line);padding:.75rem 0}
             .dashboard-chart-wrap{height:240px}
         }
     </style>
@@ -381,7 +386,7 @@
 <body class="dashboard-page">
 <div class="top-strip"></div>
 <script src="js/theme.js?v=3"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 <script type="application/json" id="dashboardChartData"><?= $dashboardChartData ?></script>
 
 <div class="page-content">

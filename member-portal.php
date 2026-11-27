@@ -48,19 +48,23 @@ $memberPortalUser = require_member_account();
         .portal-welcome h2{color:#fff}
         .portal-welcome p{color:rgba(255,255,255,.84)!important}
         .portal-welcome .btn-outline-primary{
-            --bs-btn-color:#fff;
-            --bs-btn-border-color:rgba(255,255,255,.72);
-            --bs-btn-hover-color:#1558c7;
-            --bs-btn-hover-bg:#fff;
-            --bs-btn-hover-border-color:#fff;
+            color:#fff;
+            border-color:rgba(255,255,255,.72);
+        }
+        .portal-welcome .btn-outline-primary:hover{
+            color:var(--mem-brand);
+            background:#fff;
+            border-color:#fff;
         }
         .portal-welcome .btn-primary{
-            --bs-btn-bg:#fff;
-            --bs-btn-border-color:#fff;
-            --bs-btn-color:#1558c7;
-            --bs-btn-hover-bg:#edf4ff;
-            --bs-btn-hover-border-color:#edf4ff;
-            --bs-btn-hover-color:#1249a8;
+            color:var(--mem-brand);
+            background:#fff;
+            border-color:#fff;
+        }
+        .portal-welcome .btn-primary:hover{
+            color:#1249a8;
+            background:var(--mem-brand-soft);
+            border-color:var(--mem-brand-soft);
         }
         .dashboard-stat,.dashboard-panel{
             height:100%;
@@ -84,12 +88,12 @@ $memberPortalUser = require_member_account();
             height:2.35rem;
             margin-bottom:.35rem;
             border-radius:50%;
-            color:var(--bs-primary);
-            background:var(--bs-primary-bg-subtle);
+            color:var(--mem-brand);
+            background:var(--mem-brand-soft);
             font-size:1.05rem;
         }
         .dashboard-stat .fs-2{
-            color:var(--bs-emphasis-color);
+            color:var(--mem-ink);
             font-size:clamp(1.2rem,2vw,1.65rem)!important;
             font-weight:700;
             letter-spacing:-.035em;
@@ -110,8 +114,8 @@ $memberPortalUser = require_member_account();
             align-items:center;
             padding:.22rem .55rem;
             border-radius:999px;
-            color:var(--bs-primary-text-emphasis);
-            background:var(--bs-primary-bg-subtle);
+            color:var(--mem-brand-text-emphasis);
+            background:var(--mem-brand-soft);
             font-size:.72rem;
             font-weight:650;
             white-space:nowrap;
@@ -149,7 +153,7 @@ $memberPortalUser = require_member_account();
             padding:2rem 1rem;
             font-size:.875rem;
         }
-        .portal-empty i{display:block;font-size:1.6rem;margin-bottom:.4rem;color:var(--bs-primary)}
+        .portal-empty i{display:block;font-size:1.6rem;margin-bottom:.4rem;color:var(--mem-brand)}
         .member-heatmap-section{
             padding:.85rem 0 1rem;
             margin-bottom:1rem;
@@ -162,6 +166,7 @@ $memberPortalUser = require_member_account();
             .portal-details dd{text-align:left}
         }
     </style>
+    <link href="css/site-theme.css?v=2" rel="stylesheet">
     <script>
         window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     </script>
@@ -174,7 +179,7 @@ $memberPortalUser = require_member_account();
     window.SK_MEMBER_PORTAL = true;
 </script>
 <script src="js/theme.js?v=3"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 
 <div class="page-content">
     <header class="bg-white border-bottom sticky-top">

@@ -49,8 +49,9 @@ foreach ($roles as $r) {
     $position = ($r['position'] ?? '') === 'SK Chairman' ? 'SK Chairperson' : ($r['position'] ?? '');
     if (!in_array($position, $POSITIONS, true)) continue;
     if ($position !== 'SK Kagawad' && isset($seenPositions[$position])) continue;
-    $seen[$kid] = 1;
     $name = trim(($m['firstName'] ?? '') . ' ' . (!empty($m['middleName']) ? mb_substr($m['middleName'], 0, 1) . '. ' : '') . ($m['lastName'] ?? '') . (!empty($m['suffix']) ? ' ' . $m['suffix'] : ''));
+    if ($name === '' || in_array(strtolower($name), ['chairperson', 'sk chairperson', 'sk chairman', 'secretary', 'sk secretary'], true)) continue;
+    $seen[$kid] = 1;
     $profile = $officialProfiles[(string)($r['id'] ?? '')] ?? [];
     if (!is_array($profile)) $profile = [];
     $photoId = (string)($profile['photoId'] ?? '');
@@ -82,11 +83,7 @@ foreach ($accountOfficials as $account) {
     $position = $account['role'] === 'SK Chairman' ? 'SK Chairperson' : $account['role'];
     if (isset($seenPositions[$position])) continue;
     $name = trim((string)$account['full_name']);
-    if ($name === '') continue;
-    if (strcasecmp($name, (string)$account['role']) === 0
-        || ($position === 'SK Chairperson' && strcasecmp($name, 'SK Chairperson') === 0)) {
-        $name = $position === 'SK Chairperson' ? 'Chairperson' : 'Secretary';
-    }
+    if ($name === '' || in_array(strtolower($name), ['chairperson', 'sk chairperson', 'sk chairman', 'secretary', 'sk secretary'], true)) continue;
     $parts = preg_split('/\s+/', $name);
     $ini = mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? mb_substr(end($parts), 0, 1) : ''));
     $officials[] = [
@@ -102,6 +99,21 @@ foreach ($accountOfficials as $account) {
         'order' => array_search($position, $POSITIONS, true),
     ];
     $seenPositions[$position] = true;
+}
+if ($officials && !isset($seenPositions['SK Chairperson'])) {
+    $officials[] = [
+        'roleId' => '',
+        'position' => 'SK Chairperson',
+        'name' => 'Vacant',
+        'photo' => '',
+        'initials' => '',
+        'bio' => '',
+        'monthlyHonorarium' => null,
+        'salnId' => '',
+        'salnYear' => '',
+        'order' => array_search('SK Chairperson', $POSITIONS, true),
+        'vacant' => true,
+    ];
 }
 $selfRole = null;
 $selfProfile = [];
@@ -138,18 +150,93 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
     <script src="js/theme.js"></script>
 
     <style>
-        :root { --line:var(--bs-border-color); --cream:var(--bs-tertiary-bg); }
+        :root {
+            --mem-bg: var(--ui-bg, #f8fafc);
+            --mem-surface: var(--ui-paper, #ffffff);
+            --mem-surface-alt: var(--ui-surface, #f1f5f9);
+            --mem-ink: var(--ui-ink, #1e293b);
+            --mem-muted: var(--ui-ink-muted, #64748b);
+            --mem-brand: var(--ui-brand, #1e40af);
+            --mem-brand-soft: rgba(30,64,175,.1);
+            --mem-brand-rgb: 30,64,175;
+            --mem-brand-text-emphasis: var(--ui-brand-text-emphasis, rgba(30,64,175,.75));
+            --mem-radius: var(--ui-radius, 12px);
+            --mem-line: var(--ui-line, #e2e8f0);
+        }
+
+        html[data-bs-theme="dark"] {
+            --mem-bg: #111827;
+            --mem-surface: #1f2937;
+            --mem-surface-alt: #374151;
+            --mem-ink: #f9fafb;
+            --mem-muted: #9ca3af;
+            --mem-brand: #3b82f6;
+            --mem-brand-soft: rgba(59,130,246,.1);
+            --mem-brand-rgb: 59,130,246;
+            --mem-brand-text-emphasis: rgba(59,130,246,.8);
+            --mem-line: #374151;
+        }
+
         * { box-sizing:border-box; }
-        body { margin:0; font-family:Arial,sans-serif; background:var(--cream); color:var(--bs-body-color); }
-        .top-strip { height:7px; background:var(--bs-primary); }
-        .header { min-height:70px; background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 24px; gap:12px; }
-        .header-title { font-size:20px; font-weight:800; }
+
+        body.officials-page {
+            margin:0;
+            font-family:Arial,sans-serif;
+            background:var(--mem-bg)!important;
+            color:var(--mem-ink)!important;
+        }
+
+        .top-strip {
+            height:7px;
+            background:var(--mem-brand)!important;
+        }
+
+        .header {
+            min-height:70px;
+            background:var(--mem-surface)!important;
+            border-bottom:1px solid var(--mem-line)!important;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:0 24px;
+            gap:12px;
+        }
+
+        .header-title {
+            font-size:20px;
+            font-weight:800;
+            color:var(--mem-ink)!important;
+        }
+
         .user-area { display:flex; align-items:center; gap:12px; text-align:right; }
-        .avatar { width:40px; height:40px; border-radius:50%; background:var(--bs-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
+
+        .avatar {
+            width:40px;
+            height:40px;
+            border-radius:50%;
+            background:var(--mem-brand)!important;
+            color:#fff;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-weight:700;
+        }
+
         .content { padding:24px; max-width:1100px; margin:0 auto; }
-        .hero { background:#fff; border:1px solid var(--line); border-radius:8px; padding:24px; margin-bottom:24px; text-align:center; }
-        .hero h1 { font-size:28px; font-weight:900; margin:0 0 6px; }
-        .hero p { margin:0; color:var(--bs-secondary-color); }
+
+        .hero {
+            background:var(--mem-surface)!important;
+            border:1px solid var(--mem-line)!important;
+            border-radius:8px;
+            padding:24px;
+            margin-bottom:24px;
+            text-align:center;
+        }
+
+        .hero h1 { font-size:28px; font-weight:900; margin:0 0 6px; color:var(--mem-ink)!important; }
+
+        .hero p { margin:0; color:var(--mem-muted)!important; }
+
         .officials-hierarchy {
             display:grid;
             grid-template-columns:repeat(2,minmax(0,1fr));
@@ -159,33 +246,153 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
                 "kagawads kagawads";
             gap:24px 18px;
         }
+
         .official-group { min-width:0; }
         .official-group-sk-chairperson { grid-area:chairperson; }
         .official-group-sk-secretary { grid-area:secretary; }
         .official-group-sk-treasurer { grid-area:treasurer; }
         .official-group-sk-kagawad { grid-area:kagawads; }
-        .group-title { font-size:13px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--bs-secondary-color); margin:0 0 14px; text-align:center; }
-        .cards { display:flex; flex-wrap:wrap; justify-content:center; gap:18px; }
-        .official { width:min(200px,100%); background:#fff; border:1px solid var(--line); border-radius:8px; padding:20px 14px; text-align:center; }
-        .official .pic { width:112px; height:112px; border-radius:50%; margin:0 auto 14px; object-fit:cover; border:3px solid var(--bs-primary-bg-subtle); display:block; }
-        .official .ph { display:flex; align-items:center; justify-content:center; background:var(--bs-primary-bg-subtle); color:var(--bs-primary-text-emphasis); font-size:34px; font-weight:800; }
-        .official .nm { font-weight:800; font-size:16px; line-height:1.25; }
-        .official .pos { margin-top:6px; font-size:13px; color:var(--bs-primary); font-weight:700; }
-        .official .bio { margin-top:10px; font-size:13px; color:var(--bs-secondary-color); }
-        .official .honorarium { margin-top:10px; font-size:13px; font-weight:700; }
-        .official .saln-link { display:inline-block; margin-top:8px; font-size:12px; }
-        .footer-note { text-align:center; color:var(--bs-secondary-color); font-size:13px; margin:34px 0 10px; }
+
+        .group-title {
+            font-size:13px;
+            font-weight:800;
+            letter-spacing:1px;
+            text-transform:uppercase;
+            color:var(--mem-muted)!important;
+            margin:0 0 14px;
+            text-align:center;
+        }
+
+        .cards { display:flex; flex-wrap:wrap; justify-content:center; align-items:stretch; gap:20px; }
+
+        .official {
+            flex:0 1 232px;
+            max-width:100%;
+            background:var(--mem-surface)!important;
+            border:1px solid var(--mem-line)!important;
+            border-radius:18px;
+            padding:0;
+            text-align:center;
+            overflow:hidden;
+            box-shadow:0 8px 24px rgba(27,65,125,.07);
+            transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .official-profile-trigger {
+            display:flex;
+            min-height:274px;
+            width:100%;
+            height:100%;
+            flex-direction:column;
+            align-items:center;
+            padding:24px 18px 18px;
+            border:0;
+            border-radius:inherit;
+            background:linear-gradient(180deg,var(--mem-surface-alt) 0%,var(--mem-surface) 42%);
+            color:inherit;
+            font:inherit;
+            text-align:center;
+            cursor:pointer;
+        }
+
+        .official-profile-trigger:focus-visible {
+            outline:3px solid var(--mem-brand);
+            outline-offset:-4px;
+        }
+
+        .official:hover,
+        .official:focus-within {
+            transform:translateY(-4px);
+            box-shadow:0 16px 34px rgba(27,65,125,.16);
+            border-color:var(--mem-brand);
+        }
+
+        .official .pic {
+            width:116px;
+            height:116px;
+            flex:none;
+            border-radius:50%;
+            margin:0 auto 18px;
+            object-fit:cover;
+            border:4px solid var(--mem-surface)!important;
+            display:block;
+            box-shadow:0 0 0 2px var(--mem-brand-soft),0 8px 18px rgba(23,35,60,.12);
+        }
+
+        .official .ph {
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:linear-gradient(145deg,var(--mem-brand-soft),var(--mem-surface))!important;
+            color:var(--mem-brand)!important;
+            font-size:32px;
+            font-weight:850;
+            border-radius:50%;
+            width:116px;
+            height:116px;
+            margin:0 auto 18px;
+        }
+
+        .official .nm {
+            display:flex;
+            min-height:2.6em;
+            align-items:center;
+            justify-content:center;
+            font-weight:800;
+            font-size:16px;
+            line-height:1.3;
+            color:var(--mem-ink)!important;
+        }
+
+        .official .pos {
+            display:inline-flex;
+            align-items:center;
+            margin-top:10px;
+            padding:5px 11px;
+            border:1px solid var(--mem-brand-soft);
+            border-radius:999px;
+            background:var(--mem-brand-soft);
+            color:var(--mem-brand)!important;
+            font-size:11px;
+            line-height:1.25;
+            font-weight:750;
+        }
+
+        .official .profile-hint {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            width:100%;
+            margin-top:auto;
+            padding-top:18px;
+            color:var(--mem-muted)!important;
+            font-size:12px;
+            font-weight:700;
+        }
+
+        .official .profile-hint .saln-state {
+            color:var(--mem-brand)!important;
+            font-size:11px;
+        }
+
+        .official .profile-hint .view-label {
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            color:var(--mem-ink)!important;
+        }
+
+        .official:hover .profile-hint .view-label,
+        .official:focus-within .profile-hint .view-label {
+            color:var(--mem-brand)!important;
+        }
+
+        .footer-note { text-align:center; color:var(--mem-muted)!important; font-size:13px; margin:34px 0 10px; }
         .login-link { font-size:14px; }
-        html.dark-mode body,
-        html.dark-mode .hero,
-        html.dark-mode .official { background:var(--bs-body-bg); color:var(--bs-body-color); }
-        html.dark-mode .header { background:var(--bs-body-bg); color:var(--bs-body-color); }
-        html.dark-mode .header small,
-        html.dark-mode .hero p,
-        html.dark-mode .footer-note { color:var(--bs-secondary-color); }
-        html.dark-mode .hero,
-        html.dark-mode .official { border-color:var(--bs-border-color); }
+
         @media (max-width:575.98px) {
+            .official { flex-basis:min(100%,280px); }
+
             .officials-hierarchy {
                 grid-template-columns:minmax(0,1fr);
                 grid-template-areas:
@@ -196,9 +403,14 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
                 gap:20px;
             }
         }
+
+        @media (prefers-reduced-motion:reduce) {
+            .official { transition:none; }
+        }
     </style>
+    <link href="css/site-theme.css?v=2" rel="stylesheet">
 </head>
-<body>
+<body class="officials-page">
 
 <div class="top-strip"></div>
 
@@ -206,7 +418,7 @@ foreach ($officials as $o) { $groups[$o['position']][] = $o; }
 window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;
 window.SK_MEMBER_PORTAL = <?= !empty($selfUser['legacy_id']) ? 'true' : 'false' ?>;
 </script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 
 <main class="main page-content">
 
@@ -258,22 +470,43 @@ window.SK_MEMBER_PORTAL = <?= !empty($selfUser['legacy_id']) ? 'true' : 'false' 
                 <h2 class="group-title"><?= e($pos) ?><?= count($list) > 1 ? 's' : '' ?></h2>
                 <div class="cards">
                     <?php foreach ($list as $o): ?>
-                        <article class="official">
-                            <?php if ($o['photo']): ?>
-                                <img class="pic" src="<?= e($o['photo']) ?>" alt="Photo of <?= e($o['name']) ?>" loading="lazy">
+                        <article class="official<?= !empty($o['vacant']) ? ' official-vacant' : '' ?>">
+                            <?php if (!empty($o['vacant'])): ?>
+                                <div class="official-vacant-card">
+                                    <span class="official-vacant-icon"><i class="bi bi-person-dash" aria-hidden="true"></i></span>
+                                    <strong class="official-vacant-title">Vacant</strong>
+                                    <span class="official-vacant-position"><?= e($o['position']) ?></span>
+                                    <span class="official-vacant-note">No official is currently assigned.</span>
+                                </div>
                             <?php else: ?>
-                                <div class="pic ph" aria-hidden="true"><?= e($o['initials']) ?></div>
-                            <?php endif; ?>
-                            <div class="nm"><?= e($o['name']) ?></div>
-                            <div class="pos"><?= e($o['position']) ?></div>
-                            <?php if ($o['bio'] !== ''): ?><p class="bio mb-0"><?= nl2br(e($o['bio'])) ?></p><?php endif; ?>
-                            <?php if ($o['monthlyHonorarium'] !== null): ?>
-                                <div class="honorarium">Monthly honorarium: ₱<?= e(number_format($o['monthlyHonorarium'], 2)) ?></div>
-                            <?php endif; ?>
-                            <?php if ($o['salnId'] !== ''): ?>
-                                <a class="saln-link" href="official_public_file.php?type=saln&amp;id=<?= e(rawurlencode($o['salnId'])) ?>" target="_blank" rel="noopener noreferrer">
-                                    View public SALN<?= $o['salnYear'] !== '' ? ' (' . e($o['salnYear']) . ')' : '' ?>
-                                </a>
+                            <button
+                                type="button"
+                                class="official-profile-trigger"
+                                data-official-name="<?= e($o['name']) ?>"
+                                data-official-position="<?= e($o['position']) ?>"
+                                data-official-photo="<?= e($o['photo']) ?>"
+                                data-official-initials="<?= e($o['initials']) ?>"
+                                data-official-bio="<?= e($o['bio']) ?>"
+                                data-official-honorarium="<?= $o['monthlyHonorarium'] !== null ? e(number_format($o['monthlyHonorarium'], 2, '.', '')) : '' ?>"
+                                data-official-saln-id="<?= e($o['salnId']) ?>"
+                                data-official-saln-year="<?= e($o['salnYear']) ?>"
+                                aria-label="View <?= e($o['position']) ?> <?= e($o['name']) ?> profile and public SALN"
+                            >
+                                <?php if ($o['photo']): ?>
+                                    <img class="pic" src="<?= e($o['photo']) ?>" alt="" loading="lazy">
+                                <?php else: ?>
+                                    <div class="pic ph" aria-hidden="true"><?= e($o['initials']) ?></div>
+                                <?php endif; ?>
+                                <div class="nm"><?= e($o['name']) ?></div>
+                                <div class="pos"><?= e($o['position']) ?></div>
+                                <div class="profile-hint">
+                                    <span class="saln-state">
+                                        <i class="bi <?= $o['salnId'] !== '' ? 'bi-file-earmark-check' : 'bi-file-earmark' ?> me-1" aria-hidden="true"></i>
+                                        <?= $o['salnId'] !== '' ? 'SALN posted' : 'Profile' ?>
+                                    </span>
+                                    <span class="view-label">View details <i class="bi bi-arrow-up-right" aria-hidden="true"></i></span>
+                                </div>
+                            </button>
                             <?php endif; ?>
                         </article>
                     <?php endforeach; ?>
@@ -351,7 +584,134 @@ window.SK_MEMBER_PORTAL = <?= !empty($selfUser['legacy_id']) ? 'true' : 'false' 
 
 </main>
 
+<div class="modal fade official-profile-modal" id="officialProfileModal" tabindex="-1" aria-labelledby="officialProfileModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="official-profile-modal-kicker">SK OFFICIAL PROFILE</div>
+                    <h2 class="modal-title" id="officialProfileModalTitle">Official profile</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close profile"></button>
+            </div>
+            <div class="modal-body">
+                <div class="official-profile-layout">
+                    <section class="official-profile-summary" aria-label="Official details">
+                        <div class="official-profile-identity">
+                            <img id="officialProfilePhoto" class="official-profile-photo" alt="" hidden>
+                            <div id="officialProfileInitials" class="avatar official-profile-initials" aria-hidden="true" hidden></div>
+                            <div class="official-profile-identity-copy">
+                                <div id="officialProfilePosition" class="official-profile-position"></div>
+                                <div id="officialProfileHonorarium" class="official-profile-honorarium"></div>
+                            </div>
+                        </div>
+                        <section class="official-profile-bio" aria-labelledby="officialProfileBioTitle">
+                            <h3 id="officialProfileBioTitle"><i class="bi bi-person-lines-fill" aria-hidden="true"></i> About</h3>
+                            <p id="officialProfileBio" class="official-profile-bio-copy"></p>
+                        </section>
+                    </section>
+                    <section class="official-profile-saln" aria-labelledby="officialProfileSalnTitle">
+                        <div class="official-profile-saln-heading">
+                            <div>
+                                <div class="official-profile-modal-kicker">PUBLIC DISCLOSURE</div>
+                                <h3 id="officialProfileSalnTitle">Statement of Assets, Liabilities and Net Worth</h3>
+                            </div>
+                            <a id="officialProfileSalnOpen" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener noreferrer" hidden>Open SALN</a>
+                        </div>
+                        <div class="official-profile-saln-viewer">
+                            <p id="officialProfileNoSaln" class="official-profile-no-saln" hidden>
+                                <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                                <span>No public SALN has been posted for this official.</span>
+                            </p>
+                            <img id="officialProfileSalnImage" class="official-profile-saln-image" alt="" hidden>
+                            <iframe id="officialProfileSalnPdf" class="official-profile-saln-pdf" title="Public SALN document" hidden></iframe>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span class="official-profile-footer-note">Public profile information</span>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script>
+(function () {
+    var modalElement = document.getElementById('officialProfileModal');
+    var modal = new bootstrap.Modal(modalElement);
+    var profilePhoto = document.getElementById('officialProfilePhoto');
+    var profileInitials = document.getElementById('officialProfileInitials');
+    var salnImage = document.getElementById('officialProfileSalnImage');
+    var salnPdf = document.getElementById('officialProfileSalnPdf');
+    var salnOpen = document.getElementById('officialProfileSalnOpen');
+    var noSaln = document.getElementById('officialProfileNoSaln');
+
+    document.querySelectorAll('.official-profile-trigger').forEach(function (trigger) {
+        trigger.addEventListener('click', function () {
+            var data = trigger.dataset;
+            var name = data.officialName || 'SK Official';
+            var photo = data.officialPhoto || '';
+            var salnId = data.officialSalnId || '';
+            var salnUrl = salnId
+                ? 'official_public_file.php?type=saln&id=' + encodeURIComponent(salnId)
+                : '';
+
+            document.getElementById('officialProfileModalTitle').textContent = name;
+            document.getElementById('officialProfilePosition').textContent = data.officialPosition || '';
+            document.getElementById('officialProfileBio').textContent = data.officialBio || 'No profile bio has been posted.';
+            document.getElementById('officialProfileHonorarium').textContent = data.officialHonorarium
+                ? 'Monthly honorarium: ₱' + Number(data.officialHonorarium).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })
+                : '';
+            profilePhoto.src = '';
+            profilePhoto.alt = '';
+            profilePhoto.hidden = !photo;
+            profileInitials.textContent = data.officialInitials || '';
+            profileInitials.hidden = !!photo;
+            if (photo) {
+                profilePhoto.src = photo;
+                profilePhoto.alt = 'Photo of ' + name;
+            }
+
+            salnImage.removeAttribute('src');
+            salnImage.alt = '';
+            salnImage.hidden = true;
+            salnPdf.removeAttribute('src');
+            salnPdf.hidden = true;
+            salnOpen.href = salnUrl || '#';
+            salnOpen.textContent = data.officialSalnYear
+                ? 'Open ' + data.officialSalnYear + ' SALN'
+                : 'Open SALN';
+            salnOpen.hidden = !salnUrl;
+            noSaln.hidden = !!salnUrl;
+            if (salnUrl) {
+                if (/\.pdf$/i.test(salnId)) {
+                    salnPdf.src = salnUrl;
+                    salnPdf.title = (data.officialSalnYear || 'Public') + ' SALN for ' + name;
+                    salnPdf.hidden = false;
+                } else {
+                    salnImage.src = salnUrl;
+                    salnImage.alt = (data.officialSalnYear || 'Public') + ' SALN for ' + name;
+                    salnImage.hidden = false;
+                }
+            }
+
+            modal.show();
+        });
+    });
+
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        profilePhoto.removeAttribute('src');
+        salnImage.removeAttribute('src');
+        salnPdf.removeAttribute('src');
+    });
+})();
+</script>
 <?php if ($selfRole): ?>
 <script>
 document.getElementById('officialProfileForm').addEventListener('submit', async function (event) {

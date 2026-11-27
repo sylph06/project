@@ -35,7 +35,7 @@ function audit_successful_api_action() {
         'meeting_minutes_save', 'meeting_minutes_approve', 'meeting_minutes_reopen',
         'meeting_attendance_save', 'meeting_attendance_delete',
         'role_assign', 'role_update', 'role_end', 'role_archive', 'role_archive_expired',
-        'committee_save', 'committee_chairs_save',
+        'committee_save', 'committee_chairs_save', 'committee_preference_save',
         'accounts_unlinked', 'account_link',
         'account_create', 'account_reset',
         'account_reset_member', 'account_reset_official', 'account_username_member', 'account_deactivate',
@@ -76,7 +76,11 @@ function audit_successful_api_action() {
     sk_audit(db(), $actor, $target, 'api_' . $action, null, $details);
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(['ok' => false, 'error' => 'POST only.'], 405);
+$isCommitteeRenamePut = $_SERVER['REQUEST_METHOD'] === 'PUT'
+    && (string)($_GET['action'] ?? '') === 'committee_save';
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !$isCommitteeRenamePut) {
+    out(['ok' => false, 'error' => 'POST only, except committee renames which use PUT.'], 405);
+}
 
 $in = json_decode(file_get_contents('php://input'), true);
 if (!is_array($in)) $in = [];

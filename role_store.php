@@ -105,6 +105,29 @@ function sk_role_is_current($role, $today = null) {
         && (empty($role['termEnd']) || $role['termEnd'] >= $today);
 }
 
+function sk_role_preferred_committees($role) {
+    if (!is_array($role)) throw new RuntimeException('The SK role record is invalid.');
+    $preferences = $role['preferredCommittees'] ?? null;
+    if ($preferences === null) {
+        $legacyPreference = $role['preferredCommittee'] ?? null;
+        $preferences = $legacyPreference === null || $legacyPreference === '' ? [] : [$legacyPreference];
+    }
+    if (!is_array($preferences)
+        || ($preferences !== [] && array_keys($preferences) !== range(0, count($preferences) - 1))
+        || count($preferences) > 2) {
+        throw new RuntimeException('The saved committee preferences are invalid.');
+    }
+    foreach ($preferences as $preference) {
+        if (!is_string($preference) || trim($preference) === '') {
+            throw new RuntimeException('The saved committee preferences are invalid.');
+        }
+    }
+    if (count($preferences) !== count(array_unique($preferences))) {
+        throw new RuntimeException('The saved committee preferences are invalid.');
+    }
+    return array_values($preferences);
+}
+
 function sk_role_member_has_current_assignment($roles, $legacyId, $exceptRoleId = null, $today = null) {
     foreach ($roles as $role) {
         if ((string)($role['kkId'] ?? '') === (string)$legacyId

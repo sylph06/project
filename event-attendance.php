@@ -239,7 +239,7 @@ require_official();
 <div class="top-strip"></div>
 
 <!-- Standard Navigation Sidebar -->
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 
 <div class="app-wrapper page-content d-flex flex-column min-vh-100">
 

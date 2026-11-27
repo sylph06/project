@@ -54,6 +54,7 @@ $routes = [
     'role_archive_expired'    => 'api/roles.php',
     'committee_save'          => 'api/committees.php',
     'committee_chairs_save'   => 'api/committee_chairs.php',
+    'committee_preference_save' => 'api/committee_preference.php',
 
     /* Member accounts */
     'accounts_unlinked'       => 'api/accounts.php',

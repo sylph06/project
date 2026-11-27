@@ -69,6 +69,11 @@
         if (systemMenu) systemMenu.items.unshift(['audit-log.php', 'bi-journal-text', 'Audit Log']);
     }
 
+    if (!publicMode && window.SK_SUPER_ADMIN) {
+        var systemMenu = MENU.filter(function (group) { return group.title === 'System'; })[0];
+        if (systemMenu) systemMenu.items.unshift(['super-admin.php', 'bi-shield-lock-fill', 'Admin']);
+    }
+
     function isActive(href) {
         var at = href.indexOf('#');
         var page = at > -1 ? href.slice(0, at) : href;

@@ -2,7 +2,8 @@
 require_once __DIR__ . '/notification_logic.php';
 
 $__user = current_user();
-$__official = $__user !== null && ($__user['role'] ?? '') !== 'KK Member';
+$__superAdmin = $__user !== null && is_super_admin();
+$__official = $__user !== null && (($__user['role'] ?? '') !== 'KK Member' || $__superAdmin);
 $__public = is_limited_viewer();
 
 $__publicKeys = ['skAnnouncements'];
@@ -215,11 +216,13 @@ $__flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UN
 <link rel="stylesheet" href="vendor/adminlte/css/adminlte.min.css">
 <script src="vendor/adminlte/js/adminlte.min.js" defer></script>
 <?php endif; ?>
+<link rel="stylesheet" href="css/site-theme.css?v=2">
 <script>
 document.documentElement.classList.add('sidebar-expand-lg');
 window.__DB = <?= json_encode((object)$__data, $__flags) ?>;
 window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), $__flags) ?>;
 window.SK_PUBLIC = <?= $__public ? 'true' : 'false' ?>;
+window.SK_SUPER_ADMIN = <?= $__superAdmin ? 'true' : 'false' ?>;
 window.SK_MEMBER_PORTAL = <?= !empty($__user['legacy_id']) ? 'true' : 'false' ?>;
 window.SK_OFFICER = <?= json_encode($__official ? uname() . ' (' . urole() . ')' : '', $__flags) ?>;
 window.SK_CAN_MANAGE_ROLES = <?= can_manage_sk_roles() ? 'true' : 'false' ?>;

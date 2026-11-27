@@ -58,13 +58,13 @@ if ($existingUser) {
 
         body{
             min-height:100vh;
-            background:var(--bs-tertiary-bg);
-            color:var(--bs-body-color);
+            background:var(--mem-bg);
+            color:var(--mem-ink);
         }
 
         .top-strip{
             height:6px;
-            background:var(--bs-primary);
+            background:var(--mem-brand);
         }
 
         .login-shell{
@@ -76,7 +76,7 @@ if ($existingUser) {
             position:relative;
             overflow:hidden;
             color:#fff;
-            background:linear-gradient(145deg, var(--bs-primary) 0%, var(--bs-primary-text-emphasis) 100%);
+            background:linear-gradient(145deg, var(--mem-brand) 0%, var(--mem-brand-text-emphasis) 100%);
             display:flex;
             align-items:center;
             justify-content:center;
@@ -146,8 +146,8 @@ if ($existingUser) {
         .login-card{
             width:100%;
             max-width:430px;
-            background:#fff;
-            border:1px solid var(--bs-border-color);
+            background:var(--mem-surface);
+            border:1px solid var(--mem-line);
             border-radius:24px;
             box-shadow:0 14px 34px rgba(20,20,20,.07);
             padding:34px 30px;
@@ -162,45 +162,45 @@ if ($existingUser) {
         }
 
         .login-card .form-control{
-            border-color:var(--bs-border-color);
+            border-color:var(--mem-line);
             padding:.7rem .9rem;
         }
         .login-card .input-group-text{
-            background:#fff;
-            border-color:var(--bs-border-color);
-            color:var(--bs-secondary-color);
+            background:var(--mem-surface);
+            border-color:var(--mem-line);
+            color:var(--mem-muted);
         }
         .login-card .form-control:focus{
-            border-color:var(--bs-primary);
-            box-shadow:0 0 0 3px rgba(var(--bs-primary-rgb), .25);
+            border-color:var(--mem-brand);
+            box-shadow:0 0 0 3px rgba(var(--mem-brand-rgb), .25);
         }
         .input-group:focus-within .input-group-text{
-            border-color:var(--bs-primary);
-            color:var(--bs-primary);
+            border-color:var(--mem-brand);
+            color:var(--mem-brand);
         }
         .input-group .form-control{ border-left:0; }
         .input-group .toggle-pass{
-            border:1px solid var(--bs-border-color);
+            border:1px solid var(--mem-line);
             border-left:0;
-            background:#fff;
-            color:var(--bs-secondary-color);
+            background:var(--mem-surface);
+            color:var(--mem-muted);
         }
-        .input-group .toggle-pass:hover{ color:var(--bs-primary); }
+        .input-group .toggle-pass:hover{ color:var(--mem-brand); }
 
         html[data-bs-theme="dark"] .login-card{
-            background:var(--bs-secondary-bg);
-            color:var(--bs-body-color);
+            background:var(--mem-surface-alt);
+            color:var(--mem-ink);
         }
         html[data-bs-theme="dark"] .login-card .input-group-text,
         html[data-bs-theme="dark"] .input-group .toggle-pass{
-            background:var(--bs-tertiary-bg);
-            color:var(--bs-body-color);
-            border-color:var(--bs-border-color);
+            background:var(--mem-bg);
+            color:var(--mem-ink);
+            border-color:var(--mem-line);
         }
 
         .btn-login{
-            background:var(--bs-primary);
-            border-color:var(--bs-primary);
+            background:var(--mem-brand);
+            border-color:var(--mem-brand);
             color:#fff;
             font-weight:700;
             padding:.75rem 1rem;
@@ -209,14 +209,14 @@ if ($existingUser) {
         }
         .btn-login:hover,
         .btn-login:focus{
-            background:var(--bs-primary-text-emphasis);
-            border-color:var(--bs-primary-text-emphasis);
+            background:var(--mem-brand-text-emphasis);
+            border-color:var(--mem-brand-text-emphasis);
             color:#fff;
             transform:translateY(-1px);
         }
         .btn-login:disabled{
-            background:var(--bs-primary);
-            border-color:var(--bs-primary);
+            background:var(--mem-brand);
+            border-color:var(--mem-brand);
             color:#fff;
             opacity:.75;
         }
@@ -230,7 +230,7 @@ if ($existingUser) {
 
 
         .link-soft{
-            color:var(--bs-primary);
+            color:var(--mem-brand);
             text-decoration:none;
             font-weight:600;
         }
@@ -255,6 +255,7 @@ if ($existingUser) {
             .login-card .my-4{ margin-top:.75rem !important; margin-bottom:.75rem !important; }
         }
     </style>
+    <link href="css/site-theme.css?v=2" rel="stylesheet">
 </head>
 <body>
 

@@ -17,9 +17,9 @@
     var VIEW_ONLY = !!w.SK_PUBLIC;       // public viewers can read but never save
     var existingDB = w.DB && typeof w.DB === 'object' ? w.DB : {};
 
-    function post(action, body) {
+    function postUrl(url, body, method) {
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'api.php?action=' + action, false);
+        xhr.open(method || 'POST', url, false);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.setRequestHeader('X-CSRF-Token', w.SK_CSRF_TOKEN || '');
         xhr.send(JSON.stringify(body));
@@ -27,6 +27,14 @@
         try { res = JSON.parse(xhr.responseText); } catch (e) {}
         if (xhr.status !== 200 || !res.ok) throw new Error(res.error || 'Could not save to the database.');
         return res;
+    }
+
+    function post(action, body) {
+        return postUrl('api.php?action=' + action, body);
+    }
+
+    function put(action, body) {
+        return postUrl('api.php?action=' + action, body, 'PUT');
     }
 
     function postForm(action, form) {
@@ -309,28 +317,73 @@
             return result;
         },
         saveCommittee: function (name, original, expected) {
-            var result = post('committee_save', {
+            var body = {
                 name: name,
                 original: original,
                 expected: expected
-            });
+            };
+            var result = original ? put('committee_save', body) : post('committee_save', body);
             cache.skCommittees = JSON.stringify(result.committees);
             if (Array.isArray(result.roles)) cache.skRoles = JSON.stringify(result.roles);
-            if (result.assignments && typeof result.assignments === 'object') {
+            if (Object.prototype.hasOwnProperty.call(result, 'rawAssignments')) {
+                if (typeof result.rawAssignments === 'string') cache.skCommitteeChairs = result.rawAssignments;
+                else delete cache.skCommitteeChairs;
+            } else if (result.assignments && typeof result.assignments === 'object') {
                 cache.skCommitteeChairs = JSON.stringify(result.assignments);
+            }
+            if (Object.prototype.hasOwnProperty.call(result, 'rawViceAssignments')) {
+                if (typeof result.rawViceAssignments === 'string') cache.skCommitteeViceChairs = result.rawViceAssignments;
+                else delete cache.skCommitteeViceChairs;
+            } else if (result.viceAssignments && typeof result.viceAssignments === 'object') {
+                cache.skCommitteeViceChairs = JSON.stringify(result.viceAssignments);
+            }
+            if (Object.prototype.hasOwnProperty.call(result, 'rawMemberAssignments')) {
+                if (typeof result.rawMemberAssignments === 'string') cache.skCommitteeMembers = result.rawMemberAssignments;
+                else delete cache.skCommitteeMembers;
+            } else if (result.memberAssignments && typeof result.memberAssignments === 'object') {
+                cache.skCommitteeMembers = JSON.stringify(result.memberAssignments);
+            }
+            if (Object.prototype.hasOwnProperty.call(result, 'rawPreferences')) {
+                if (typeof result.rawPreferences === 'string') cache.skCommitteePreferences = result.rawPreferences;
+                else delete cache.skCommitteePreferences;
+            } else if (result.preferences && typeof result.preferences === 'object') {
+                cache.skCommitteePreferences = JSON.stringify(result.preferences);
+            }
+            if (typeof result.rawBudget === 'string') {
+                cache.skTransparencyBudget = result.rawBudget;
+            } else if (result.budget && typeof result.budget === 'object') {
+                cache.skTransparencyBudget = JSON.stringify(result.budget);
             }
             return result;
         },
-        saveCommitteeChairs: function (assignments, committees) {
-            var expected = Object.prototype.hasOwnProperty.call(cache, 'skCommitteeChairs')
-                ? cache.skCommitteeChairs : null;
-            var result = post('committee_chairs_save', {
+        saveCommitteeChairs: function (assignments, viceAssignments, memberAssignments, committees) {
+            var result = postUrl('api/committee-assignments.php?action=save_assignments', {
                 assignments: assignments,
+                viceAssignments: viceAssignments,
+                memberAssignments: memberAssignments,
                 committees: committees,
+                expected: {
+                    chairs: Object.prototype.hasOwnProperty.call(cache, 'skCommitteeChairs') ? cache.skCommitteeChairs : null,
+                    viceChairs: Object.prototype.hasOwnProperty.call(cache, 'skCommitteeViceChairs') ? cache.skCommitteeViceChairs : null,
+                    members: Object.prototype.hasOwnProperty.call(cache, 'skCommitteeMembers') ? cache.skCommitteeMembers : null
+                }
+            });
+            cache.skCommitteeChairs = result.rawAssignments;
+            cache.skCommitteeViceChairs = result.rawViceAssignments;
+            cache.skCommitteeMembers = result.rawMemberAssignments;
+            return result;
+        },
+        saveCommitteePreference: function (preferences, expected) {
+            var result = post('committee_preference_save', {
+                preferences: preferences,
                 expected: expected
             });
-            cache.skCommitteeChairs = JSON.stringify(result.assignments);
-            return result;
+            var roles = JSON.parse(cache.skRoles || '[]');
+            if (!Array.isArray(roles)) roles = [];
+            cache.skRoles = JSON.stringify(roles.map(function (role) {
+                return role && String(role.id) === String(result.role.id) ? result.role : role;
+            }));
+            return result.role;
         },
         uploadOfficialProfileFiles: function (formData) {
             return fetch('api/official-files.php?action=profile_files', {

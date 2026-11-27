@@ -25,6 +25,16 @@ $assert(sk_role_member_has_current_assignment($roles, 'member-1', null, $today),
 $assert(!sk_role_member_has_current_assignment($roles, 'member-1', 'current', $today), 'A role update must ignore the role being updated.');
 $assert(!sk_role_member_has_current_assignment($roles, 'member-2', null, $today), 'A future role must not block a current assignment.');
 $assert(!sk_role_member_has_current_assignment($roles, 'missing', null, $today), 'A member without a current role must be assignable.');
+$assert(sk_role_preferred_committees(['preferredCommittee' => 'Education']) === ['Education'], 'A saved single committee preference must remain readable.');
+$assert(sk_role_preferred_committees(['preferredCommittees' => ['Education', 'Health']]) === ['Education', 'Health'], 'Two committee preferences must be preserved in order.');
+$assert(sk_role_preferred_committees(['preferredCommittees' => []]) === [], 'An official without saved preferences must remain supported.');
+$invalidPreferencesRejected = false;
+try {
+    sk_role_preferred_committees(['preferredCommittees' => ['Education', 'Health', 'Governance']]);
+} catch (RuntimeException $error) {
+    $invalidPreferencesRejected = true;
+}
+$assert($invalidPreferencesRejected, 'More than two saved preferences must be rejected.');
 
 $hadUserAgent = array_key_exists('HTTP_USER_AGENT', $_SERVER);
 $originalUserAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;

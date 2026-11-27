@@ -146,8 +146,9 @@ try {
         $position = ($r['position'] ?? '') === 'SK Chairman' ? 'SK Chairperson' : ($r['position'] ?? '');
         if (!in_array($position, $POSITIONS, true)) continue;
         if ($position !== 'SK Kagawad' && isset($seenPositions[$position])) continue;
-        $seen[$kid] = 1;
         $name = trim(($m['firstName'] ?? '') . ' ' . ($m['lastName'] ?? '') . (!empty($m['suffix']) ? ' ' . $m['suffix'] : ''));
+        if ($name === '' || in_array(strtolower($name), ['chairperson', 'sk chairperson', 'sk chairman', 'secretary', 'sk secretary'], true)) continue;
+        $seen[$kid] = 1;
         $profile = is_array($officialProfiles[(string)($r['id'] ?? '')] ?? null)
             ? $officialProfiles[(string)$r['id']] : [];
         $photoId = (string)($profile['photoId'] ?? '');
@@ -184,11 +185,7 @@ try {
         $position = $account['role'] === 'SK Chairman' ? 'SK Chairperson' : $account['role'];
         if (isset($seenPositions[$position])) continue;
         $name = trim((string)$account['full_name']);
-        if ($name === '') continue;
-        if (strcasecmp($name, (string)$account['role']) === 0
-            || ($position === 'SK Chairperson' && strcasecmp($name, 'SK Chairperson') === 0)) {
-            $name = $position === 'SK Chairperson' ? 'Chairperson' : 'Secretary';
-        }
+        if ($name === '' || in_array(strtolower($name), ['chairperson', 'sk chairperson', 'sk chairman', 'secretary', 'sk secretary'], true)) continue;
         $parts = preg_split('/\s+/', $name);
         $ini = mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . (count($parts) > 1 ? mb_substr(end($parts), 0, 1) : ''));
         $officials[] = [
@@ -204,6 +201,21 @@ try {
             'order' => array_search($position, $POSITIONS, true),
         ];
         $seenPositions[$position] = true;
+    }
+    if ($officials && !isset($seenPositions['SK Chairperson'])) {
+        $officials[] = [
+            'roleId' => '',
+            'position' => 'SK Chairperson',
+            'name' => 'Vacant',
+            'photo' => '',
+            'initials' => '',
+            'bio' => '',
+            'monthlyHonorarium' => null,
+            'salnId' => '',
+            'salnYear' => '',
+            'order' => array_search('SK Chairperson', $POSITIONS, true),
+            'vacant' => true,
+        ];
     }
     usort($officials, function ($a, $b) { return $a['order'] <=> $b['order'] ?: strcmp($a['name'], $b['name']); });
 
@@ -302,51 +314,45 @@ $L_EVENTS   = '#announcements';
 
     <style>
         :root{
-            --lp-display:Arial,sans-serif;
-            --lp-ink:var(--bs-body-color);
-            --lp-line:var(--bs-border-color);
-            --bs-success:#0d6efd;
-            --bs-success-rgb:13,110,253;
-            --bs-success-text-emphasis:#084298;
-            --bs-success-bg-subtle:#cfe2ff;
-            --bs-success-border-subtle:#9ec5fe;
+            --mem-display:Arial,sans-serif;
+            --mem-bg: var(--ui-bg, #f8fafc);
+            --mem-surface: var(--ui-paper, #ffffff);
+            --mem-surface-alt: var(--ui-surface, #f1f5f9);
+            --mem-ink: var(--ui-ink, #1e293b);
+            --mem-muted: var(--ui-ink-muted, #64748b);
+            --mem-brand: var(--ui-brand, #1e40af);
+            --mem-brand-soft: rgba(30,64,175,.1);
+            --mem-brand-rgb: 30,64,175;
+            --mem-brand-text-emphasis: rgba(30,64,175,.75);
+            --mem-radius: var(--ui-radius, 12px);
+            --mem-line: var(--ui-line, #e2e8f0);
         }
         html[data-bs-theme="dark"]{
             color-scheme:dark;
-            --bs-body-bg:#151a24;
-            --bs-body-color:#e8edf5;
-            --bs-emphasis-color:#f7f9fc;
-            --bs-secondary-color:#aeb8c7;
-            --bs-tertiary-bg:#1c2432;
-            --bs-secondary-bg:#222d3d;
-            --bs-border-color:#384457;
-            --bs-border-color-translucent:rgba(230,239,255,.12);
-            --bs-primary:#0d6efd;
-            --bs-primary-rgb:13,110,253;
-            --bs-primary-text-emphasis:#9ec5fe;
-            --bs-primary-bg-subtle:#1b3558;
-            --bs-primary-border-subtle:#264f84;
-            --bs-link-color:#9ec5fe;
-            --bs-link-hover-color:#cfe2ff;
-            --bs-success:#0d6efd;
-            --bs-success-rgb:13,110,253;
-            --bs-success-text-emphasis:#9ec5fe;
-            --bs-success-bg-subtle:#1b3558;
-            --bs-success-border-subtle:#264f84;
+            --mem-bg: #111827;
+            --mem-surface: #1f2937;
+            --mem-surface-alt: #374151;
+            --mem-ink: #f9fafb;
+            --mem-muted: #9ca3af;
+            --mem-brand: #3b82f6;
+            --mem-brand-soft: rgba(59,130,246,.1);
+            --mem-brand-rgb: 59,130,246;
+            --mem-brand-text-emphasis: rgba(59,130,246,.8);
+            --mem-line: #374151;
         }
         html{scroll-behavior:smooth;scroll-padding-top:5rem}
         @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-        body{background:#f5f2ea;color:var(--lp-ink);line-height:1.6;overflow-x:hidden}
-        h1,h2,h3,.display-font{font-family:var(--lp-display);letter-spacing:-.02em}
-        a:focus-visible,button:focus-visible{outline:3px solid var(--bs-primary);outline-offset:3px}
+        body{background:var(--mem-bg)!important;color:var(--mem-ink);line-height:1.6;overflow-x:hidden}
+        h1,h2,h3,.display-font{font-family:var(--mem-display);letter-spacing:-.02em}
+        a:focus-visible,button:focus-visible{outline:3px solid var(--mem-brand);outline-offset:3px}
 
         .lp-logo{width:42px;height:42px;border-radius:50%;object-fit:cover}
         .lp-mobilebar{
             position:sticky;
             top:0;
             z-index:1020;
-            background:var(--bs-body-bg);
-            border-bottom:1px solid var(--lp-line);
+            background:var(--mem-surface);
+            border-bottom:1px solid var(--mem-line);
         }
         .lp-mobilebar .navbar-toggler{
             width:44px;
@@ -356,7 +362,7 @@ $L_EVENTS   = '#announcements';
             align-items:center;
             justify-content:center;
             border-radius:.5rem;
-            color:var(--lp-ink);
+            color:var(--mem-ink);
         }
         .lp-mobilebar .navbar-toggler:focus{box-shadow:none}
         .lp-mobilebar .navbar-toggler:focus-visible{outline-offset:0}
@@ -365,9 +371,10 @@ $L_EVENTS   = '#announcements';
             .lp-main .container{padding-left:1.5rem;padding-right:1.5rem}
         }
 
-        .lp-ann-card{display:flex;flex-direction:column;height:100%;background:#fff;border:1px solid var(--lp-line);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
+        .lp-ann-card{display:flex;flex-direction:column;height:100%;background:var(--mem-surface);border:1px solid var(--mem-line);border-radius:var(--mem-radius);overflow:hidden;box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
+        .lp-ann-card:hover{border-color:var(--mem-brand);box-shadow:0 14px 28px rgba(0,0,0,.09)}
         .lp-ann-card.is-cancelled{opacity:.8}
-        .lp-ann-banner{position:relative;aspect-ratio:16/9;background:var(--bs-primary-bg-subtle);display:grid;place-items:center;color:var(--bs-primary-text-emphasis);font-size:2.4rem;overflow:hidden}
+        .lp-ann-banner{position:relative;aspect-ratio:16/9;background:var(--mem-brand-soft);display:grid;place-items:center;color:var(--mem-brand-text-emphasis);font-size:2.4rem;overflow:hidden}
         .lp-ann-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
         .lp-ann-status{position:absolute;top:.75rem;left:.75rem;z-index:1}
         .lp-ann-rescheduled{position:absolute;z-index:2;top:3.2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.15rem;width:max-content;max-width:calc(100% - 1.5rem);padding:.45rem .75rem;border:1px solid rgba(255,255,255,.55);border-radius:.75rem;background:rgba(13,110,253,.94);box-shadow:0 4px 12px rgba(0,0,0,.2);color:#fff;font-size:.74rem;line-height:1.2;text-align:center}
@@ -376,56 +383,54 @@ $L_EVENTS   = '#announcements';
         .lp-ann-rescheduled-old{opacity:.86;text-decoration-thickness:2px}
         .lp-ann-rescheduled-new{font-weight:900}
         .lp-ann-body{display:flex;flex-direction:column;flex:1;padding:1.1rem 1.2rem 1.2rem}
-        .lp-ann-cat{font-size:.78rem;font-weight:700;color:var(--bs-primary);text-transform:uppercase;letter-spacing:.04em}
-        .lp-ann-desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;color:var(--bs-secondary-color);font-size:.9rem}
-        .lp-ann-meta{font-size:.85rem;color:var(--bs-secondary-color);display:grid;gap:.25rem;margin-bottom:1rem}
-        .lp-ann-meta i{width:1.2rem;display:inline-block;color:var(--bs-primary)}
-        .lp-ann-footer{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:auto;padding:.75rem 1.1rem 1rem;border-top:1px solid var(--lp-line)}
+        .lp-ann-cat{font-size:.78rem;font-weight:700;color:var(--mem-brand);text-transform:uppercase;letter-spacing:.04em}
+        .lp-ann-desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;color:var(--mem-muted);font-size:.9rem}
+        .lp-ann-meta{font-size:.85rem;color:var(--mem-muted);display:grid;gap:.25rem;margin-bottom:1rem}
+        .lp-ann-meta i{width:1.2rem;display:inline-block;color:var(--mem-brand)}
+        .lp-ann-footer{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:auto;padding:.75rem 1.1rem 1rem;border-top:1px solid var(--mem-line)}
         .lp-ann-organizer{display:flex;flex-direction:column;min-width:0;line-height:1.25}
-        .lp-ann-organizer small{color:var(--bs-secondary-color);font-size:.68rem}
-        .lp-ann-organizer strong{overflow:hidden;color:var(--bs-primary);font-size:.78rem;text-overflow:ellipsis;white-space:nowrap}
-        .lp-ann-details-btn{flex:none;padding:.45rem .75rem;border:1px solid var(--bs-primary);border-radius:9px;background:#fff;color:var(--bs-primary);font-size:.8rem;font-weight:650;white-space:nowrap}
-        .lp-ann-details-btn:hover,.lp-ann-details-btn:focus-visible{background:var(--bs-primary);border-color:var(--bs-primary);color:#fff}
+        .lp-ann-organizer small{color:var(--mem-muted);font-size:.68rem}
+        .lp-ann-organizer strong{overflow:hidden;color:var(--mem-brand);font-size:.78rem;text-overflow:ellipsis;white-space:nowrap}
+        .lp-ann-details-btn{flex:none;padding:.45rem .75rem;border:1px solid var(--mem-brand);border-radius:9px;background:var(--mem-surface);color:var(--mem-brand);font-size:.8rem;font-weight:650;white-space:nowrap}
+        .lp-ann-details-btn:hover,.lp-ann-details-btn:focus-visible{background:var(--mem-brand);border-color:var(--mem-brand);color:#fff}
         .lp-ann-interest{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:1.25rem}
         .lp-ann-card>.lp-ann-interest{padding:0 1.1rem 1rem;margin-top:0}
         #annGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
         @media(max-width:767.98px){#annGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
         @media(max-width:479.98px){#annGrid{grid-template-columns:minmax(0,1fr)}}
-        html.dark-mode .lp-ann-details-btn{background:var(--bs-secondary-bg);color:var(--bs-primary)}
-        html.dark-mode .lp-ann-details-btn:hover,html.dark-mode .lp-ann-details-btn:focus-visible{background:var(--bs-primary);color:#fff}
         .lp-ann-filters .btn{font-weight:650}
         .lp-ann-detail-wrap{position:relative}
-        .lp-ann-detail-banner{aspect-ratio:16/9;overflow:hidden;background:var(--bs-primary-bg-subtle);display:grid;place-items:center;font-size:3rem;color:var(--bs-primary-text-emphasis)}
+        .lp-ann-detail-banner{aspect-ratio:16/9;overflow:hidden;background:var(--mem-brand-soft);display:grid;place-items:center;font-size:3rem;color:var(--mem-brand-text-emphasis)}
         .lp-ann-detail-banner img{width:100%;height:100%;object-fit:cover}
         .lp-ann-text{white-space:pre-line}
 
         /* hero */
-        .lp-hero{background:var(--bs-primary);color:#fff}
+        .lp-hero{background:linear-gradient(135deg,var(--mem-brand) 0%,#3b82f6 100%);color:#fff}
         .lp-hero .container{position:relative;z-index:1}
         .lp-place{color:rgba(255,255,255,.8);font-weight:600}
         .lp-hero h1{font-size:clamp(2.4rem,6vw,4.4rem);font-weight:800;line-height:1.02;max-width:13ch}
         .lp-hero .lead{color:rgba(255,255,255,.9);max-width:34rem}
-        .btn-lp-light{background:#fff;color:var(--bs-primary-text-emphasis);font-weight:700;border:2px solid #fff}
-        .btn-lp-light:hover{background:var(--bs-primary-bg-subtle);color:var(--bs-primary-text-emphasis);border-color:var(--bs-primary-bg-subtle)}
+        .btn-lp-light{background:#fff;color:var(--mem-brand-text-emphasis);font-weight:700;border:2px solid #fff}
+        .btn-lp-light:hover{background:var(--mem-brand-soft);color:var(--mem-brand-text-emphasis);border-color:var(--mem-brand-soft)}
         .btn-lp-ghost{color:#fff;border:2px solid rgba(255,255,255,.7);font-weight:700}
-        .btn-lp-ghost:hover{color:var(--bs-primary-text-emphasis);background:#fff;border-color:#fff}
+        .btn-lp-ghost:hover{color:var(--mem-brand-text-emphasis);background:#fff;border-color:#fff}
 
         /* "next up" ticket: the one memorable element */
-        .lp-ticket{background:#fff;color:var(--lp-ink);border-radius:16px;overflow:hidden;border:1px solid var(--lp-line);box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
+        .lp-ticket{background:var(--mem-surface);color:var(--mem-ink);border-radius:var(--mem-radius);overflow:hidden;border:1px solid var(--mem-line);box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
         .lp-ticket-top{display:flex;gap:1.1rem;padding:1.5rem 1.5rem 1.25rem;align-items:center}
-        .lp-datebox{flex:0 0 auto;width:5.2rem;text-align:center;border-radius:1rem;background:var(--bs-primary-bg-subtle);color:var(--bs-primary-text-emphasis);padding:.6rem 0}
+        .lp-datebox{flex:0 0 auto;width:5.2rem;text-align:center;border-radius:1rem;background:var(--mem-brand-soft);color:var(--mem-brand-text-emphasis);padding:.6rem 0}
         .lp-datebox .mo{font-weight:700;font-size:.95rem}
-        .lp-datebox .dy{font-family:var(--lp-display);font-weight:800;font-size:2.4rem;line-height:1}
-        .lp-ticket-cut{border-top:2px dashed var(--lp-line);position:relative}
-        .lp-ticket-cut::before,.lp-ticket-cut::after{content:"";position:absolute;top:-.8rem;width:1.6rem;height:1.6rem;border-radius:50%;background:var(--bs-primary)}
+        .lp-datebox .dy{font-family:var(--mem-display);font-weight:800;font-size:2.4rem;line-height:1}
+        .lp-ticket-cut{border-top:2px dashed var(--mem-line);position:relative}
+        .lp-ticket-cut::before,.lp-ticket-cut::after{content:"";position:absolute;top:-.8rem;width:1.6rem;height:1.6rem;border-radius:50%;background:var(--mem-brand)}
         .lp-ticket-cut::before{left:-.8rem}.lp-ticket-cut::after{right:-.8rem}
         .lp-ticket-bottom{padding:1.1rem 1.5rem 1.5rem}
 
         /* facts row */
-        .lp-facts{border-bottom:1px solid var(--lp-line)}
+        .lp-facts{border-bottom:1px solid var(--mem-line);background:var(--mem-surface)}
         .lp-fact{padding:1.6rem 0}
-        .lp-fact .n{font-family:var(--lp-display);font-weight:800;font-size:2.2rem;line-height:1;color:var(--bs-primary-text-emphasis)}
-        @media(min-width:768px){.lp-fact+.lp-fact{border-left:1px solid var(--lp-line);padding-left:2rem}}
+        .lp-fact .n{font-family:var(--mem-display);font-weight:800;font-size:2.2rem;line-height:1;color:var(--mem-brand-text-emphasis)}
+        @media(min-width:768px){.lp-fact+.lp-fact{border-left:1px solid var(--mem-line);padding-left:2rem}}
         @media(max-width:767.98px){
             .lp-fact{text-align:center}
         }
@@ -433,16 +438,17 @@ $L_EVENTS   = '#announcements';
         /* sections */
         .lp-section{padding:clamp(3rem,7vw,5.5rem) 0}
         .lp-section h2{font-weight:800;font-size:clamp(1.8rem,4vw,2.6rem)}
-        .lp-muted-bg{background:var(--bs-tertiary-bg)}
+        .lp-muted-bg{background:var(--mem-surface-alt)}
 
         /* activity list */
 
         /* public budget transparency */
-        .lp-budget-card{height:100%;padding:1.5rem;background:#fff;border:1px solid var(--lp-line);border-radius:16px;box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
-        .lp-budget-card .list-group-item{background:transparent;color:inherit;border-color:var(--lp-line)}
-        .lp-budget-value{font-family:var(--lp-display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;line-height:1.2}
+        .lp-budget-card{height:100%;padding:1.5rem;background:var(--mem-surface);border:1px solid var(--mem-line);border-radius:var(--mem-radius);box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
+        .lp-budget-card:hover{border-color:var(--mem-brand);box-shadow:0 14px 28px rgba(0,0,0,.09)}
+        .lp-budget-card .list-group-item{background:transparent;color:inherit;border-color:var(--mem-line)}
+        .lp-budget-value{font-family:var(--mem-display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;line-height:1.2}
         .lp-budget-table th,.lp-budget-table td{padding:.75rem .5rem;vertical-align:middle}
-        .lp-steps-card{background:#fff;border:1px solid var(--lp-line);border-radius:16px;padding:0 1.5rem;box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
+        .lp-steps-card{background:var(--mem-surface);border:1px solid var(--mem-line);border-radius:var(--mem-radius);padding:0 1.5rem;box-shadow:0 1px 2px rgba(28,26,26,.05),0 8px 24px -12px rgba(28,26,26,.12)}
         @media(max-width:767.98px){
             .lp-hero .row,.lp-section .row,.lp-cta .row{margin-left:0;margin-right:0}
             .lp-budget-card{overflow:hidden}
@@ -450,41 +456,48 @@ $L_EVENTS   = '#announcements';
 
         /* steps (a real sequence: apply, review, listed) */
         .lp-step{display:flex;gap:1rem;padding:1.1rem 0}
-        .lp-step+.lp-step{border-top:1px solid var(--lp-line)}
-        .lp-stepnum{flex:0 0 auto;width:2.4rem;height:2.4rem;border-radius:50%;background:var(--bs-primary);color:#fff;
-            display:grid;place-items:center;font-family:var(--lp-display);font-weight:800}
+        .lp-step+.lp-step{border-top:1px solid var(--mem-line)}
+        .lp-stepnum{flex:0 0 auto;width:2.4rem;height:2.4rem;border-radius:50%;background:var(--mem-brand);color:#fff;
+            display:grid;place-items:center;font-family:var(--mem-display);font-weight:800}
 
         /* officials */
-        .lp-off{text-align:center}
-        .lp-off .pic{width:104px;height:104px;border-radius:50%;object-fit:cover;margin:0 auto .8rem;display:block;border:3px solid var(--bs-primary-bg-subtle)}
-        .lp-off .ph{display:grid;place-items:center;background:var(--bs-primary-bg-subtle);color:var(--bs-primary-text-emphasis);font-family:var(--lp-display);font-weight:800;font-size:2rem}
-        .lp-off .nm{font-weight:700;line-height:1.25}
-        .lp-off .pos{color:var(--bs-primary);font-weight:600;font-size:.88rem}
-        .lp-off .bio{font-size:.875rem;color:var(--bs-secondary-color);margin-top:.65rem}
-        .lp-off .honorarium{font-size:.875rem;font-weight:700;margin-top:.75rem}
-        .lp-off .saln-link{font-size:.8rem;display:inline-block;margin-top:.5rem}
+        .lp-off{height:100%;overflow:hidden;padding:0!important;border-radius:18px;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+        .lp-off:hover,.lp-off:focus-within{transform:translateY(-4px);border-color:var(--mem-brand);box-shadow:0 16px 34px rgba(27,65,125,.16)}
+        .lp-off-trigger{display:flex;width:100%;height:100%;min-height:274px;flex-direction:column;align-items:center;padding:24px 18px 18px;border:0;border-radius:inherit;background:linear-gradient(180deg,var(--mem-surface-alt) 0%,var(--mem-surface) 42%);color:inherit;font:inherit;text-align:center;cursor:pointer}
+        .lp-off-trigger:focus-visible{outline:3px solid var(--mem-brand);outline-offset:-4px}
+        .lp-off .pic{width:116px;height:116px;flex:none;border-radius:50%;object-fit:cover;margin:0 auto 18px;display:block;border:4px solid var(--mem-surface);box-shadow:0 0 0 2px var(--mem-brand-soft),0 8px 18px rgba(23,35,60,.12)}
+        .lp-off .ph{display:grid;place-items:center;background:linear-gradient(145deg,var(--mem-brand-soft),var(--mem-surface));color:var(--mem-brand);font-family:var(--mem-display);font-weight:800;font-size:2rem}
+        .lp-off .nm{display:flex;min-height:2.6em;align-items:center;justify-content:center;color:var(--mem-ink);font-weight:800;line-height:1.3}
+        .lp-off .pos{display:inline-flex;align-items:center;margin-top:10px;padding:5px 11px;border:1px solid var(--mem-brand-soft);border-radius:999px;background:var(--mem-brand-soft);color:var(--mem-brand);font-size:.72rem;line-height:1.25;font-weight:750}
+        .lp-off .profile-hint{display:flex;width:100%;align-items:center;justify-content:space-between;margin-top:auto;padding-top:18px;color:var(--mem-muted);font-size:.75rem;font-weight:700}
+        .lp-off .saln-state{color:var(--mem-brand);font-size:.7rem}
+        .lp-off .view-label{display:inline-flex;align-items:center;gap:6px;color:var(--mem-ink)}
+        .lp-off:hover .view-label,.lp-off:focus-within .view-label{color:var(--mem-brand)}
+        @media(max-width:767.98px){.lp-off-trigger{min-height:258px}}
+        @media(prefers-reduced-motion:reduce){.lp-off{transition:none}}
 
         /* closing band + footer */
-        .lp-cta{background:var(--bs-primary-bg-subtle);color:var(--bs-primary-text-emphasis)}
-        .lp-footer{background:var(--bs-primary-text-emphasis);color:rgba(255,255,255,.8);font-size:.9rem}
+        .lp-cta{background:var(--mem-brand-soft);color:var(--mem-brand-text-emphasis)}
+        .lp-footer{background:var(--mem-brand-text-emphasis);color:rgba(255,255,255,.8);font-size:.9rem}
         .lp-footer a{color:#fff}
         html.dark-mode body,
         html.dark-mode .lp-facts,
-        html.dark-mode .lp-muted-bg{background:var(--bs-body-bg);color:var(--bs-body-color)}
-        html.dark-mode .lp-mobilebar{background:var(--bs-tertiary-bg);border-color:var(--bs-border-color)}
-        html.dark-mode .lp-mobilebar .text-secondary{color:var(--bs-body-color)!important}
+        html.dark-mode .lp-muted-bg{background:var(--mem-bg);color:var(--mem-ink)}
+        html.dark-mode .lp-mobilebar{background:var(--mem-surface);border-color:var(--mem-line)}
+        html.dark-mode .lp-mobilebar .text-secondary{color:var(--mem-muted)!important}
         html.dark-mode .lp-fact .text-secondary,
-        html.dark-mode .lp-section .text-secondary{color:var(--bs-secondary-color)!important}
+        html.dark-mode .lp-section .text-secondary{color:var(--mem-muted)!important}
         html.dark-mode .lp-ann-card,
         html.dark-mode .lp-ticket,
         html.dark-mode .lp-budget-card,
-        html.dark-mode .lp-steps-card{background:var(--bs-secondary-bg);border-color:var(--bs-border-color)}
-        html.dark-mode .lp-budget-table{--bs-table-bg:transparent;--bs-table-color:var(--bs-body-color);--bs-table-border-color:var(--bs-border-color)}
-        html.dark-mode .lp-cta{background:var(--bs-secondary-bg);color:var(--bs-body-color)}
-        html.dark-mode .btn-lp-light{color:#084298}
-        html.dark-mode .btn-lp-light:hover{color:var(--bs-primary-text-emphasis)}
-        html.dark-mode .lp-footer{background:#084298;color:rgba(255,255,255,.9)}
+        html.dark-mode .lp-steps-card{background:var(--mem-surface);border-color:var(--mem-line)}
+        html.dark-mode .lp-budget-table{background:transparent;color:var(--mem-ink);border-color:var(--mem-line)}
+        html.dark-mode .lp-cta{background:var(--mem-surface);color:var(--mem-ink)}
+        html.dark-mode .btn-lp-light{color:var(--mem-brand-text-emphasis)}
+        html.dark-mode .btn-lp-light:hover{color:var(--mem-brand-text-emphasis)}
+        html.dark-mode .lp-footer{background:var(--mem-brand);color:rgba(255,255,255,.9)}
     </style>
+    <link href="css/site-theme.css?v=2" rel="stylesheet">
 </head>
 <body>
 
@@ -496,7 +509,7 @@ window.SK_PUBLIC = <?= is_limited_viewer() ? 'true' : 'false' ?>;
 window.SK_MEMBER_PORTAL = <?= $hasMemberPortal ? 'true' : 'false' ?>;
 window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 </script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 
 <div class="page-content lp-main">
     <nav class="lp-mobilebar navbar" aria-label="Landing page header">
@@ -628,22 +641,43 @@ window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP
             <div class="row g-4 justify-content-center">
                 <?php foreach ($officials as $o): ?>
                     <div class="col-12 col-md-6 col-lg-4">
-                        <article class="lp-off lp-budget-card">
-                            <?php if ($o['photo']): ?>
-                                <img class="pic" src="<?= e($o['photo']) ?>" alt="Photo of <?= e($o['name']) ?>" loading="lazy">
+                        <article class="lp-off lp-budget-card<?= !empty($o['vacant']) ? ' official-vacant' : '' ?>">
+                            <?php if (!empty($o['vacant'])): ?>
+                                <div class="official-vacant-card">
+                                    <span class="official-vacant-icon"><i class="bi bi-person-dash" aria-hidden="true"></i></span>
+                                    <strong class="official-vacant-title">Vacant</strong>
+                                    <span class="official-vacant-position"><?= e($o['position']) ?></span>
+                                    <span class="official-vacant-note">No official is currently assigned.</span>
+                                </div>
                             <?php else: ?>
-                                <div class="pic ph" aria-hidden="true"><?= e($o['initials']) ?></div>
-                            <?php endif; ?>
-                            <div class="nm"><?= e($o['name']) ?></div>
-                            <div class="pos"><?= e($o['position']) ?></div>
-                            <?php if ($o['bio'] !== ''): ?><p class="bio mb-0"><?= nl2br(e($o['bio'])) ?></p><?php endif; ?>
-                            <?php if ($o['monthlyHonorarium'] !== null): ?>
-                                <div class="honorarium">Monthly honorarium: ₱<?= e(number_format($o['monthlyHonorarium'], 2)) ?></div>
-                            <?php endif; ?>
-                            <?php if ($o['salnId'] !== ''): ?>
-                                <a class="saln-link" href="official_public_file.php?type=saln&amp;id=<?= e(rawurlencode($o['salnId'])) ?>" target="_blank" rel="noopener noreferrer">
-                                    View public SALN<?= $o['salnYear'] !== '' ? ' (' . e($o['salnYear']) . ')' : '' ?>
-                                </a>
+                            <button
+                                type="button"
+                                class="lp-off-trigger"
+                                data-official-name="<?= e($o['name']) ?>"
+                                data-official-position="<?= e($o['position']) ?>"
+                                data-official-photo="<?= e($o['photo']) ?>"
+                                data-official-initials="<?= e($o['initials']) ?>"
+                                data-official-bio="<?= e($o['bio']) ?>"
+                                data-official-honorarium="<?= $o['monthlyHonorarium'] !== null ? e(number_format($o['monthlyHonorarium'], 2, '.', '')) : '' ?>"
+                                data-official-saln-id="<?= e($o['salnId']) ?>"
+                                data-official-saln-year="<?= e($o['salnYear']) ?>"
+                                aria-label="View <?= e($o['position']) ?> <?= e($o['name']) ?> profile and public SALN"
+                            >
+                                <?php if ($o['photo']): ?>
+                                    <img class="pic" src="<?= e($o['photo']) ?>" alt="" loading="lazy">
+                                <?php else: ?>
+                                    <div class="pic ph" aria-hidden="true"><?= e($o['initials']) ?></div>
+                                <?php endif; ?>
+                                <div class="nm"><?= e($o['name']) ?></div>
+                                <div class="pos"><?= e($o['position']) ?></div>
+                                <div class="profile-hint">
+                                    <span class="saln-state">
+                                        <i class="bi <?= $o['salnId'] !== '' ? 'bi-file-earmark-check' : 'bi-file-earmark' ?> me-1" aria-hidden="true"></i>
+                                        <?= $o['salnId'] !== '' ? 'SALN posted' : 'Profile' ?>
+                                    </span>
+                                    <span class="view-label">View details <i class="bi bi-arrow-up-right" aria-hidden="true"></i></span>
+                                </div>
+                            </button>
                             <?php endif; ?>
                         </article>
                     </div>
@@ -957,7 +991,134 @@ window.SK_CSRF_TOKEN = <?= json_encode(csrf_token(), JSON_HEX_TAG | JSON_HEX_AMP
 </footer>
 </div>
 
+<div class="modal fade official-profile-modal" id="landingOfficialModal" tabindex="-1" aria-labelledby="landingOfficialModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="official-profile-modal-kicker">SK OFFICIAL PROFILE</div>
+                    <h2 class="modal-title" id="landingOfficialModalTitle">Official profile</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close profile"></button>
+            </div>
+            <div class="modal-body">
+                <div class="official-profile-layout">
+                    <section class="official-profile-summary" aria-label="Official details">
+                        <div class="official-profile-identity">
+                            <img id="landingOfficialPhoto" class="official-profile-photo" alt="" hidden>
+                            <div id="landingOfficialInitials" class="avatar official-profile-initials" aria-hidden="true" hidden></div>
+                            <div class="official-profile-identity-copy">
+                                <div id="landingOfficialPosition" class="official-profile-position"></div>
+                                <div id="landingOfficialHonorarium" class="official-profile-honorarium"></div>
+                            </div>
+                        </div>
+                        <section class="official-profile-bio" aria-labelledby="landingOfficialBioTitle">
+                            <h3 id="landingOfficialBioTitle"><i class="bi bi-person-lines-fill" aria-hidden="true"></i> About</h3>
+                            <p id="landingOfficialBio" class="official-profile-bio-copy"></p>
+                        </section>
+                    </section>
+                    <section class="official-profile-saln" aria-labelledby="landingOfficialSalnTitle">
+                        <div class="official-profile-saln-heading">
+                            <div>
+                                <div class="official-profile-modal-kicker">PUBLIC DISCLOSURE</div>
+                                <h3 id="landingOfficialSalnTitle">Statement of Assets, Liabilities and Net Worth</h3>
+                            </div>
+                            <a id="landingOfficialSalnOpen" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener noreferrer" hidden>Open SALN</a>
+                        </div>
+                        <div class="official-profile-saln-viewer">
+                            <p id="landingOfficialNoSaln" class="official-profile-no-saln" hidden>
+                                <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                                <span>No public SALN has been posted for this official.</span>
+                            </p>
+                            <img id="landingOfficialSalnImage" class="official-profile-saln-image" alt="" hidden>
+                            <iframe id="landingOfficialSalnPdf" class="official-profile-saln-pdf" title="Public SALN document" hidden></iframe>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span class="official-profile-footer-note">Public profile information</span>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script>
+(function () {
+    var modalElement = document.getElementById('landingOfficialModal');
+    var modal = new bootstrap.Modal(modalElement);
+    var profilePhoto = document.getElementById('landingOfficialPhoto');
+    var profileInitials = document.getElementById('landingOfficialInitials');
+    var salnImage = document.getElementById('landingOfficialSalnImage');
+    var salnPdf = document.getElementById('landingOfficialSalnPdf');
+    var salnOpen = document.getElementById('landingOfficialSalnOpen');
+    var noSaln = document.getElementById('landingOfficialNoSaln');
+
+    document.querySelectorAll('.lp-off-trigger').forEach(function (trigger) {
+        trigger.addEventListener('click', function () {
+            var data = trigger.dataset;
+            var name = data.officialName || 'SK Official';
+            var photo = data.officialPhoto || '';
+            var salnId = data.officialSalnId || '';
+            var salnUrl = salnId
+                ? 'official_public_file.php?type=saln&id=' + encodeURIComponent(salnId)
+                : '';
+
+            document.getElementById('landingOfficialModalTitle').textContent = name;
+            document.getElementById('landingOfficialPosition').textContent = data.officialPosition || '';
+            document.getElementById('landingOfficialBio').textContent = data.officialBio || 'No profile bio has been posted.';
+            document.getElementById('landingOfficialHonorarium').textContent = data.officialHonorarium
+                ? 'Monthly honorarium: ₱' + Number(data.officialHonorarium).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })
+                : '';
+            profilePhoto.src = '';
+            profilePhoto.alt = '';
+            profilePhoto.hidden = !photo;
+            profileInitials.textContent = data.officialInitials || '';
+            profileInitials.hidden = !!photo;
+            if (photo) {
+                profilePhoto.src = photo;
+                profilePhoto.alt = 'Photo of ' + name;
+            }
+
+            salnImage.removeAttribute('src');
+            salnImage.alt = '';
+            salnImage.hidden = true;
+            salnPdf.removeAttribute('src');
+            salnPdf.hidden = true;
+            salnOpen.href = salnUrl || '#';
+            salnOpen.textContent = data.officialSalnYear
+                ? 'Open ' + data.officialSalnYear + ' SALN'
+                : 'Open SALN';
+            salnOpen.hidden = !salnUrl;
+            noSaln.hidden = !!salnUrl;
+            if (salnUrl) {
+                if (/\.pdf$/i.test(salnId)) {
+                    salnPdf.src = salnUrl;
+                    salnPdf.title = (data.officialSalnYear || 'Public') + ' SALN for ' + name;
+                    salnPdf.hidden = false;
+                } else {
+                    salnImage.src = salnUrl;
+                    salnImage.alt = (data.officialSalnYear || 'Public') + ' SALN for ' + name;
+                    salnImage.hidden = false;
+                }
+            }
+
+            modal.show();
+        });
+    });
+
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        profilePhoto.removeAttribute('src');
+        salnImage.removeAttribute('src');
+        salnPdf.removeAttribute('src');
+    });
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="js/app-alerts.js?v=2"></script>
 <script>

@@ -399,7 +399,7 @@ foreach ($archiveRows as $archiveRow) $archiveCounts[$archiveRow['type']]++;
 <body>
 <div class="top-strip"></div>
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">

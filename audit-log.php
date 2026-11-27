@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/role_store.php';
-require_official();
-if (!can_view_background_history()) {
-    http_response_code(403);
-    exit('You do not have permission to view the audit log.');
+if (!is_super_admin()) {
+    require_official();
+    if (!can_view_background_history()) {
+        http_response_code(403);
+        exit('You do not have permission to view the audit log.');
+    }
 }
 $auditViewer = current_user();
 if (is_array($GLOBALS['SK_ACTIVE_DELEGATION'] ?? null)) {
@@ -49,6 +51,31 @@ $page = is_scalar($pageValue) && ctype_digit((string)$pageValue) ? max(1, (int)$
 $auditCount = 0;
 $auditRows = [];
 $auditError = '';
+$filters = ['actor' => '', 'action' => '', 'from' => '', 'to' => ''];
+$filterError = '';
+
+foreach (array_keys($filters) as $filterName) {
+    if (!array_key_exists($filterName, $_GET)) continue;
+    if (!is_string($_GET[$filterName])) {
+        $filterError = 'Audit filters must be single text values.';
+        break;
+    }
+    $filters[$filterName] = trim(substr($_GET[$filterName], 0, $filterName === 'actor' ? 120 : 50));
+}
+foreach (['from', 'to'] as $dateFilter) {
+    if ($filterError !== '' || $filters[$dateFilter] === '') continue;
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $filters[$dateFilter]);
+    $dateErrors = DateTimeImmutable::getLastErrors();
+    if (!$date || ($dateErrors && ($dateErrors['warning_count'] || $dateErrors['error_count']))
+        || $date->format('Y-m-d') !== $filters[$dateFilter]) {
+        $filterError = 'Audit date filters must use YYYY-MM-DD.';
+        break;
+    }
+}
+if ($filterError === '' && $filters['from'] !== '' && $filters['to'] !== ''
+    && $filters['from'] > $filters['to']) {
+    $filterError = 'The audit date range is invalid.';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -62,8 +89,8 @@ $auditError = '';
     <style>
         :root { --line:var(--ui-line); --muted:var(--ui-muted); }
         * { box-sizing:border-box; }
-        body { margin:0; background:var(--ui-paper); color:var(--bs-body-color); }
-        .top-strip { height:7px; background:var(--bs-primary); }
+        body { margin:0; background:var(--ui-paper); color:var(--mem-ink); }
+        .top-strip { height:7px; background:var(--mem-brand); }
         .header { min-height:70px; background:var(--ui-surface); border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 26px; gap:14px; }
         .header-title { font-size:20px; font-weight:800; }
         .content { padding:24px; max-width:1600px; margin:0 auto; }
@@ -76,14 +103,14 @@ $auditError = '';
         .audit-heading h2 { font-size:17px; font-weight:800; margin:0; }
         .table-responsive { max-height:calc(100vh - 350px); min-height:220px; overflow:auto; }
         .table { margin:0; font-size:14px; }
-        .table th { white-space:nowrap; background:var(--bs-primary-bg-subtle); color:var(--bs-secondary-color); font-size:12px; text-transform:uppercase; }
+        .table th { white-space:nowrap; background:var(--mem-brand-soft); color:var(--mem-muted); font-size:12px; text-transform:uppercase; }
         .table td, .table th { padding:12px; vertical-align:top; }
         .audit-action { font-weight:700; white-space:nowrap; }
         .audit-target { overflow-wrap:anywhere; }
         .audit-device { min-width:150px; }
         .audit-detail-dialog { max-width:1120px; }
         .audit-detail-modal { border:1px solid var(--ui-line); border-radius:var(--ui-radius); overflow:hidden; box-shadow:var(--ui-shadow); }
-        .audit-detail-header { gap:16px; padding:20px 24px; background:var(--bs-primary); color:#fff; border-bottom:1px solid var(--bs-primary); }
+        .audit-detail-header { gap:16px; padding:20px 24px; background:var(--mem-brand); color:#fff; border-bottom:1px solid var(--mem-brand); }
         .audit-detail-heading { display:flex; align-items:center; gap:15px; min-width:0; }
         .audit-detail-icon { display:grid; place-items:center; width:46px; height:46px; flex:none; border:1px solid rgba(255,255,255,.28); border-radius:var(--ui-radius-sm); color:#fff; background:rgba(255,255,255,.14); font-size:21px; }
         .audit-detail-copy { min-width:0; }
@@ -91,17 +118,17 @@ $auditError = '';
         .audit-detail-title { margin:2px 0 3px; color:#fff; font-size:19px; font-weight:750; }
         .audit-detail-summary { color:rgba(255,255,255,.86); font-size:13px; overflow-wrap:anywhere; }
         .audit-detail-body { padding:22px 24px 24px; background:var(--ui-paper); }
-        .audit-action-summary { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:15px 18px; margin-bottom:18px; background:var(--bs-primary-bg-subtle); border:1px solid var(--bs-primary-border-subtle); border-left:4px solid var(--bs-primary); border-radius:var(--ui-radius-sm); }
+        .audit-action-summary { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:15px 18px; margin-bottom:18px; background:var(--mem-brand-soft); border:1px solid var(--mem-line); border-left:4px solid var(--mem-brand); border-radius:var(--ui-radius-sm); }
         .audit-summary-label { display:block; margin-bottom:4px; color:var(--ui-muted); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
         .audit-summary-action { font-size:17px; font-weight:750; overflow-wrap:anywhere; }
-        .audit-record-badge { color:var(--bs-primary-text-emphasis)!important; background:var(--bs-primary-bg-subtle); border-color:var(--bs-primary-border-subtle)!important; }
+        .audit-record-badge { color:var(--mem-brand-text-emphasis)!important; background:var(--mem-brand-soft); border-color:var(--mem-line)!important; }
         .audit-section { height:100%; padding:17px; background:var(--ui-surface); border:1px solid var(--ui-line); border-radius:var(--ui-radius); }
         .audit-section-heading { display:flex; align-items:center; gap:9px; margin:0 0 15px; font-size:14px; font-weight:800; }
         .audit-section-heading i { color:var(--ui-brand); font-size:16px; }
         .audit-info-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 12px; }
         .audit-info-item { min-width:0; }
         .audit-info-label { display:block; margin-bottom:4px; color:var(--ui-muted); font-size:10px; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }
-        .audit-info-value { color:var(--bs-body-color); font-size:13px; font-weight:600; overflow-wrap:anywhere; }
+        .audit-info-value { color:var(--mem-ink); font-size:13px; font-weight:600; overflow-wrap:anywhere; }
         .audit-ua { margin-top:15px; padding-top:12px; border-top:1px solid var(--ui-line); }
         .audit-ua summary { color:var(--ui-muted); cursor:pointer; font-size:12px; font-weight:700; }
         .audit-ua-value { margin:8px 0 0; color:var(--ui-muted); font-size:11px; overflow-wrap:anywhere; }
@@ -112,7 +139,7 @@ $auditError = '';
         .audit-change-table { min-width:600px; margin:0; font-size:13px; }
         .audit-change-table th { padding:11px 14px; color:var(--ui-muted); font-size:10px; font-weight:800; letter-spacing:.06em; white-space:nowrap; }
         .audit-change-table td { min-width:150px; padding:11px 14px; vertical-align:top; white-space:pre-wrap; overflow-wrap:anywhere; }
-        .audit-change-table .audit-change-label { min-width:170px; background:var(--ui-surface); color:var(--bs-body-color); font-weight:700; }
+        .audit-change-table .audit-change-label { min-width:170px; background:var(--ui-surface); color:var(--mem-ink); font-weight:700; }
         .audit-changes-empty { padding:14px 16px; color:var(--ui-muted); font-size:13px; }
         .audit-detail-note { margin:14px 2px 0; color:var(--ui-muted); font-size:11px; }
         .audit-pagination { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; }
@@ -131,19 +158,50 @@ $auditError = '';
     </style>
     <?php include __DIR__ . '/init.php'; ?>
     <?php
+    $where = [];
+    $filterParameters = [];
+    if ($filters['actor'] !== '') {
+        $where[] = 'LOWER(actor) LIKE LOWER(:actor)';
+        $filterParameters[':actor'] = '%' . $filters['actor'] . '%';
+    }
+    if ($filters['action'] !== '') {
+        $where[] = 'LOWER(action) LIKE LOWER(:action)';
+        $filterParameters[':action'] = '%' . $filters['action'] . '%';
+    }
+    if ($filters['from'] !== '') {
+        $where[] = 'created_at >= :date_from';
+        $filterParameters[':date_from'] = $filters['from'] . ' 00:00:00';
+    }
+    if ($filters['to'] !== '') {
+        $endDate = DateTimeImmutable::createFromFormat('!Y-m-d', $filters['to'])->modify('+1 day')->format('Y-m-d');
+        $where[] = 'created_at < :date_to';
+        $filterParameters[':date_to'] = $endDate . ' 00:00:00';
+    }
+    $whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+    $pageCount = 1;
     try {
-        $auditCount = (int)db()->query('SELECT COUNT(*) FROM audit_log')->fetchColumn();
+        if ($filterError !== '') {
+            http_response_code(400);
+            $auditError = $filterError;
+        } else {
+            $countStatement = db()->prepare('SELECT COUNT(*) FROM audit_log' . $whereSql);
+            $countStatement->execute($filterParameters);
+            $auditCount = (int)$countStatement->fetchColumn();
+        }
         $pageCount = max(1, (int)ceil($auditCount / $pageSize));
         $page = min($page, $pageCount);
         $offset = ($page - 1) * $pageSize;
-        $statement = db()->prepare('SELECT id, actor, target_legacy_id, action, device_type, browser, created_at
-            FROM audit_log
+        if ($filterError === '') {
+            $statement = db()->prepare('SELECT id, actor, target_legacy_id, action, device_type, browser, created_at
+            FROM audit_log' . $whereSql . '
             ORDER BY created_at DESC, id DESC
             LIMIT :limit OFFSET :offset');
-        $statement->bindValue(':limit', $pageSize, PDO::PARAM_INT);
-        $statement->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $statement->execute();
-        $auditRows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($filterParameters as $name => $value) $statement->bindValue($name, $value, PDO::PARAM_STR);
+            $statement->bindValue(':limit', $pageSize, PDO::PARAM_INT);
+            $statement->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $statement->execute();
+            $auditRows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        }
     } catch (PDOException $error) {
         error_log('Audit log page could not load: ' . $error->getMessage());
         http_response_code(500);
@@ -157,7 +215,7 @@ $auditError = '';
 <body>
 <div class="top-strip"></div>
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">
@@ -181,6 +239,31 @@ $auditError = '';
             <h1><i class="bi bi-journal-text me-2"></i>Audit Log</h1>
             <p>Review recent actions and their recorded details, including device, browser, IP address, and approximate location when available. Newest entries appear first.</p>
         </section>
+
+        <form class="audit-card p-3 mb-3" method="get" action="audit-log.php" aria-label="Filter audit log">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold" for="filterActor">Performed by</label>
+                    <input class="form-control form-control-sm" id="filterActor" name="actor" value="<?= e($filters['actor']) ?>" maxlength="120">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold" for="filterAction">Action contains</label>
+                    <input class="form-control form-control-sm" id="filterAction" name="action" value="<?= e($filters['action']) ?>" maxlength="50">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold" for="filterFrom">From</label>
+                    <input class="form-control form-control-sm" type="date" id="filterFrom" name="from" value="<?= e($filters['from']) ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold" for="filterTo">To</label>
+                    <input class="form-control form-control-sm" type="date" id="filterTo" name="to" value="<?= e($filters['to']) ?>">
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button class="btn btn-primary btn-sm flex-grow-1" type="submit">Filter</button>
+                    <a class="btn btn-outline-secondary btn-sm" href="audit-log.php">Clear</a>
+                </div>
+            </div>
+        </form>
 
         <section class="audit-card" aria-labelledby="auditHeading">
             <div class="audit-heading">
@@ -229,10 +312,12 @@ $auditError = '';
                     <span class="small text-muted">Page <?= (int)$page ?> of <?= (int)$pageCount ?></span>
                     <div class="d-flex gap-2">
                         <?php if ($page > 1): ?>
-                            <a class="btn btn-outline-secondary btn-sm" href="audit-log.php?page=<?= (int)($page - 1) ?>">Previous</a>
+                            <?php $previousQuery = http_build_query(array_merge($filters, ['page' => $page - 1])); ?>
+                            <a class="btn btn-outline-secondary btn-sm" href="audit-log.php?<?= e($previousQuery) ?>">Previous</a>
                         <?php endif; ?>
                         <?php if ($page < $pageCount): ?>
-                            <a class="btn btn-outline-secondary btn-sm" href="audit-log.php?page=<?= (int)($page + 1) ?>">Next</a>
+                            <?php $nextQuery = http_build_query(array_merge($filters, ['page' => $page + 1])); ?>
+                            <a class="btn btn-outline-secondary btn-sm" href="audit-log.php?<?= e($nextQuery) ?>">Next</a>
                         <?php endif; ?>
                     </div>
                 </nav>
@@ -355,7 +440,16 @@ $auditError = '';
         meeting_minutes_reopened: 'Reopened meeting minutes',
         member_registered: 'Registered a KK member',
         member_restored: 'Restored a KK member record',
+        committee_created: 'Added a committee',
         committee_renamed: 'Renamed a committee',
+        committee_assignments_updated: 'Updated committee memberships and leadership',
+        committee_preference_updated: 'Updated committee preferences',
+        committee_chair_assignment_updated: 'Updated committee chair assignments',
+        committee_vice_assignment_updated: 'Updated committee vice-chair assignments',
+        committee_membership_updated: 'Updated committee memberships',
+        committee_volunteer_submitted: 'Applied to volunteer for a committee or event',
+        committee_volunteer_approved: 'Approved a committee volunteer',
+        committee_volunteer_declined: 'Declined a committee volunteer',
         api_login: 'Signed in',
         api_password: 'Changed a password',
         api_event_register: 'Registered for an event',

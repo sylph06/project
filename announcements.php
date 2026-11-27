@@ -20,15 +20,29 @@
    The first part is the original style of the page, unchanged.
    ========================================================= */
 :root{
-    --kk-primary:var(--bs-primary);
-    --kk-primary-dark:var(--bs-primary-text-emphasis);
-    --kk-primary-soft:rgba(var(--bs-primary-rgb),.12);
-    --black:var(--bs-body-color);
-    --dark:var(--bs-primary-text-emphasis);
-    --cream:var(--bs-tertiary-bg);
-    --line:var(--bs-border-color);
-    --muted:var(--bs-secondary-color);
-    --white:#ffffff;
+    --mem-bg: var(--ui-bg, #f8fafc);
+    --mem-surface: var(--ui-paper, #ffffff);
+    --mem-surface-alt: var(--ui-surface, #f1f5f9);
+    --mem-ink: var(--ui-ink, #1e293b);
+    --mem-muted: var(--ui-ink-muted, #64748b);
+    --mem-brand: var(--ui-brand, #1e40af);
+    --mem-brand-soft: rgba(30, 64, 175, 0.1);
+    --mem-brand-rgb: rgb(30, 64, 175);
+    --mem-radius: var(--ui-radius, 12px);
+    --mem-line: var(--ui-line, #e2e8f0);
+    --mem-brand-text-emphasis: rgba(30, 64, 175, 0.75);
+}
+html[data-bs-theme="dark"]{
+    --mem-bg: #0f172a;
+    --mem-surface: #1e293b;
+    --mem-surface-alt: #334155;
+    --mem-ink: #f1f5f9;
+    --mem-muted: #94a3b8;
+    --mem-brand: #3b82f6;
+    --mem-brand-soft: rgba(59, 130, 246, 0.16);
+    --mem-brand-rgb: rgb(59, 130, 246);
+    --mem-brand-text-emphasis: rgba(59, 130, 246, 0.7);
+    --mem-line: #334155;
 }
 
 *{
@@ -37,8 +51,8 @@
 
 body{
     margin:0;
-    background:var(--bs-tertiary-bg);
-    color:var(--black);
+    background:var(--mem-surface-alt);
+    color:var(--mem-ink);
     font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
@@ -48,12 +62,12 @@ a{
 
 .top-strip{
     height:7px;
-    background:var(--bs-primary);
+    background:var(--mem-brand);
 }
 
 header{
-    background:#fff!important;
-    border-bottom:1px solid var(--line)!important;
+    background:var(--mem-surface)!important;
+    border-bottom:1px solid var(--mem-line)!important;
 }
 
 header h1{
@@ -61,25 +75,26 @@ header h1{
 }
 
 .btn-success{
-    --bs-btn-bg:var(--bs-body-color);
-    --bs-btn-border-color:var(--bs-body-color);
-    --bs-btn-hover-bg:var(--kk-primary);
-    --bs-btn-hover-border-color:var(--kk-primary);
+    --bs-btn-bg:var(--mem-brand);
+    --bs-btn-border-color:var(--mem-brand);
+    --bs-btn-hover-bg:var(--mem-brand);
+    --bs-btn-hover-border-color:var(--mem-brand);
     --bs-btn-hover-color:#fff;
-    --bs-btn-active-bg:var(--bs-body-color);
-    --bs-btn-active-border-color:var(--bs-body-color);
-    --bs-btn-focus-shadow-rgb:255,230,0;
+    --bs-btn-active-bg:var(--mem-brand);
+    --bs-btn-active-border-color:var(--mem-brand);
+    --bs-btn-focus-shadow-rgb:59,130,246;
     font-weight:800;
 }
 
 .btn-outline-success{
-    --bs-btn-color:var(--bs-body-color);
-    --bs-btn-border-color:var(--bs-body-color);
-    --bs-btn-hover-bg:var(--kk-primary);
-    --bs-btn-hover-border-color:var(--kk-primary);
-    --bs-btn-hover-color:#fff;
-    --bs-btn-active-bg:var(--kk-primary);
-    --bs-btn-active-border-color:var(--kk-primary);
+    --bs-btn-color:var(--mem-brand);
+    --bs-btn-border-color:var(--mem-line);
+    --bs-btn-hover-bg:rgba(var(--mem-brand-rgb),.08);
+    --bs-btn-hover-border-color:var(--mem-line);
+    --bs-btn-hover-color:var(--mem-brand);
+    --bs-btn-active-bg:rgba(var(--mem-brand-rgb),.06);
+    --bs-btn-active-border-color:var(--mem-line);
+    --bs-btn-active-color:var(--mem-brand);
     font-weight:700;
 }
 
@@ -91,10 +106,10 @@ header h1{
     align-items:center;
     justify-content:center;
     border-radius:50%;
-    background:var(--bs-primary);
-    color:var(--bs-body-color);
+    background:var(--mem-brand);
+    color:var(--mem-brand-text-emphasis);
     font-weight:900;
-    border:2px solid var(--bs-body-color);
+    border:2px solid var(--mem-brand-text-emphasis);
 }
 
 footer{
@@ -107,8 +122,8 @@ footer{
     overflow:hidden;
     padding:32px;
     border-radius:28px;
-    background:var(--bs-primary);
-    color:var(--bs-body-color);
+    background:var(--mem-brand);
+    color:var(--mem-brand-text-emphasis);
     box-shadow:0 16px 35px rgba(31,31,31,.10);
 }
 
@@ -120,7 +135,7 @@ footer{
     border-radius:50%;
     right:-80px;
     top:-120px;
-    background:var(--bs-primary-text-emphasis);
+    background:var(--mem-brand);
     opacity:.08;
 }
 
@@ -151,7 +166,7 @@ footer{
 
 .hero-copy p{
     max-width:560px;
-    color:var(--bs-primary-text-emphasis);
+    color:var(--mem-brand-text-emphasis);
 }
 
 .hero-tag{
@@ -160,7 +175,7 @@ footer{
     gap:8px;
     padding:8px 13px;
     border-radius:999px;
-    background:var(--bs-primary-text-emphasis);
+    background:var(--mem-brand);
     color:#fff;
     font-size:.78rem;
     font-weight:800;
@@ -168,8 +183,8 @@ footer{
 
 /* ---------- TOOLBAR (search + filters) ---------- */
 .toolbar-box{
-    background:#fff;
-    border:1px solid var(--line);
+    background:var(--mem-surface);
+    border:1px solid var(--mem-line);
     border-radius:22px;
     box-shadow:0 8px 20px rgba(20,20,20,.045);
     padding:16px;
@@ -177,19 +192,19 @@ footer{
 
 .toolbar-box .form-control,
 .toolbar-box .input-group-text{
-    border-color:var(--bs-border-color);
-    background:#fff;
+    border-color:var(--mem-line);
+    background:var(--mem-surface);
 }
 
 .toolbar-box .form-control:focus{
-    border-color:var(--bs-body-color);
-    box-shadow:0 0 0 3px rgba(var(--bs-primary-rgb),.28);
+    border-color:var(--mem-ink);
+    box-shadow:0 0 0 3px rgba(var(--mem-brand-rgb),.28);
 }
 
 .filter-pill{
-    border:1px solid var(--bs-body-color);
-    background:#fff;
-    color:var(--bs-body-color);
+    border:1px solid var(--mem-ink);
+    background:var(--mem-surface);
+    color:var(--mem-ink);
     font-weight:700;
     font-size:.85rem;
     padding:.4rem .95rem;
@@ -198,12 +213,12 @@ footer{
 }
 
 .filter-pill:hover{
-    background:var(--kk-primary-soft);
+    background:var(--mem-brand-soft);
 }
 
 .filter-pill.active{
-    background:var(--bs-primary-text-emphasis);
-    color:var(--kk-primary);
+    background:var(--mem-brand);
+    color:#fff;
 }
 
 .filter-pill .count{
@@ -212,8 +227,8 @@ footer{
     margin-left:4px;
     padding:0 6px;
     border-radius:999px;
-    background:var(--bs-primary);
-    color:var(--bs-body-color);
+    background:var(--mem-brand);
+    color:var(--mem-brand-text-emphasis);
     font-size:.72rem;
     font-weight:800;
 }
@@ -223,8 +238,8 @@ footer{
     height:100%;
     display:flex;
     flex-direction:column;
-    background:#fff;
-    border:1px solid var(--line);
+    background:var(--mem-surface);
+    border:1px solid var(--mem-line);
     border-radius:22px;
     overflow:hidden;
     box-shadow:0 8px 20px rgba(20,20,20,.05);
@@ -239,7 +254,7 @@ footer{
 .ann-banner{
     position:relative;
     aspect-ratio:16 / 9;
-    background:var(--bs-primary);
+    background:var(--mem-brand);
     overflow:hidden;
 }
 
@@ -257,8 +272,8 @@ footer{
     display:flex;
     align-items:center;
     justify-content:center;
-    background:var(--bs-primary);
-    color:var(--bs-body-color);
+    background:var(--mem-brand);
+    color:var(--mem-ink);
     font-size:3.2rem;
     position:relative;
 }
@@ -271,7 +286,7 @@ footer{
     border-radius:50%;
     right:-60px;
     top:-90px;
-    background:var(--bs-primary-text-emphasis);
+    background:var(--mem-brand-text-emphasis);
     opacity:.08;
 }
 
@@ -286,17 +301,17 @@ footer{
     border-radius:999px;
     font-size:.74rem;
     font-weight:800;
-    border:2px solid var(--bs-body-color);
+    border:2px solid var(--mem-ink);
 }
 
 .ann-status.upcoming{
-    background:var(--bs-primary-text-emphasis);
-    color:var(--kk-primary);
+    background:var(--mem-brand-text-emphasis);
+    color:var(--mem-brand);
 }
 
 .ann-status.ongoing{
-    background:var(--bs-primary);
-    color:var(--bs-body-color);
+    background:var(--mem-brand);
+    color:var(--mem-ink);
 }
 
 .ann-status.ongoing:before{
@@ -304,13 +319,13 @@ footer{
     width:8px;
     height:8px;
     border-radius:50%;
-    background:var(--bs-primary-text-emphasis);
+    background:var(--mem-brand-text-emphasis);
 }
 
 .ann-status.completed{
-    background:var(--bs-border-color);
-    color:var(--bs-secondary-color);
-    border-color:var(--bs-border-color);
+    background:var(--mem-line);
+    color:var(--mem-muted);
+    border-color:var(--mem-line);
 }
 
 .ann-date-chip{
@@ -321,9 +336,9 @@ footer{
     text-align:center;
     padding:.4rem 0;
     border-radius:15px;
-    background:var(--bs-primary);
-    color:var(--bs-body-color);
-    border:2px solid var(--bs-body-color);
+    background:var(--mem-brand);
+    color:var(--mem-ink);
+    border:2px solid var(--mem-ink);
     line-height:1.1;
 }
 
@@ -379,7 +394,7 @@ footer{
 }
 
 .ann-desc{
-    color:var(--bs-secondary-color);
+    color:var(--mem-muted);
     font-size:.9rem;
     margin:0 0 14px;
     display:-webkit-box;
@@ -408,8 +423,8 @@ footer{
     align-items:center;
     justify-content:center;
     border-radius:9px;
-    background:var(--bs-primary);
-    color:var(--bs-body-color);
+    background:var(--mem-brand);
+    color:var(--mem-ink);
     font-size:.85rem;
 }
 
@@ -440,25 +455,25 @@ footer{
 }
 
 .btn-outline-danger.icon-btn{
-    --bs-btn-color:var(--bs-danger);
-    --bs-btn-border-color:var(--bs-danger);
-    --bs-btn-hover-bg:var(--bs-danger);
-    --bs-btn-hover-border-color:var(--bs-danger);
+    --bs-btn-color:var(--mem-brand);
+    --bs-btn-border-color:var(--mem-brand);
+    --bs-btn-hover-bg:var(--mem-brand);
+    --bs-btn-hover-border-color:var(--mem-brand);
 }
 
 /* ---------- EMPTY STATE ---------- */
 .empty-state{
     text-align:center;
-    background:#fff;
-    border:2px dashed var(--line);
+    background:var(--mem-surface);
+    border:2px dashed var(--mem-line);
     border-radius:22px;
     padding:48px 20px;
-    color:var(--muted);
+    color:var(--mem-muted);
 }
 
 .empty-state i{
     font-size:3rem;
-    color:var(--bs-border-color);
+    color:var(--mem-line);
 }
 
 /* ---------- MODALS & FORM ---------- */
@@ -469,7 +484,7 @@ footer{
 }
 
 .modal-header{
-    background:var(--bs-primary);
+    background:var(--mem-brand);
     border-bottom:0;
 }
 
@@ -484,27 +499,27 @@ footer{
 
 .form-control,
 .form-select{
-    border:1px solid var(--bs-border-color);
+    border:1px solid var(--mem-line);
     border-radius:12px;
 }
 
 .form-control:focus,
 .form-select:focus{
-    border-color:var(--bs-body-color);
-    box-shadow:0 0 0 3px rgba(var(--bs-primary-rgb),.28);
+    border-color:var(--mem-ink);
+    box-shadow:0 0 0 3px rgba(var(--mem-brand-rgb),.28);
 }
 
 .banner-preview{
     position:relative;
     aspect-ratio:16 / 9;
-    border:2px dashed var(--bs-border-color);
+    border:2px dashed var(--mem-line);
     border-radius:16px;
-    background:var(--bs-tertiary-bg);
+    background:var(--mem-surface-alt);
     overflow:hidden;
     display:flex;
     align-items:center;
     justify-content:center;
-    color:var(--muted);
+    color:var(--mem-muted);
     text-align:center;
     font-size:.85rem;
 }
@@ -518,7 +533,7 @@ footer{
 
 .detail-banner{
     aspect-ratio:16 / 9;
-    background:var(--bs-primary);
+    background:var(--mem-brand);
     overflow:hidden;
     position:relative;
 }
@@ -532,7 +547,7 @@ footer{
 
 .detail-text{
     white-space:pre-line;
-    color:var(--bs-body-color);
+    color:var(--mem-ink);
 }
 
 .save-toast{
@@ -1175,7 +1190,7 @@ html.dark-mode .reschedule-history{background:var(--dashboard-blue-light);color:
 <script>
 window.SK_MEMBER_PORTAL = <?= (($memberFlagUser = current_user()) && !empty($memberFlagUser['legacy_id'])) ? 'true' : 'false' ?>;
 </script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 
 <div class="page-content">
 

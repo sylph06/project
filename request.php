@@ -12,13 +12,13 @@ require_official();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
     <link href="css/sidebar.css?v=33" rel="stylesheet">
     <style>
-        :root { --line:var(--bs-border-color); --muted:var(--bs-secondary-color); }
+        :root { --line:var(--mem-line); --muted:var(--mem-muted); }
         * { box-sizing:border-box; }
-        body { margin:0; background:var(--bs-tertiary-bg); color:var(--bs-body-color); font-family:Arial,sans-serif; }
-        .header { min-height:70px; background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 26px; gap:14px; }
-        .header-title { font-size:20px; font-weight:800; }
+        body { margin:0; background:var(--mem-bg)!important; color:var(--mem-ink)!important; font-family:Arial,sans-serif; }
+        .header { min-height:70px; background:var(--mem-surface)!important; border-bottom:1px solid var(--mem-line)!important; display:flex; align-items:center; justify-content:space-between; padding:0 26px; gap:14px; }
+        .header-title { font-size:20px; font-weight:800; color:var(--mem-ink)!important; }
         .content { padding:20px; max-width:1680px; margin:0 auto; }
-        .records-card { background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 10px 28px rgba(37,76,151,.08); }
+        .records-card { background:var(--mem-surface)!important; border:1px solid var(--mem-line)!important; border-radius:16px; overflow:hidden; box-shadow:0 10px 28px rgba(0,0,0,.07); }
         .review-welcome {
             position:relative;
             overflow:hidden;
@@ -47,80 +47,28 @@ require_official();
         .review-date-tools { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:12px; }
         .review-date-tools .form-control { width:140px; min-width:125px; height:36px; font-size:13px; }
         .review-date-tools .btn { padding-right:6px; padding-left:6px; font-size:12px; font-weight:700; white-space:nowrap; }
-        .review-date-tools .btn.active { background:var(--bs-primary-text-emphasis); border-color:var(--bs-primary-text-emphasis); color:#fff; }
+        .review-date-tools .btn.active { background:var(--mem-brand)!important; border-color:var(--mem-brand)!important; color:#fff; }
         .review-summary-grid { display:grid; grid-template-columns:repeat(5,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
-        .review-summary-card { min-height:82px; padding:12px 14px; border:1px solid var(--line); border-top:3px solid var(--review-accent,var(--bs-primary)); border-radius:14px; background:#fff; color:var(--bs-body-color); text-align:left; box-shadow:0 4px 14px rgba(27,65,125,.045); transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease; }
-        .review-summary-card:hover { transform:translateY(-2px); box-shadow:0 10px 22px rgba(27,65,125,.1); }
-        .review-summary-card.active { background:#f7faff; box-shadow:0 0 0 2px rgba(var(--bs-primary-rgb),.14),0 8px 18px rgba(27,65,125,.08); }
+        .review-summary-card { min-height:82px; padding:12px 14px; border:1px solid var(--mem-line)!important; border-top:3px solid var(--review-accent,var(--mem-brand)); border-radius:14px; background:var(--mem-surface)!important; color:var(--mem-ink)!important; text-align:left; box-shadow:0 4px 14px rgba(0,0,0,.04); transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease; }
+        .review-summary-card:hover { transform:translateY(-2px); box-shadow:0 10px 22px rgba(0,0,0,.1); }
+        .review-summary-card.active { background:var(--mem-surface-alt)!important; box-shadow:0 0 0 2px rgba(var(--mem-brand-rgb),.14),0 8px 18px rgba(0,0,0,.08); }
         .review-summary-number { display:block; font-size:24px; font-weight:800; line-height:1.1; }
-        .review-summary-label { display:block; color:var(--muted); font-size:12px; }
-        .card-header { background:var(--bs-primary-text-emphasis); color:#fff; padding:14px 16px; font-size:16px; font-weight:bold; }
+        .review-summary-label { display:block; color:var(--mem-muted)!important; font-size:12px; }
+        .card-header { background:var(--mem-surface-alt)!important; color:var(--mem-ink)!important; padding:14px 16px; font-size:16px; font-weight:bold; border-bottom:1px solid var(--mem-line)!important; }
         .request-tabs { gap:6px; }
         .request-tabs .nav-link { padding:7px 12px; border-radius:8px; color:inherit; font-size:14px; font-weight:700; white-space:nowrap; }
-        .request-tabs .nav-link:hover,.request-tabs .nav-link:focus { background:var(--bs-primary-bg-subtle); color:inherit; }
-        .request-tabs .nav-link.active { background:var(--bs-primary); color:#fff; }
+        .request-tabs .nav-link:hover,.request-tabs .nav-link:focus { background:var(--mem-brand-soft)!important; color:inherit; }
+        .request-tabs .nav-link.active { background:var(--mem-brand)!important; color:#fff; }
         .table { font-size:14px; }
         .table th { white-space:nowrap; }
         .table td,.table th { padding:12px; vertical-align:middle; }
-        .btn-outline { background:#fff; color:var(--bs-body-color); border:1px solid var(--line); padding:8px 14px; border-radius:7px; font-weight:700; }
-        .btn-black { background:var(--bs-primary-text-emphasis); color:#fff; border:0; padding:8px 14px; border-radius:7px; font-weight:700; }
-        .btn-black:hover { background:var(--bs-primary); color:#fff; }
-        .footer-note { text-align:center; color:var(--muted); font-size:13px; padding:20px; }
+        .btn-outline { background:var(--mem-surface)!important; color:var(--mem-ink)!important; border:1px solid var(--mem-line)!important; padding:8px 14px; border-radius:7px; font-weight:700; }
+        .btn-black { background:var(--mem-brand-text-emphasis)!important; color:#fff; border:0; padding:8px 14px; border-radius:7px; font-weight:700; }
+        .btn-black:hover { background:var(--mem-brand)!important; color:#fff; }
+        .footer-note { text-align:center; color:var(--mem-muted)!important; font-size:13px; padding:20px; }
         #toastBox { position:fixed; right:20px; bottom:20px; z-index:2000; width:min(400px,calc(100% - 40px)); }
         @media(max-width:800px) { .review-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
         @media(max-width:767px) { .content { padding:14px; } .header { padding:0 16px; } .review-date-tools .form-control { flex:1; min-width:120px; } }
-        :root, body.review-requests-page {
-            --rq-bg:#f3f6fc;
-            --rq-surface:#fff;
-            --rq-surface-2:#f9fbff;
-            --rq-line:#e1e9f6;
-            --rq-text:#17233c;
-            --rq-muted:#66748d;
-            --rq-accent:#0d6efd;
-            --rq-select:#e9f1ff;
-            color-scheme:light;
-        }
-        html[data-bs-theme="dark"] body.review-requests-page,
-        html.dark-mode body.review-requests-page {
-            --rq-bg:#111827;
-            --rq-surface:#1f2937;
-            --rq-surface-2:#273449;
-            --rq-line:#374151;
-            --rq-text:#f3f4f6;
-            --rq-muted:#9ca3af;
-            --rq-accent:#93c5fd;
-            --rq-select:#253247;
-            color-scheme:dark;
-        }
-        body.review-requests-page,
-        body.review-requests-page .page-content { background:var(--rq-bg); color:var(--rq-text); }
-        body.review-requests-page .header,
-        body.review-requests-page .records-card,
-        body.review-requests-page .review-summary-card { background:var(--rq-surface); color:var(--rq-text); border-color:var(--rq-line); }
-        body.review-requests-page .header { border-bottom-color:var(--rq-line); }
-        body.review-requests-page .review-summary-card { border-top-color:var(--review-accent,var(--rq-accent)); }
-        body.review-requests-page .review-summary-card.active { background:var(--rq-select); box-shadow:0 0 0 2px rgba(13,110,253,.16),0 8px 18px rgba(27,65,125,.08); }
-        body.review-requests-page .review-summary-label,
-        body.review-requests-page .footer-note { color:var(--rq-muted)!important; }
-        body.review-requests-page .review-welcome{
-            color:#fff;
-            border:0;
-            background:linear-gradient(112deg,#1249a8 0%,#1765d6 58%,#4385ec 100%);
-        }
-        body.review-requests-page .review-welcome small{color:rgba(255,255,255,.82)!important}
-        body.review-requests-page .card-header { background:var(--rq-surface-2); color:var(--rq-text); border-bottom:1px solid var(--rq-line); }
-        body.review-requests-page .table {
-            --bs-table-color:var(--rq-text);
-            --bs-table-bg:var(--rq-surface);
-            --bs-table-hover-bg:var(--rq-surface-2);
-            --bs-table-hover-color:var(--rq-text);
-            --bs-table-border-color:var(--rq-line);
-        }
-        body.review-requests-page .table th { background:var(--rq-surface-2); color:var(--rq-muted); }
-        body.review-requests-page .request-tabs .nav-link { color:var(--rq-text); }
-        body.review-requests-page .request-tabs .nav-link.active { background:var(--rq-accent); color:#fff; }
-        body.review-requests-page .btn-outline { background:var(--rq-surface); color:var(--rq-text); border-color:var(--rq-line); }
-        body.review-requests-page .btn-black { background:var(--rq-accent); color:#fff; }
     </style>
     <?php include __DIR__ . '/init.php'; ?>
     <?php
@@ -145,7 +93,7 @@ require_official();
 <body class="review-requests-page">
 <div class="top-strip"></div>
 <script src="js/theme.js"></script>
-<script src="js/sidebar.js?v=18"></script>
+<script src="js/sidebar.js?v=20"></script>
 <main class="main page-content">
     <header class="header">
         <div class="d-flex align-items-center gap-2">
@@ -183,7 +131,7 @@ require_official();
                     <button type="button" class="review-summary-card" style="--review-accent:#3675b9" data-request-status="approved"><span class="review-summary-number" id="approvedRequestTotal">0</span><span class="review-summary-label">Approved</span></button>
                     <button type="button" class="review-summary-card" style="--review-accent:#d94848" data-request-status="rejected"><span class="review-summary-number" id="rejectedRequestTotal">0</span><span class="review-summary-label">Rejected</span></button>
                     <button type="button" class="review-summary-card" style="--review-accent:#0d6efd" data-request-status="done"><span class="review-summary-number" id="doneRequestTotal">0</span><span class="review-summary-label">Done Requests</span></button>
-                    <button type="button" class="review-summary-card" style="--review-accent:var(--bs-primary)" data-request-status="all"><span class="review-summary-number" id="allRequestTotal">0</span><span class="review-summary-label">All Requests</span></button>
+                    <button type="button" class="review-summary-card" style="--review-accent:var(--mem-brand)" data-request-status="all"><span class="review-summary-number" id="allRequestTotal">0</span><span class="review-summary-label">All Requests</span></button>
                 </div>
             </div>
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
